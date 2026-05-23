@@ -1,0 +1,354 @@
+"use client";
+
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  collection,
+  getDocs,
+  query,
+  updateDoc,
+  where,
+  doc,
+} from "firebase/firestore";
+
+import { db } from "@/lib/firebase";
+
+import {
+  useGuildAuth,
+} from "./GuildAuthLogic";
+
+export default function QuestReport() {
+
+  const {
+    user,
+  } = useGuildAuth();
+
+  const [report, setReport] =
+    useState("");
+
+  const [questId, setQuestId] =
+    useState("");
+
+  const [submitted, setSubmitted] =
+    useState(false);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  useEffect(() => {
+
+    async function loadQuest() {
+
+      if (!user) {
+        return;
+      }
+
+      try {
+
+        const q = query(
+          collection(db, "quests"),
+
+          where(
+            "assignedTo",
+            "==",
+            user.uid
+          ),
+
+          where(
+            "status",
+            "==",
+            "ASSIGNED"
+          )
+        );
+
+        const snapshot =
+          await getDocs(q);
+
+        if (!snapshot.empty) {
+
+          const quest =
+            snapshot.docs[0];
+
+          setQuestId(
+            quest.id
+          );
+        }
+
+      } catch (error) {
+
+        console.log(error);
+      }
+    }
+
+    loadQuest();
+
+  }, [user]);
+
+  async function handleSubmit() {
+
+    if (!report.trim()) {
+
+      setError(
+        "Mission report cannot be empty."
+      );
+
+      return;
+    }
+
+    if (!questId) {
+
+      setError(
+        "No assigned mission found."
+      );
+
+      return;
+    }
+
+    try {
+
+      setLoading(true);
+
+      setError("");
+
+      await updateDoc(
+        doc(
+          db,
+          "quests",
+          questId
+        ),
+        {
+          reportSubmitted:
+            true,
+
+          reportText:
+            report.trim(),
+
+          reportSubmittedAt:
+            new Date()
+              .toISOString(),
+
+          status:
+            "REPORT_SUBMITTED",
+        }
+      );
+
+      setSubmitted(true);
+
+    } catch (error) {
+
+      console.log(error);
+
+      setError(
+        "Failed to submit mission report."
+      );
+
+    } finally {
+
+      setLoading(false);
+    }
+  }
+
+  /* SUCCESS */
+  if (submitted) {
+    return (
+      <section
+        className="
+          relative
+          overflow-hidden
+          rounded-[34px]
+          border
+          border-green-900/20
+          bg-green-950/10
+          p-10
+          backdrop-blur-xl
+        "
+      >
+
+        <div className="relative z-10">
+
+          <p
+            className="
+              text-[10px]
+              tracking-[0.45em]
+              text-green-500
+            "
+          >
+            GUILD REPORT
+          </p>
+
+          <h2
+            className="
+              font-cinzel
+              mt-5
+              text-4xl
+              text-green-400
+            "
+          >
+            Report Submitted
+          </h2>
+
+          <p
+            className="
+              font-cormorant
+              mt-6
+              text-2xl
+              italic
+              leading-relaxed
+              text-zinc-400
+            "
+          >
+            Your operational report has been
+            submitted to the guild council for
+            manual verification and review.
+          </p>
+
+        </div>
+
+      </section>
+    );
+  }
+
+  return (
+    <section
+      className="
+        relative
+        overflow-hidden
+        rounded-[34px]
+        border
+        border-yellow-900/20
+        bg-black/30
+        p-10
+        backdrop-blur-xl
+      "
+    >
+
+      {/* Glow */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(212,164,75,0.06),transparent_35%)]" />
+
+      <div className="relative z-10">
+
+        <p
+          className="
+            text-[10px]
+            tracking-[0.45em]
+            text-yellow-700
+          "
+        >
+          GUILD REPORT
+        </p>
+
+        <h2
+          className="
+            font-cinzel
+            mt-5
+            text-4xl
+            text-yellow-400
+          "
+        >
+          Submit Mission Report
+        </h2>
+
+        <p
+          className="
+            font-cormorant
+            mt-6
+            text-2xl
+            italic
+            leading-relaxed
+            text-zinc-500
+          "
+        >
+          Submit your mission progress and
+          operational notes for guild review.
+        </p>
+
+        {/* ERROR */}
+        {error && (
+          <div
+            className="
+              mt-8
+              rounded-[20px]
+              border
+              border-red-900/20
+              bg-red-950/10
+              p-5
+              text-sm
+              text-red-400
+            "
+          >
+            {error}
+          </div>
+        )}
+
+        {/* TEXTAREA */}
+        <textarea
+          value={report}
+          onChange={(e) =>
+            setReport(
+              e.target.value
+            )
+          }
+          placeholder="Describe completed objectives, encountered issues, operational progress, and guild notes..."
+          className="
+            font-cormorant
+            mt-10
+            h-52
+            w-full
+            resize-none
+            rounded-[24px]
+            border
+            border-yellow-900/10
+            bg-black/20
+            p-6
+            text-2xl
+            italic
+            leading-relaxed
+            text-zinc-200
+            outline-none
+            placeholder:text-zinc-600
+            focus:border-yellow-700/40
+          "
+        />
+
+        {/* BUTTON */}
+        <div className="mt-8 flex justify-end">
+
+          <button
+            onClick={
+              handleSubmit
+            }
+            disabled={
+              loading
+            }
+            className="
+              border
+              border-yellow-700
+              bg-yellow-500/10
+              px-8
+              py-3
+              text-[10px]
+              tracking-[0.35em]
+              text-yellow-300
+              transition
+              hover:bg-yellow-500/20
+              disabled:opacity-50
+            "
+          >
+            {loading
+              ? "SUBMITTING..."
+              : "SUBMIT REPORT"}
+          </button>
+
+        </div>
+
+      </div>
+
+    </section>
+  );
+}
