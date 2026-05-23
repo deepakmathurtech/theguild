@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   title: "The Guild",
   description:
     "Enter as unknown. Leave as legend.",
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export default function RootLayout({
