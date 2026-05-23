@@ -51,7 +51,7 @@ export default function PublicAdventurerProfile({
               query(
                 collection(
                   db,
-                  "adventurers"
+                  "publicAdventurerProfiles"
                 ),
                 where(
                   "adventurerId",
@@ -106,19 +106,19 @@ export default function PublicAdventurerProfile({
 
   return (
     <div className="space-y-8">
-      <section className="border border-yellow-900/20 bg-black/35 p-8 backdrop-blur-xl">
+      <section className="border border-yellow-900/20 bg-black/35 p-5 sm:p-8 backdrop-blur-xl">
         <p className="text-[10px] tracking-[0.45em] text-yellow-700">
           PUBLIC GUILD PROFILE
         </p>
-        <h1 className="font-cinzel mt-4 text-5xl text-yellow-400">
+        <h1 className="font-cinzel mt-4 break-words text-3xl text-yellow-400 sm:text-5xl">
           {profile.name}
         </h1>
-        <p className="mt-3 text-lg italic text-zinc-400">
+        <p className="mt-3 text-base italic text-zinc-400 sm:text-lg">
           {profile.publicTagline ||
             "Verified guild adventurer profile."}
         </p>
 
-        <div className="mt-8 grid gap-5 md:grid-cols-3">
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           <ProfileStat
             label="ADVENTURER ID"
             value={
@@ -154,7 +154,7 @@ export default function PublicAdventurerProfile({
         </div>
       </section>
 
-      <section className="border border-yellow-900/20 bg-black/35 p-8 backdrop-blur-xl">
+      <section className="border border-yellow-900/20 bg-black/35 p-5 sm:p-8 backdrop-blur-xl">
         <p className="text-[10px] tracking-[0.45em] text-yellow-700">
           SKILL VERIFICATION
         </p>
@@ -179,7 +179,9 @@ export default function PublicAdventurerProfile({
         {profile.portfolioUrl && (
           <Link
             href={profile.portfolioUrl}
-            className="mt-6 inline-flex border border-yellow-700/40 bg-yellow-500/10 px-5 py-3 text-[10px] tracking-[0.3em] text-yellow-300"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-6 inline-flex w-full justify-center break-all border border-yellow-700/40 bg-yellow-500/10 px-5 py-3 text-center text-[10px] tracking-[0.3em] text-yellow-300 sm:w-auto"
           >
             VIEW PORTFOLIO
           </Link>

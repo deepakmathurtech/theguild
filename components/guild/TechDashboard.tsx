@@ -167,7 +167,7 @@ export default function TechDashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="grid gap-4 md:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <ConsoleStat
           label="TOTAL"
           value={String(stats.total)}
@@ -196,13 +196,13 @@ export default function TechDashboard() {
         </div>
       )}
 
-      <section className="border border-yellow-900/20 bg-black/35 p-6 backdrop-blur-xl">
+      <section className="border border-yellow-900/20 bg-black/35 p-4 sm:p-6 backdrop-blur-xl">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-[10px] tracking-[0.45em] text-yellow-700">
               TECH OPERATIONS
             </p>
-            <h2 className="font-cinzel mt-3 text-3xl text-yellow-400">
+            <h2 className="font-cinzel mt-3 text-2xl sm:text-3xl text-yellow-400">
               Quest Monitor
             </h2>
           </div>
@@ -224,10 +224,10 @@ export default function TechDashboard() {
             {quests.map((quest) => (
               <article
                 key={quest.id}
-                className="grid gap-4 border border-white/10 bg-black/25 p-5 xl:grid-cols-[1fr_auto]"
+                className="grid gap-4 border border-white/10 bg-black/25 p-4 sm:p-5 xl:grid-cols-[1fr_auto]"
               >
                 <div>
-                  <h3 className="font-cinzel text-2xl text-zinc-100">
+                  <h3 className="font-cinzel text-xl sm:text-2xl text-zinc-100">
                     {quest.title ||
                       "Untitled quest"}
                   </h3>
@@ -254,7 +254,7 @@ export default function TechDashboard() {
                   </p>
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-3 xl:w-[440px]">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 xl:w-[440px]">
                   <button
                     type="button"
                     onClick={() =>
@@ -311,16 +311,16 @@ export default function TechDashboard() {
         )}
       </section>
 
-      <section className="border border-yellow-900/20 bg-black/35 p-6 backdrop-blur-xl">
+      <section className="border border-yellow-900/20 bg-black/35 p-4 sm:p-6 backdrop-blur-xl">
         <p className="text-[10px] tracking-[0.45em] text-yellow-700">
           OPERATIONS BULLETIN
         </p>
-        <h2 className="font-cinzel mt-3 text-3xl text-yellow-400">
+        <h2 className="font-cinzel mt-3 text-2xl sm:text-3xl text-yellow-400">
           Tech Announcements
         </h2>
 
         <div className="mt-6 grid gap-6 xl:grid-cols-[380px_1fr]">
-          <div className="border border-white/10 bg-black/25 p-5">
+          <div className="border border-white/10 bg-black/25 p-4 sm:p-5">
             <input
               type="text"
               value={announcementTitle}
@@ -356,7 +356,7 @@ export default function TechDashboard() {
               (announcement) => (
                 <article
                   key={announcement.id}
-                  className="border border-white/10 bg-black/25 p-5"
+                  className="border border-white/10 bg-black/25 p-4 sm:p-5"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>

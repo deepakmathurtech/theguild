@@ -193,8 +193,8 @@ export default function RegisterPage() {
       <main
       className="
         relative
-        h-screen
-        overflow-hidden
+        min-h-screen
+        overflow-x-hidden
         bg-[#120d08]
         text-white
       "

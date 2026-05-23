@@ -280,7 +280,7 @@ export default function TavernPage() {
           <div
             className="
               grid
-              h-[calc(100dvh-82px)]
+              min-h-[calc(100dvh-82px)]
               w-full
               max-w-7xl
               overflow-hidden
@@ -294,15 +294,14 @@ export default function TavernPage() {
           >
             <aside
               className="
-                hidden
-                border-r
+                border-b
                 border-white/5
                 bg-black/20
-                lg:flex
-                lg:flex-col
+                lg:border-b-0
+                lg:border-r
               "
             >
-              <div className="border-b border-white/5 p-6">
+              <div className="border-b border-white/5 p-4 sm:p-6">
                 <p className="text-[10px] tracking-[0.45em] text-yellow-700">
                   SOCIAL HALL
                 </p>
@@ -314,12 +313,12 @@ export default function TavernPage() {
                 </p>
               </div>
 
-              <div className="space-y-5 p-5">
+              <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-1">
                 <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-5">
                   <p className="text-[10px] tracking-[0.25em] text-zinc-500">
                     CURRENT ADVENTURER
                   </p>
-                  <h3 className="mt-3 text-2xl font-bold text-yellow-300">
+                  <h3 className="mt-3 text-xl font-bold text-yellow-300 sm:text-2xl">
                     {guildProfile?.name ||
                       "Guest"}
                   </h3>
@@ -385,7 +384,7 @@ export default function TavernPage() {
               </div>
             </aside>
 
-            <div className="flex flex-col">
+            <div className="flex min-h-0 flex-col">
               <div className="border-b border-white/5 px-4 py-4 sm:px-6">
                 <div className="flex items-center justify-between gap-4">
                   <div>
@@ -562,7 +561,7 @@ export default function TavernPage() {
                     placeholder="Share a lead, ask for help, or gather a party..."
                     className="h-24 w-full resize-none bg-transparent px-2 py-2 text-sm text-white outline-none placeholder:text-zinc-500"
                   />
-                  <div className="flex items-center justify-between gap-3 border-t border-white/5 px-2 pt-3">
+                  <div className="flex flex-col gap-3 border-t border-white/5 px-2 pt-3 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-[10px] tracking-[0.25em] text-zinc-500">
                       SHIFT+ENTER for a new line
                     </p>

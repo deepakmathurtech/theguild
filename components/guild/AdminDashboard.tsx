@@ -12,6 +12,7 @@ import {
 
 import { db } from "@/lib/firebase";
 import type { GuildRole } from "@/lib/guildAccess";
+import { upsertPublicAdventurerProfile } from "@/lib/publicAdventurerProfile";
 
 import {
   createAnnouncement,
@@ -23,12 +24,17 @@ import AdventurerProfileLookup from "./AdventurerProfileLookup";
 
 type AdminAdventurer = {
   uid: string;
+  adventurerId?: string;
   name?: string;
   email?: string;
   guildRank?: string;
   reputation?: number;
   questsCompleted?: number;
   specialization?: string;
+  cityName?: string;
+  publicTagline?: string;
+  portfolioUrl?: string;
+  skillsVerified?: string[];
   approved?: boolean;
   role?: GuildRole;
 };
@@ -188,6 +194,57 @@ export default function AdminDashboard() {
       }
     );
 
+    const existing =
+      adventurers.find(
+        (adventurer) =>
+          adventurer.uid === uid
+      );
+
+    if (existing) {
+      await upsertPublicAdventurerProfile(
+        db,
+        uid,
+        {
+          uid,
+          adventurerId:
+            (existing as AdminAdventurer & {
+              adventurerId?: string;
+            }).adventurerId,
+          name: existing.name,
+          guildRank:
+            data.guildRank ||
+            existing.guildRank,
+          specialization:
+            existing.specialization,
+          cityName:
+            (existing as AdminAdventurer & {
+              cityName?: string;
+            }).cityName,
+          publicTagline:
+            (existing as AdminAdventurer & {
+              publicTagline?: string;
+            }).publicTagline,
+          skillsVerified:
+            (existing as AdminAdventurer & {
+              skillsVerified?: string[];
+            }).skillsVerified,
+          portfolioUrl:
+            (existing as AdminAdventurer & {
+              portfolioUrl?: string;
+            }).portfolioUrl,
+          questsCompleted:
+            data.questsCompleted ??
+            existing.questsCompleted,
+          reputation:
+            data.reputation ??
+            existing.reputation,
+          approved:
+            data.approved ??
+            existing.approved,
+        }
+      );
+    }
+
     await loadAdminData();
   }
 
@@ -237,7 +294,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="grid gap-4 md:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
           label="PENDING"
           value={String(
@@ -280,13 +337,13 @@ export default function AdminDashboard() {
         </p>
       ) : (
         <>
-          <section className="border border-yellow-900/20 bg-black/35 p-6 backdrop-blur-xl">
+          <section className="border border-yellow-900/20 bg-black/35 p-4 sm:p-6 backdrop-blur-xl">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="text-[10px] tracking-[0.45em] text-yellow-700">
                   ADVENTURER CONTROL
                 </p>
-                <h2 className="font-cinzel mt-3 text-3xl text-yellow-400">
+                <h2 className="font-cinzel mt-3 text-2xl sm:text-3xl text-yellow-400">
                   Approvals, Roles, Progress
                 </h2>
               </div>
@@ -304,16 +361,19 @@ export default function AdminDashboard() {
                 (adventurer) => (
                   <article
                     key={adventurer.uid}
-                    className="grid gap-5 border border-white/10 bg-black/25 p-5 xl:grid-cols-[1fr_auto]"
+                    className="grid gap-5 border border-white/10 bg-black/25 p-4 sm:p-5 xl:grid-cols-[1fr_auto]"
                   >
                     <div>
-                      <h3 className="font-cinzel text-2xl text-zinc-100">
+                      <h3 className="font-cinzel text-xl sm:text-2xl text-zinc-100">
                         {adventurer.name ||
                           "Unnamed"}
                       </h3>
                       <p className="mt-2 text-sm text-zinc-500">
                         {adventurer.email ||
                           "No email"}{" "}
+                        |{" "}
+                        {adventurer.adventurerId ||
+                          "No ID assigned"}{" "}
                         |{" "}
                         {adventurer.specialization ||
                           "No specialization"}
@@ -331,7 +391,7 @@ export default function AdminDashboard() {
                       </p>
                     </div>
 
-                    <div className="grid gap-3 md:grid-cols-4 xl:w-[540px]">
+                    <div className="grid gap-3 sm:grid-cols-2 xl:w-full xl:max-w-[540px] xl:grid-cols-4">
                       <button
                         type="button"
                         onClick={() =>
@@ -448,11 +508,11 @@ export default function AdminDashboard() {
             </div>
           </section>
 
-          <section className="border border-yellow-900/20 bg-black/35 p-6 backdrop-blur-xl">
+          <section className="border border-yellow-900/20 bg-black/35 p-4 sm:p-6 backdrop-blur-xl">
             <p className="text-[10px] tracking-[0.45em] text-yellow-700">
               QUEST CONTROL
             </p>
-            <h2 className="font-cinzel mt-3 text-3xl text-yellow-400">
+            <h2 className="font-cinzel mt-3 text-2xl sm:text-3xl text-yellow-400">
               Verification, Visibility, Status
             </h2>
 
@@ -460,10 +520,10 @@ export default function AdminDashboard() {
               {quests.map((quest) => (
                 <article
                   key={quest.id}
-                  className="grid gap-4 border border-white/10 bg-black/25 p-5 xl:grid-cols-[1fr_auto]"
+                  className="grid gap-4 border border-white/10 bg-black/25 p-4 sm:p-5 xl:grid-cols-[1fr_auto]"
                 >
                   <div>
-                    <h3 className="font-cinzel text-2xl text-zinc-100">
+                    <h3 className="font-cinzel text-xl sm:text-2xl text-zinc-100">
                       {quest.title ||
                         "Untitled quest"}
                     </h3>
@@ -490,7 +550,7 @@ export default function AdminDashboard() {
                     </p>
                   </div>
 
-                  <div className="grid gap-3 md:grid-cols-3 xl:w-[440px]">
+                  <div className="grid gap-3 sm:grid-cols-2 xl:w-full xl:max-w-[440px] xl:grid-cols-3">
                     <button
                       type="button"
                       onClick={() =>
@@ -546,16 +606,16 @@ export default function AdminDashboard() {
             </div>
           </section>
 
-          <section className="border border-yellow-900/20 bg-black/35 p-6 backdrop-blur-xl">
+          <section className="border border-yellow-900/20 bg-black/35 p-4 sm:p-6 backdrop-blur-xl">
             <p className="text-[10px] tracking-[0.45em] text-yellow-700">
               BROADCAST CONTROL
             </p>
-            <h2 className="font-cinzel mt-3 text-3xl text-yellow-400">
+            <h2 className="font-cinzel mt-3 text-2xl sm:text-3xl text-yellow-400">
               Guild Announcements
             </h2>
 
             <div className="mt-6 grid gap-6 xl:grid-cols-[420px_1fr]">
-              <div className="border border-white/10 bg-black/25 p-5">
+              <div className="border border-white/10 bg-black/25 p-4 sm:p-5">
                 <input
                   type="text"
                   value={announcementTitle}
@@ -625,7 +685,7 @@ export default function AdminDashboard() {
                   (announcement) => (
                     <article
                       key={announcement.id}
-                      className="border border-white/10 bg-black/25 p-5"
+                      className="border border-white/10 bg-black/25 p-4 sm:p-5"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>

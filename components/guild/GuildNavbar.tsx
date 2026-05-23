@@ -137,7 +137,7 @@ export default function GuildNavbar() {
                 md:block
               "
             >
-              STRIVE • SURPASS • SOVEREIGN
+              STRIVE | SURPASS | SOVEREIGN
             </span>
 
           </div>
@@ -151,11 +151,14 @@ export default function GuildNavbar() {
             flex-1
             items-center
             justify-center
-            gap-6
-            text-[10px]
-            tracking-[0.24em]
+            gap-4
+            text-[9px]
+            tracking-[0.2em]
             text-zinc-400
             lg:flex
+            xl:gap-6
+            xl:text-[10px]
+            xl:tracking-[0.24em]
           "
         >
 
@@ -222,6 +225,34 @@ export default function GuildNavbar() {
               REGISTRY
             </Link>
           )}
+
+          <Link
+            href="/about"
+            className="transition hover:text-yellow-400"
+          >
+            ABOUT
+          </Link>
+
+          <Link
+            href="/terms"
+            className="transition hover:text-yellow-400"
+          >
+            TERMS
+          </Link>
+
+          <Link
+            href="/privacy"
+            className="transition hover:text-yellow-400"
+          >
+            PRIVACY
+          </Link>
+
+          <Link
+            href="/technical"
+            className="transition hover:text-yellow-400"
+          >
+            SYSTEM
+          </Link>
 
         </nav>
 
@@ -393,7 +424,7 @@ export default function GuildNavbar() {
               lg:hidden
             "
           >
-            ☰
+            MENU
           </button>
 
         </div>
@@ -460,6 +491,22 @@ export default function GuildNavbar() {
                 REGISTRY
               </Link>
             )}
+
+            <Link href="/about">
+              ABOUT
+            </Link>
+
+            <Link href="/terms">
+              TERMS
+            </Link>
+
+            <Link href="/privacy">
+              PRIVACY
+            </Link>
+
+            <Link href="/technical">
+              SYSTEM
+            </Link>
 
             {user && (
               <Link href="/guild-card">

@@ -1,0 +1,206 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function requesterEmail() {
+      return signedIn() && request.auth.token.email is string
+        ? request.auth.token.email.lower()
+        : "";
+    }
+
+    function isOwner() {
+      return requesterEmail() == "thecentralguild@gmail.com";
+    }
+
+    function adventurerDoc(uid) {
+      return get(/databases/$(database)/documents/adventurers/$(uid));
+    }
+
+    function adventurerExists(uid) {
+      return exists(/databases/$(database)/documents/adventurers/$(uid));
+    }
+
+    function currentProfile() {
+      return signedIn() && adventurerExists(request.auth.uid)
+        ? adventurerDoc(request.auth.uid)
+        : null;
+    }
+
+    function currentRole() {
+      return currentProfile() != null &&
+        currentProfile().data.role is string
+        ? currentProfile().data.role.lower()
+        : "";
+    }
+
+    function isAdmin() {
+      return isOwner() || currentRole() == "admin";
+    }
+
+    function isTech() {
+      return isAdmin() || currentRole() == "tech";
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isApprovedAdventurer() {
+      return currentProfile() != null &&
+        currentProfile().data.approved == true;
+    }
+
+    function selfProfileFieldsOnly() {
+      return request.resource.data.diff(resource.data).changedKeys().hasOnly([
+        "name",
+        "contact",
+        "experience",
+        "specialization",
+        "cityName",
+        "cityCode",
+        "gender",
+        "genderCode",
+        "publicTagline",
+        "portfolioUrl",
+        "updatedAt"
+      ]);
+    }
+
+    function registrationFields() {
+      return [
+        "uid",
+        "adventurerId",
+        "email",
+        "name",
+        "guildRank",
+        "reputation",
+        "questsCompleted",
+        "completedQuestLog",
+        "specialization",
+        "contact",
+        "experience",
+        "cityName",
+        "cityCode",
+        "gender",
+        "genderCode",
+        "publicTagline",
+        "portfolioUrl",
+        "skillsVerified",
+        "verificationNotes",
+        "approved",
+        "role",
+        "createdAt"
+      ];
+    }
+
+    function validSelfRegistration(uid) {
+      return isSelf(uid)
+        && request.resource.data.keys().hasOnly(registrationFields())
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.role == "adventurer"
+        && request.resource.data.approved == false
+        && request.resource.data.guildRank == "F-RANK"
+        && request.resource.data.reputation == 0
+        && request.resource.data.questsCompleted == 0
+        && request.resource.data.completedQuestLog is list
+        && request.resource.data.skillsVerified is list
+        && request.resource.data.verificationNotes == "";
+    }
+
+    function completesOwnRegistration(uid) {
+      return validSelfRegistration(uid)
+        && (!("adventurerId" in resource.data) || resource.data.adventurerId == "")
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly(registrationFields());
+    }
+
+    function selfPublicProfileFieldsOnly() {
+      return request.resource.data.diff(resource.data).changedKeys().hasOnly([
+        "name",
+        "specialization",
+        "cityName",
+        "publicTagline",
+        "portfolioUrl",
+        "updatedAt"
+      ]);
+    }
+
+    match /adventurers/{uid} {
+      allow read: if isSelf(uid) || isAdmin() || isTech();
+
+      allow create: if validSelfRegistration(uid);
+
+      allow update: if isAdmin() || isTech()
+        || (isSelf(uid) && selfProfileFieldsOnly())
+        || completesOwnRegistration(uid);
+
+      allow delete: if isOwner();
+    }
+
+    match /publicAdventurerProfiles/{uid} {
+      allow read: if true;
+
+      allow create: if isAdmin() || isTech()
+        || (isSelf(uid) && request.resource.data.uid == request.auth.uid);
+
+      allow update: if isAdmin() || isTech()
+        || (isSelf(uid) && selfPublicProfileFieldsOnly());
+
+      allow delete: if isOwner();
+    }
+
+    match /guildAnnouncements/{announcementId} {
+      allow read: if true;
+      allow create, update: if isAdmin() || isTech();
+      allow delete: if isOwner();
+    }
+
+    match /questsv1/{questId} {
+      allow read: if true;
+
+      allow create: if signedIn()
+        && request.resource.data.createdBy == request.auth.uid;
+
+      allow update: if isAdmin()
+        || isTech()
+        || (signedIn() && resource.data.createdBy == request.auth.uid);
+
+      allow delete: if isOwner();
+    }
+
+    match /quests/{questId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.resource.data.createdBy == request.auth.uid;
+
+      allow update: if isAdmin()
+        || isTech()
+        || (signedIn() && resource.data.createdBy == request.auth.uid)
+        || (signedIn() && resource.data.assignedTo == request.auth.uid);
+
+      allow delete: if isOwner();
+    }
+
+    match /tavernChat/{messageId} {
+      allow read: if isApprovedAdventurer();
+
+      allow create: if isApprovedAdventurer()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.author is string
+        && request.resource.data.message is string;
+
+      allow update, delete: if isAdmin() || isTech();
+    }
+
+    match /guildCounters/{counterId} {
+      allow get: if signedIn();
+      allow list: if isAdmin() || isTech();
+      allow create, update: if signedIn();
+      allow delete: if isOwner();
+    }
+  }
+}

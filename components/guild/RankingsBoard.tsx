@@ -6,6 +6,10 @@ import { useEffect, useState } from "react";
 import {
   collection,
   getDocs,
+  limit,
+  orderBy,
+  query,
+  where,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -38,7 +42,15 @@ export default function RankingsBoard() {
         setError("");
 
         const snapshot = await getDocs(
-          collection(db, "adventurers")
+          query(
+            collection(
+              db,
+              "publicAdventurerProfiles"
+            ),
+            where("approved", "==", true),
+            orderBy("reputation", "desc"),
+            limit(50)
+          )
         );
 
         const loaded =
@@ -52,10 +64,9 @@ export default function RankingsBoard() {
                 uid: docSnap.id,
               };
             })
-            .sort(
-              (first, second) =>
-                (second.reputation || 0) -
-                (first.reputation || 0)
+            .filter(
+              (adventurer) =>
+                adventurer.approved
             );
 
         setAdventurers(loaded);

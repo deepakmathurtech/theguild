@@ -20,11 +20,11 @@ export default async function AdventurerPublicPage(
 
       <GuildNavbar />
 
-      <section className="relative z-10 mx-auto max-w-6xl px-6 pb-20 pt-36">
+      <section className="relative z-10 mx-auto max-w-6xl px-4 pb-20 pt-32 sm:px-6 sm:pt-36">
         <p className="text-[10px] tracking-[0.45em] text-yellow-700">
           PUBLIC DOSSIER
         </p>
-        <p className="mt-3 text-zinc-500">
+        <p className="mt-3 max-w-2xl text-sm text-zinc-500 sm:text-base">
           Open verification page for guild identity and approved skills.
         </p>
 

@@ -19,7 +19,6 @@ import {
 import {
   doc,
   getDoc,
-  setDoc,
 } from "firebase/firestore";
 
 import {
@@ -28,7 +27,6 @@ import {
 } from "@/lib/firebase";
 
 import {
-  getEffectiveRole,
   type GuildRole,
 } from "@/lib/guildAccess";
 
@@ -225,44 +223,8 @@ export function GuildAuthProvider({
       }
     );
 
-    /* SAVE GUILD PROFILE */
-    await setDoc(
-      doc(
-        db,
-        "adventurers",
-        result.user.uid
-      ),
-      {
-
-        uid: result.user.uid,
-
-        name,
-
-        email,
-
-        guildRank: "F-RANK",
-
-        reputation: 0,
-
-        questsCompleted: 0,
-
-        specialization: "",
-
-        contact: "",
-
-        experience: "",
-
-        approved: false,
-
-        role: getEffectiveRole(
-          result.user,
-          null
-        ),
-      }
-    );
-
     console.log(
-      "PROFILE CREATED"
+      "AUTH USER CREATED"
     );
 
     return result.user;

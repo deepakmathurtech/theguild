@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
+import { upsertPublicAdventurerProfile } from "@/lib/publicAdventurerProfile";
 
 type AdventurerRecord = {
   uid: string;
@@ -165,6 +166,40 @@ export default function AdventurerProfileLookup({
       }
     );
 
+    await upsertPublicAdventurerProfile(
+      db,
+      record.uid,
+      {
+        uid: record.uid,
+        adventurerId:
+          record.adventurerId,
+        name: record.name,
+        guildRank:
+          record.guildRank,
+        specialization:
+          record.specialization,
+        cityName:
+          record.cityName,
+        publicTagline:
+          publicTagline.trim(),
+        portfolioUrl:
+          portfolioUrl.trim(),
+        skillsVerified:
+          verifiedSkills
+            .split(",")
+            .map((skill) =>
+              skill.trim()
+            )
+            .filter(Boolean),
+        questsCompleted:
+          record.questsCompleted,
+        reputation:
+          record.reputation,
+        approved:
+          record.approved,
+      }
+    );
+
     await searchProfile();
   }
 
@@ -200,6 +235,35 @@ export default function AdventurerProfileLookup({
       }
     );
 
+    await upsertPublicAdventurerProfile(
+      db,
+      record.uid,
+      {
+        uid: record.uid,
+        adventurerId:
+          record.adventurerId,
+        name: record.name,
+        guildRank:
+          record.guildRank,
+        specialization:
+          record.specialization,
+        cityName:
+          record.cityName,
+        publicTagline:
+          record.publicTagline,
+        portfolioUrl:
+          record.portfolioUrl,
+        skillsVerified:
+          record.skillsVerified,
+        questsCompleted:
+          (record.questsCompleted || 0) + 1,
+        reputation:
+          record.reputation,
+        approved:
+          record.approved,
+      }
+    );
+
     setCompletedQuestTitle("");
     setCompletedQuestId("");
     setCompletedQuestSummary("");
@@ -207,11 +271,11 @@ export default function AdventurerProfileLookup({
   }
 
   return (
-    <section className="border border-yellow-900/20 bg-black/35 p-6 backdrop-blur-xl">
+    <section className="border border-yellow-900/20 bg-black/35 p-4 sm:p-6 backdrop-blur-xl">
       <p className="text-[10px] tracking-[0.45em] text-yellow-700">
         PROFILE LOOKUP
       </p>
-      <h2 className="font-cinzel mt-3 text-3xl text-yellow-400">
+      <h2 className="font-cinzel mt-3 text-2xl sm:text-3xl text-yellow-400">
         {title}
       </h2>
 
@@ -251,11 +315,11 @@ export default function AdventurerProfileLookup({
 
       {record && (
         <div className="mt-6 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="border border-white/10 bg-black/25 p-5">
+          <div className="border border-white/10 bg-black/25 p-4 sm:p-5">
             <p className="text-[10px] tracking-[0.28em] text-yellow-700">
               PUBLIC + INTERNAL IDENTITY
             </p>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <Detail label="ADVENTURER ID" value={record.adventurerId} />
               <Detail label="NAME" value={record.name} />
               <Detail label="RANK" value={record.guildRank} />
@@ -302,7 +366,7 @@ export default function AdventurerProfileLookup({
           </div>
 
           <div className="space-y-6">
-            <div className="border border-white/10 bg-black/25 p-5">
+            <div className="border border-white/10 bg-black/25 p-4 sm:p-5">
               <p className="text-[10px] tracking-[0.28em] text-yellow-700">
                 VERIFIED SKILLS
               </p>
@@ -325,7 +389,7 @@ export default function AdventurerProfileLookup({
               </div>
             </div>
 
-            <div className="border border-white/10 bg-black/25 p-5">
+            <div className="border border-white/10 bg-black/25 p-4 sm:p-5">
               <p className="text-[10px] tracking-[0.28em] text-yellow-700">
                 COMPLETED QUEST LOG
               </p>
@@ -355,7 +419,7 @@ export default function AdventurerProfileLookup({
 
             {allowEditing && (
               <>
-                <div className="border border-white/10 bg-black/25 p-5">
+                <div className="border border-white/10 bg-black/25 p-4 sm:p-5">
                   <p className="text-[10px] tracking-[0.28em] text-yellow-700">
                     PUBLIC PROFILE EDITOR
                   </p>
@@ -410,7 +474,7 @@ export default function AdventurerProfileLookup({
                   </button>
                 </div>
 
-                <div className="border border-white/10 bg-black/25 p-5">
+                <div className="border border-white/10 bg-black/25 p-4 sm:p-5">
                   <p className="text-[10px] tracking-[0.28em] text-yellow-700">
                     ADD COMPLETED QUEST
                   </p>

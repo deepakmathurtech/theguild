@@ -35,7 +35,10 @@ export default function GuildAuthUI() {
   const [processing, setProcessing] =
     useState(false);
 
-  async function handleSubmit() {
+  async function handleSubmit(
+    event: React.FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
 
     try {
 
@@ -91,7 +94,7 @@ export default function GuildAuthUI() {
 
       const user =
         await register(
-          name,
+          name.trim(),
           email,
           password
         );
@@ -106,7 +109,7 @@ export default function GuildAuthUI() {
         router.refresh();
 
         router.push(
-          "/quests"
+          "/register"
         );
 
       }, 1200);
@@ -218,11 +221,13 @@ export default function GuildAuthUI() {
         min-h-dvh
         items-center
         justify-center
-        overflow-hidden
+        overflow-x-hidden
         bg-[#120d08]
-        px-4
-        py-20
+        px-3
+        py-14
         text-white
+        sm:px-4
+        sm:py-20
       "
     >
 
@@ -264,14 +269,15 @@ export default function GuildAuthUI() {
           z-10
           w-full
           max-w-2xl
-          rotate-[-1deg]
+          rotate-0
           overflow-hidden
           border-[5px]
           border-[#c9ae7b]
           bg-[#e8d8b4]
-          p-6
+          p-4
           text-[#1d120a]
           shadow-[0_35px_120px_rgba(0,0,0,0.7)]
+          sm:rotate-[-1deg]
           sm:p-8
           md:p-12
         "
@@ -284,19 +290,24 @@ export default function GuildAuthUI() {
         <div
           className="
             absolute
-            right-4
-            top-4
-            rotate-[18deg]
-            opacity-70
+            right-3
+            top-3
+            rotate-[12deg]
+            opacity-60
             mix-blend-multiply
+            sm:right-4
+            sm:top-4
+            sm:rotate-[18deg]
+            sm:opacity-70
           "
         >
 
           <Image
             src="/stamp.png"
             alt="Guild Stamp"
-            width={120}
-            height={120}
+            width={92}
+            height={92}
+            className="sm:h-[120px] sm:w-[120px]"
           />
 
         </div>
@@ -311,9 +322,11 @@ export default function GuildAuthUI() {
 
           <p
             className="
-              text-[10px]
-              tracking-[0.45em]
+              text-[9px]
+              tracking-[0.28em]
               text-[#6a4b32]
+              sm:text-[10px]
+              sm:tracking-[0.45em]
             "
           >
             GUILD AUTHORIZATION
@@ -322,9 +335,11 @@ export default function GuildAuthUI() {
           <h1
             className="
               mt-4
-              text-4xl
+              max-w-[14rem]
+              text-3xl
               font-black
               tracking-[0.04em]
+              sm:max-w-none
               sm:text-5xl
             "
           >
@@ -372,12 +387,15 @@ export default function GuildAuthUI() {
         )}
 
         {/* Form */}
-        <div
+        <form
+          onSubmit={handleSubmit}
           className="
             relative
             z-10
-            mt-10
-            space-y-8
+            mt-7
+            space-y-6
+            sm:mt-10
+            sm:space-y-8
           "
         >
 
@@ -399,6 +417,7 @@ export default function GuildAuthUI() {
               <input
                 type="text"
                 value={name}
+                required={!isLogin}
                 onChange={(e) =>
                   setName(
                     e.target.value
@@ -407,11 +426,12 @@ export default function GuildAuthUI() {
                 className="
                   mt-3
                   w-full
+                  min-h-12
                   border-b
                   border-black/20
                   bg-transparent
                   pb-3
-                  text-2xl
+                  text-base
                   italic
                   outline-none
                   sm:text-3xl
@@ -436,21 +456,23 @@ export default function GuildAuthUI() {
             </label>
 
             <input
-              type="email"
-              value={email}
-              onChange={(e) =>
-                setEmail(
-                  e.target.value
+            type="email"
+            value={email}
+            required
+            onChange={(e) =>
+              setEmail(
+                e.target.value
                 )
               }
               className="
                 mt-3
                 w-full
+                min-h-12
                 border-b
                 border-black/20
                 bg-transparent
                 pb-3
-                text-2xl
+                text-base
                 italic
                 outline-none
                 sm:text-3xl
@@ -473,21 +495,24 @@ export default function GuildAuthUI() {
             </label>
 
             <input
-              type="password"
-              value={password}
-              onChange={(e) =>
-                setPassword(
-                  e.target.value
+            type="password"
+            value={password}
+            required
+            minLength={6}
+            onChange={(e) =>
+              setPassword(
+                e.target.value
                 )
               }
               className="
                 mt-3
                 w-full
+                min-h-12
                 border-b
                 border-black/20
                 bg-transparent
                 pb-3
-                text-2xl
+                text-base
                 italic
                 outline-none
                 sm:text-3xl
@@ -528,15 +553,16 @@ export default function GuildAuthUI() {
               "
             >
               {isLogin
-                ? "REGISTER AS ADVENTURER"
+                ? "REGISTER"
                 : "ALREADY REGISTERED?"}
             </button>
 
             <button
-              onClick={handleSubmit}
+              type="submit"
               disabled={processing}
               className="
                 w-full
+                min-h-12
                 border-[3px]
                 border-[#6d4c1c]
                 bg-[#24160d]
@@ -561,7 +587,7 @@ export default function GuildAuthUI() {
 
           </div>
 
-        </div>
+        </form>
 
       </section>
 

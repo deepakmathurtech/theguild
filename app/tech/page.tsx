@@ -17,14 +17,14 @@ export default function TechPage() {
 
         <GuildNavbar />
 
-        <section className="relative z-10 mx-auto max-w-7xl px-6 pb-20 pt-36">
+        <section className="relative z-10 mx-auto max-w-7xl px-4 pb-20 pt-32 sm:px-6 sm:pt-36">
           <p className="text-[10px] tracking-[0.45em] text-yellow-700">
             TECH TEAM
           </p>
-          <h1 className="font-cinzel mt-5 text-5xl text-yellow-400">
+          <h1 className="font-cinzel mt-5 text-3xl sm:text-5xl text-yellow-400">
             Operations Console
           </h1>
-          <p className="mt-5 max-w-3xl text-xl italic leading-relaxed text-zinc-400">
+          <p className="mt-5 max-w-3xl text-lg sm:text-xl italic leading-relaxed text-zinc-400">
             Track quests, verify submissions, and close or reopen
             work from the guild operations board.
           </p>

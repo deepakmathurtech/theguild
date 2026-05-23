@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import AmbientGlow from "@/components/guild/AmbientGlow";
 import BackgroundEmblem from "@/components/guild/BackgroundEmblem";
 import GuildNavbar from "@/components/guild/GuildNavbar";
@@ -62,11 +64,8 @@ export default function GuildCardPage() {
       <main
         className="
           relative
-          flex
           min-h-screen
-          items-center
-          justify-center
-          overflow-hidden
+          overflow-x-hidden
           bg-[#070707]
           text-white
         "
@@ -78,55 +77,134 @@ export default function GuildCardPage() {
 
         <div className="absolute inset-0 bg-black/70" />
 
+        <div className="fixed left-0 top-0 z-50 w-full">
+          <GuildNavbar />
+        </div>
+
         <section
           className="
             relative
             z-10
+            mx-auto
+            flex
+            min-h-screen
             w-full
-            max-w-2xl
-            overflow-hidden
-            rounded-[34px]
-            border
-            border-yellow-900/20
-            bg-black/40
-            p-14
-            backdrop-blur-xl
+            max-w-6xl
+            items-center
+            px-4
+            py-28
+            sm:px-6
+            lg:px-8
           "
         >
-
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(212,164,75,0.08),transparent_40%)]" />
-
-          <div className="relative z-10">
-
-            <p className="text-[10px] tracking-[0.45em] text-yellow-700">
-              GUILD REGISTRY
-            </p>
-
-            <h1
+          <div className="grid w-full gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-stretch">
+            <div
               className="
-                font-cinzel
-                mt-5
-                text-5xl
-                text-yellow-400
+                relative
+                overflow-hidden
+                border
+                border-yellow-900/20
+                bg-black/45
+                p-6
+                backdrop-blur-xl
+                sm:p-10
               "
             >
-              Registration Pending
-            </h1>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,164,75,0.10),transparent_42%)]" />
 
-            <p
+              <div className="relative z-10">
+                <p className="text-[10px] tracking-[0.45em] text-yellow-700">
+                  GUILD REGISTRY
+                </p>
+
+                <h1 className="font-cinzel mt-5 text-4xl text-yellow-400 sm:text-6xl">
+                  Application Received
+                </h1>
+
+                <p className="font-cormorant mt-7 max-w-3xl text-2xl italic leading-relaxed text-zinc-400 sm:text-3xl">
+                  Your adventurer profile is complete and is now waiting for
+                  guild approval.
+                </p>
+
+                <div className="mt-10 grid gap-4 sm:grid-cols-3">
+                  <PendingStep
+                    label="SUBMITTED"
+                    value="Complete"
+                    active
+                  />
+                  <PendingStep
+                    label="REVIEW"
+                    value="In progress"
+                    active
+                  />
+                  <PendingStep
+                    label="ACCESS"
+                    value="Locked"
+                  />
+                </div>
+
+                <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+                  <Link
+                    href="/rankings"
+                    className="border border-yellow-700/40 bg-yellow-500/10 px-5 py-3 text-center text-[10px] font-black tracking-[0.28em] text-yellow-300 transition hover:bg-yellow-500 hover:text-black"
+                  >
+                    VIEW RANKINGS
+                  </Link>
+                  <Link
+                    href="/about"
+                    className="border border-white/10 px-5 py-3 text-center text-[10px] tracking-[0.28em] text-zinc-300 transition hover:border-white/25 hover:text-white"
+                  >
+                    ABOUT THE GUILD
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <aside
               className="
-                font-cormorant
-                mt-8
-                text-3xl
-                italic
-                leading-relaxed
-                text-zinc-400
+                border
+                border-yellow-900/20
+                bg-black/35
+                p-6
+                backdrop-blur-xl
+                sm:p-8
               "
             >
-              Your adventurer application is currently
-              awaiting guild approval.
-            </p>
+              <p className="text-[10px] tracking-[0.4em] text-yellow-700">
+                REVIEW DETAILS
+              </p>
 
+              <div className="mt-7 space-y-5">
+                <PendingInfo
+                  label="Adventurer"
+                  value={guildProfile.name}
+                />
+                <PendingInfo
+                  label="Rank"
+                  value={guildProfile.guildRank}
+                />
+                <PendingInfo
+                  label="Specialization"
+                  value={
+                    guildProfile.specialization ||
+                    "Not recorded"
+                  }
+                />
+                <PendingInfo
+                  label="Guild ID"
+                  value={
+                    guildProfile.adventurerId ||
+                    "Generating"
+                  }
+                />
+              </div>
+
+              <p className="mt-8 border-t border-white/10 pt-6 text-sm leading-6 text-zinc-500">
+                You can keep your login. Once approved, your guild card,
+                tavern access, quest tracking, and public profile unlock
+                automatically.
+              </p>
+            </aside>
           </div>
 
         </section>
@@ -201,25 +279,31 @@ export default function GuildCardPage() {
       </div>
 
       {/* MAIN */}
-      <section
-        className="
+        <section
+          className="
           relative
           z-10
-          ml-[520px]
-          px-10
-          pt-32
+          px-4
+          pt-28
           pb-20
+          sm:px-6
+          lg:px-8
+          xl:ml-[520px]
+          xl:px-10
+          xl:pt-32
         "
       >
 
         {/* RIGHT */}
-        <div
-          className="
-            mx-auto
-            max-w-[950px]
-            space-y-8
-          "
-        >
+        <div className="mx-auto max-w-[950px] space-y-8">
+          <div className="xl:hidden">
+            <GlassPanel>
+              <GuildIdentitySection
+                name={guildProfile.name}
+                rank={guildProfile.guildRank}
+              />
+            </GlassPanel>
+          </div>
 
           {/* DOSSIER */}
           <GlassPanel>
@@ -244,7 +328,7 @@ export default function GuildCardPage() {
             </div>
 
             {/* GRID */}
-            <div className="mt-16 grid grid-cols-2 gap-8">
+            <div className="mt-16 grid gap-6 sm:grid-cols-2">
 
               <InfoCard
                 label="ADVENTURER ID"
@@ -323,13 +407,21 @@ export default function GuildCardPage() {
               Shareable Profile
             </h2>
 
-            <p className="font-cormorant mt-6 text-2xl italic leading-relaxed text-zinc-400">
-              Public identity page:
-              {" "}
-              {guildProfile.adventurerId
-                ? `/${guildProfile.adventurerId}`
-                : "not available yet"}
-            </p>
+            <div className="font-cormorant mt-6 text-xl sm:text-2xl italic leading-relaxed text-zinc-400">
+              <p>Public identity page:</p>
+              {guildProfile.adventurerId ? (
+                <Link
+                  href={`/${guildProfile.adventurerId}`}
+                  className="mt-3 inline-flex break-all border border-yellow-700/30 bg-yellow-500/10 px-4 py-3 text-base not-italic text-yellow-200"
+                >
+                  /{guildProfile.adventurerId}
+                </Link>
+              ) : (
+                <p className="mt-3">
+                  not available yet
+                </p>
+              )}
+            </div>
 
           </GlassPanel>
 
@@ -339,11 +431,11 @@ export default function GuildCardPage() {
               EXPERIENCE
             </p>
 
-            <h2 className="font-cinzel mt-5 text-4xl text-yellow-400">
+            <h2 className="font-cinzel mt-5 text-3xl sm:text-4xl text-yellow-400">
               Adventurer Background
             </h2>
 
-            <p className="font-cormorant mt-6 text-2xl italic leading-relaxed text-zinc-400">
+            <p className="font-cormorant mt-6 text-xl sm:text-2xl italic leading-relaxed text-zinc-400">
               {guildProfile.experience ||
                 "No experience record available."}
             </p>
@@ -357,11 +449,11 @@ export default function GuildCardPage() {
               GUILD STATUS
             </p>
 
-            <h2 className="font-cinzel mt-5 text-4xl text-yellow-400">
+            <h2 className="font-cinzel mt-5 text-3xl sm:text-4xl text-yellow-400">
               Archive Status Active
             </h2>
 
-            <p className="font-cormorant mt-6 text-2xl italic leading-relaxed text-zinc-400">
+            <p className="font-cormorant mt-6 text-xl sm:text-2xl italic leading-relaxed text-zinc-400">
               Adventurer profile verified and connected
               to the guild archive system. Reputation,
               rank progression, and quest history are
@@ -382,6 +474,52 @@ export default function GuildCardPage() {
   );
 }
 
+function PendingStep({
+  label,
+  value,
+  active,
+}: {
+  label: string;
+  value: string;
+  active?: boolean;
+}) {
+  return (
+    <div className="border border-yellow-900/20 bg-black/30 p-4">
+      <p className="text-[9px] tracking-[0.3em] text-yellow-700">
+        {label}
+      </p>
+      <p
+        className={
+          active
+            ? "mt-3 text-lg text-yellow-300"
+            : "mt-3 text-lg text-zinc-500"
+        }
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function PendingInfo({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div>
+      <p className="text-[9px] tracking-[0.3em] text-yellow-700">
+        {label}
+      </p>
+      <p className="mt-2 break-words text-xl text-zinc-200">
+        {value}
+      </p>
+    </div>
+  );
+}
+
 /* INFO CARD */
 function InfoCard({
   label,
@@ -399,7 +537,7 @@ function InfoCard({
         border
         border-yellow-900/10
         bg-black/20
-        p-7
+        p-5 sm:p-7
       "
     >
 
@@ -416,7 +554,7 @@ function InfoCard({
             font-cormorant
             mt-4
             break-words
-            text-3xl
+            text-2xl sm:text-3xl
             italic
             leading-tight
             text-zinc-200
@@ -446,7 +584,7 @@ function GlassPanel({
         border
         border-yellow-900/20
         bg-black/30
-        p-10
+        p-6 sm:p-10
         backdrop-blur-xl
       "
     >

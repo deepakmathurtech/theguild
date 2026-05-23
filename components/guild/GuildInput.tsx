@@ -25,11 +25,14 @@ export default function GuildInput({
 
       <label
         className="
-          mb-3
+          mb-2
           block
-          text-xs
-          tracking-[0.3em]
+          text-[10px]
+          tracking-[0.22em]
           text-zinc-700
+          sm:mb-3
+          sm:text-xs
+          sm:tracking-[0.3em]
         "
       >
         {label}
@@ -43,16 +46,18 @@ export default function GuildInput({
         placeholder={placeholder}
         className="
           w-full
+          min-h-12
           border-b-2
           border-black/20
           bg-transparent
           pb-3
-          text-2xl
+          text-base
           italic
           outline-none
           placeholder:text-zinc-500
           focus:border-[#8c5d17]
           disabled:opacity-70
+          sm:text-2xl
         "
       />
 

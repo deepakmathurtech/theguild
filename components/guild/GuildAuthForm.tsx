@@ -32,7 +32,10 @@ export default function GuildAuthForm() {
   const [loading, setLoading] =
     useState(false);
 
-  async function handleAuth() {
+  async function handleAuth(
+    event: React.FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
 
     try {
 
@@ -106,7 +109,7 @@ export default function GuildAuthForm() {
 
       const result =
         await register(
-          name,
+          name.trim(),
           email,
           password
         );
@@ -167,9 +170,10 @@ export default function GuildAuthForm() {
         min-h-[calc(100vh-120px)]
         items-center
         justify-center
-        px-4
-        py-12
-        sm:px-6
+          px-3
+          py-8
+          sm:px-6
+          sm:py-12
       "
     >
 
@@ -179,14 +183,15 @@ export default function GuildAuthForm() {
           relative
           w-full
           max-w-2xl
-          rotate-[-1deg]
+          rotate-0
           overflow-hidden
           border-[5px]
           border-[#c9ae7b]
           bg-[#e8d8b4]
-          p-6
+          p-4
           text-black
           shadow-[0_35px_120px_rgba(0,0,0,0.7)]
+          sm:rotate-[-1deg]
           sm:p-8
           md:p-10
         "
@@ -305,7 +310,10 @@ export default function GuildAuthForm() {
           </div>
 
           {/* Form */}
-          <div className="mt-8 space-y-8">
+          <form
+            onSubmit={handleAuth}
+            className="mt-6 space-y-6 sm:mt-8 sm:space-y-8"
+          >
 
             {/* NAME */}
             {!isLogin && (
@@ -325,6 +333,7 @@ export default function GuildAuthForm() {
                 <input
                   type="text"
                   value={name}
+                  required={!isLogin}
                   onChange={(e) =>
                     setName(
                       e.target.value
@@ -333,11 +342,12 @@ export default function GuildAuthForm() {
                   className="
                     mt-3
                     w-full
+                    min-h-12
                     border-b
                     border-black/20
                     bg-transparent
                     pb-3
-                    text-2xl
+                    text-base
                     italic
                     outline-none
                     sm:text-3xl
@@ -364,6 +374,7 @@ export default function GuildAuthForm() {
               <input
                 type="email"
                 value={email}
+                required
                 onChange={(e) =>
                   setEmail(
                     e.target.value
@@ -372,11 +383,12 @@ export default function GuildAuthForm() {
                 className="
                   mt-3
                   w-full
+                  min-h-12
                   border-b
                   border-black/20
                   bg-transparent
                   pb-3
-                  text-2xl
+                  text-base
                   italic
                   outline-none
                   sm:text-3xl
@@ -401,6 +413,8 @@ export default function GuildAuthForm() {
               <input
                 type="password"
                 value={password}
+                required
+                minLength={6}
                 onChange={(e) =>
                   setPassword(
                     e.target.value
@@ -409,11 +423,12 @@ export default function GuildAuthForm() {
                 className="
                   mt-3
                   w-full
+                  min-h-12
                   border-b
                   border-black/20
                   bg-transparent
                   pb-3
-                  text-2xl
+                  text-base
                   italic
                   outline-none
                   sm:text-3xl
@@ -454,15 +469,16 @@ export default function GuildAuthForm() {
                 "
               >
                 {isLogin
-                  ? "REGISTER AS ADVENTURER"
+                  ? "REGISTER"
                   : "ALREADY REGISTERED?"}
               </button>
 
               <button
-                onClick={handleAuth}
+                type="submit"
                 disabled={loading}
                 className="
                   w-full
+                  min-h-12
                   border-[3px]
                   border-[#6d4c1c]
                   bg-[#24160d]
@@ -487,7 +503,7 @@ export default function GuildAuthForm() {
 
             </div>
 
-          </div>
+          </form>
 
         </div>
 
