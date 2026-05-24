@@ -6,57 +6,11 @@ import {
 } from "@/components/guild/GuildAuthLogic";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://theguild.vercel.app"), // replace later
-
-  title: {
-    default: "The Guild",
-    template: "%s | The Guild",
-  },
-
+  title: "The Guild",
   description:
-    "Enter as unknown. Leave as legend. Join quests, build skills, and grow with your city Guild.",
-
-  keywords: [
-    "Guild",
-    "community",
-    "quests",
-    "adventurer",
-    "skills",
-    "student community",
-  ],
-
+    "Enter as unknown. Leave as legend.",
   icons: {
     icon: "/icon.png",
-    apple: "/icon.png",
-  },
-
-  openGraph: {
-    title: "The Guild",
-    description:
-      "Enter as unknown. Leave as legend.",
-    url: "https://theguild.vercel.app",
-    siteName: "The Guild",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-      },
-    ],
-    type: "website",
-  },
-
-  twitter: {
-    card: "summary_large_image",
-    title: "The Guild",
-    description:
-      "Enter as unknown. Leave as legend.",
-    images: ["/og-image.png"],
-  },
-
-  robots: {
-    index: true,
-    follow: true,
   },
 };
 
