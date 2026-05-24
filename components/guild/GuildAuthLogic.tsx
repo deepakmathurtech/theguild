@@ -18,7 +18,7 @@ import {
 
 import {
   doc,
-  getDoc,
+  onSnapshot,
 } from "firebase/firestore";
 
 import {
@@ -257,6 +257,10 @@ export function GuildAuthProvider({
       "AUTH LISTENER STARTED"
     );
 
+    let profileUnsubscribe:
+      | (() => void)
+      | undefined;
+
     const unsubscribe =
       onAuthStateChanged(
         auth,
@@ -273,6 +277,9 @@ export function GuildAuthProvider({
 
             /* NO USER */
             if (!firebaseUser) {
+              profileUnsubscribe?.();
+              profileUnsubscribe =
+                undefined;
 
               console.log(
                 "NO AUTH USER"
@@ -314,7 +321,7 @@ export function GuildAuthProvider({
             try {
 
               console.log(
-                "FETCHING PROFILE..."
+                "WATCHING PROFILE..."
               );
 
               const profileRef =
@@ -324,42 +331,46 @@ export function GuildAuthProvider({
                   firebaseUser.uid
                 );
 
-              const profileSnap =
-                await getDoc(
-                  profileRef
+              profileUnsubscribe?.();
+
+              profileUnsubscribe =
+                onSnapshot(
+                  profileRef,
+                  (profileSnap) => {
+                    if (
+                      profileSnap.exists()
+                    ) {
+                      const data =
+                        profileSnap.data() as GuildProfile;
+
+                      setGuildProfile(
+                        data
+                      );
+
+                      setIsAdventurer(
+                        true
+                      );
+                    } else {
+                      setGuildProfile(
+                        null
+                      );
+
+                      setIsAdventurer(
+                        false
+                      );
+                    }
+
+                    setLoading(false);
+                  },
+                  (profileError) => {
+                    console.log(
+                      "PROFILE WATCH FAILED:",
+                      profileError
+                    );
+
+                    setLoading(false);
+                  }
                 );
-
-              /* PROFILE EXISTS */
-              if (
-                profileSnap.exists()
-              ) {
-
-                console.log(
-                  "PROFILE FOUND"
-                );
-
-                const data =
-                  profileSnap.data() as GuildProfile;
-
-                console.log(
-                  "PROFILE DATA:",
-                  data
-                );
-
-                setGuildProfile(
-                  data
-                );
-
-                setIsAdventurer(
-                  true
-                );
-
-              } else {
-
-                console.log(
-                  "NO PROFILE FOUND"
-                );
-              }
 
             } catch (
               profileError
@@ -383,8 +394,6 @@ export function GuildAuthProvider({
             console.log(
               "AUTH LOADING COMPLETE"
             );
-
-            setLoading(false);
           }
         }
       );
@@ -394,6 +403,8 @@ export function GuildAuthProvider({
       console.log(
         "AUTH LISTENER CLEANUP"
       );
+
+      profileUnsubscribe?.();
 
       unsubscribe();
     };

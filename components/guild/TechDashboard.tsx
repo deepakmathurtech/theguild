@@ -11,6 +11,14 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
+import {
+  rejectQuestReport,
+  verifyQuestReportAndUpdateProfile,
+} from "@/lib/questCompletion";
+import {
+  acceptQuestApplicant,
+  rejectQuestApplicant,
+} from "@/lib/questStaffActions";
 
 import {
   createAnnouncement,
@@ -23,12 +31,32 @@ import AdventurerProfileLookup from "./AdventurerProfileLookup";
 type TechQuest = {
   id: string;
   title?: string;
+  description?: string;
   status?: string;
   verified?: boolean;
   reward?: string;
+  difficulty?: string;
   questType?: string;
+  maxApplicants?: number;
+  deadline?: string;
+  location?: string;
   applicants?: unknown[];
-  reports?: number;
+  acceptedApplicants?: unknown[];
+  acceptedApplicantUids?: string[];
+  acceptedApplicantsCount?: number;
+  rejectedApplicantUids?: string[];
+  reports?: Array<{
+    uid?: string;
+    name?: string;
+    text?: string;
+    status?: string;
+    submittedAt?: string;
+    reputationAward?: number;
+  }>;
+  reportSubmitted?: boolean;
+  reportSubmittedBy?: string;
+  reportSubmittedByName?: string;
+  reportText?: string;
   views?: number;
   featured?: boolean;
 };
@@ -46,6 +74,12 @@ export default function TechDashboard() {
     useState("");
   const [announcementBody, setAnnouncementBody] =
     useState("");
+  const [editingQuest, setEditingQuest] =
+    useState<Record<string, Partial<TechQuest>>>(
+      {}
+    );
+  const [reportReputation, setReportReputation] =
+    useState<Record<string, string>>({});
 
   async function loadTechData() {
     setLoading(true);
@@ -120,6 +154,15 @@ export default function TechDashboard() {
       featured: quests.filter(
         (quest) => quest.featured
       ).length,
+      accepted: quests.reduce(
+        (total, quest) =>
+          total +
+          (quest.acceptedApplicantUids
+            ?.length ||
+            quest.acceptedApplicantsCount ||
+            0),
+        0
+      ),
     };
   }, [quests]);
 
@@ -136,6 +179,127 @@ export default function TechDashboard() {
     );
 
     await loadTechData();
+  }
+
+  async function saveQuestEdits(
+    quest: TechQuest
+  ) {
+    const draft =
+      editingQuest[quest.id] || {};
+
+    await updateQuest(quest.id, {
+      title:
+        draft.title ?? quest.title,
+      reward:
+        draft.reward ?? quest.reward,
+      difficulty:
+        draft.difficulty ?? quest.difficulty,
+      questType:
+        draft.questType ?? quest.questType,
+      maxApplicants:
+        Number(
+          draft.maxApplicants ??
+            quest.maxApplicants ??
+            1
+        ),
+      deadline:
+        draft.deadline ?? quest.deadline,
+      location:
+        draft.location ?? quest.location,
+      description:
+        draft.description ??
+        quest.description,
+    });
+
+    setEditingQuest((current) => {
+      const next = { ...current };
+      delete next[quest.id];
+      return next;
+    });
+  }
+
+  async function verifyReport(
+    quest: TechQuest,
+    reportUid: string
+  ) {
+    try {
+      const key = `${quest.id}:${reportUid}`;
+      const reputationAward =
+        Number(reportReputation[key]) || 0;
+
+      await verifyQuestReportAndUpdateProfile(
+        db,
+        quest,
+        reportUid,
+        reputationAward
+      );
+
+      await loadTechData();
+    } catch (error: any) {
+      setMessage(
+        error?.message ||
+          "Unable to verify report."
+      );
+    }
+  }
+
+  async function handleRejectReport(
+    quest: TechQuest,
+    reportUid: string
+  ) {
+    try {
+      await rejectQuestReport(
+        db,
+        quest,
+        reportUid
+      );
+      await loadTechData();
+    } catch (error: any) {
+      setMessage(
+        error?.message ||
+          "Unable to reject report."
+      );
+    }
+  }
+
+  async function handleAcceptApplicant(
+    quest: TechQuest,
+    applicant: any
+  ) {
+    try {
+      setMessage("");
+      await acceptQuestApplicant(
+        db,
+        quest.id,
+        applicant
+      );
+      await loadTechData();
+    } catch (error: any) {
+      setMessage(
+        error?.message ||
+          "Unable to accept applicant."
+      );
+    }
+  }
+
+  async function handleRejectApplicant(
+    quest: TechQuest,
+    applicant: any
+  ) {
+    try {
+      setMessage("");
+      await rejectQuestApplicant(
+        db,
+        quest.id,
+        applicant
+      );
+      await loadTechData();
+    } catch (error: any) {
+      setMessage(
+        error?.message ||
+          "Unable to reject applicant."
+      );
+    }
   }
 
   async function handleOpsAnnouncement() {
@@ -183,6 +347,10 @@ export default function TechDashboard() {
         <ConsoleStat
           label="APPLICATIONS"
           value={String(stats.applied)}
+        />
+        <ConsoleStat
+          label="ACCEPTED"
+          value={String(stats.accepted)}
         />
         <ConsoleStat
           label="FEATURED"
@@ -237,9 +405,16 @@ export default function TechDashboard() {
                     |{" "}
                     {quest.reward ||
                       "Unknown reward"}{" "}
-                    | Applicants{" "}
+                    | Applications{" "}
                     {quest.applicants?.length ||
                       0}
+                    {" "} | Accepted{" "}
+                    {quest.acceptedApplicantUids
+                      ?.length ||
+                      quest.acceptedApplicantsCount ||
+                      0}
+                    /
+                    {quest.maxApplicants || 1}
                   </p>
                   <p className="mt-3 text-[10px] tracking-[0.28em] text-yellow-700">
                     {quest.verified
@@ -252,6 +427,363 @@ export default function TechDashboard() {
                       ? "FEATURED"
                       : "STANDARD"}
                   </p>
+                  {Array.isArray(quest.reports) &&
+                    quest.reports.length >
+                      0 && (
+                      <div className="mt-4 border border-green-900/30 bg-green-950/10 p-4">
+                        <p className="text-[10px] tracking-[0.28em] text-green-400">
+                          REPORT REVIEW
+                        </p>
+                        <div className="mt-3 grid gap-3">
+                          {quest.reports.map(
+                            (
+                              report,
+                              index
+                            ) => {
+                              const status =
+                                String(
+                                  report.status ||
+                                    "submitted"
+                                ).toLowerCase();
+                              const key = `${quest.id}:${report.uid}`;
+
+                              return (
+                                <div
+                                  key={`${report.uid}-${report.submittedAt}-${index}`}
+                                  className="border border-white/10 bg-black/20 p-3"
+                                >
+                                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                                    <div>
+                                      <p className="text-sm text-zinc-100">
+                                        {report.name ||
+                                          "Adventurer"}{" "}
+                                        |{" "}
+                                        {status.toUpperCase()}
+                                      </p>
+                                      <p className="mt-2 text-sm leading-6 text-zinc-300">
+                                        {report.text ||
+                                          "No report text stored."}
+                                      </p>
+                                      {report.reputationAward !==
+                                        undefined && (
+                                        <p className="mt-2 text-xs text-green-300">
+                                          Reputation +{report.reputationAward}
+                                        </p>
+                                      )}
+                                    </div>
+                                    {status ===
+                                      "submitted" && (
+                                      <div className="grid gap-2 sm:grid-cols-[120px_1fr_1fr]">
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          value={
+                                            reportReputation[
+                                              key
+                                            ] || ""
+                                          }
+                                          onChange={(
+                                            event
+                                          ) =>
+                                            setReportReputation(
+                                              (
+                                                current
+                                              ) => ({
+                                                ...current,
+                                                [key]:
+                                                  event
+                                                    .target
+                                                    .value,
+                                              })
+                                            )
+                                          }
+                                          placeholder="+rep"
+                                          className="border border-white/10 bg-black px-3 py-2 text-sm text-zinc-100 outline-none"
+                                        />
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            verifyReport(
+                                              quest,
+                                              report.uid ||
+                                                ""
+                                            )
+                                          }
+                                          className="border border-green-700/40 px-4 py-2 text-[10px] tracking-[0.24em] text-green-300"
+                                        >
+                                          VERIFY
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            handleRejectReport(
+                                              quest,
+                                              report.uid ||
+                                                ""
+                                            )
+                                          }
+                                          className="border border-red-700/40 px-4 py-2 text-[10px] tracking-[0.24em] text-red-300"
+                                        >
+                                          REJECT
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            }
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  {Array.isArray(
+                    quest.applicants
+                  ) &&
+                    quest.applicants.length >
+                      0 && (
+                      <div className="mt-4 border border-white/10 bg-black/20 p-4">
+                        <p className="text-[10px] tracking-[0.28em] text-yellow-700">
+                          APPLICANT REVIEW
+                        </p>
+                        <div className="mt-3 grid gap-3">
+                          {quest.applicants.map(
+                            (
+                              applicant: any
+                            ) => {
+                              const accepted =
+                                quest.acceptedApplicantUids?.includes(
+                                  applicant.uid
+                                );
+                              const rejected =
+                                quest.rejectedApplicantUids?.includes(
+                                  applicant.uid
+                                );
+
+                              return (
+                                <div
+                                  key={
+                                    applicant.uid
+                                  }
+                                  className="flex flex-col gap-3 border border-white/10 p-3 md:flex-row md:items-center md:justify-between"
+                                >
+                                  <div>
+                                    <p className="text-sm text-zinc-100">
+                                      {applicant.name ||
+                                        "Unknown"}{" "}
+                                      |{" "}
+                                      {applicant.rank ||
+                                        "F-RANK"}
+                                    </p>
+                                    <p className="mt-1 text-xs text-zinc-500">
+                                      {applicant.email ||
+                                        "No email"}
+                                    </p>
+                                  </div>
+                                  <div className="grid gap-2 sm:grid-cols-2">
+                                    <button
+                                      type="button"
+                                      disabled={
+                                        accepted ||
+                                        rejected
+                                      }
+                                      onClick={() =>
+                                        handleAcceptApplicant(
+                                          quest,
+                                          applicant
+                                        )
+                                      }
+                                      className="border border-green-700/40 px-4 py-2 text-[10px] tracking-[0.24em] text-green-300 disabled:opacity-40"
+                                    >
+                                      {accepted
+                                        ? "ACCEPTED"
+                                        : "ACCEPT"}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={
+                                        accepted ||
+                                        rejected
+                                      }
+                                      onClick={() =>
+                                        handleRejectApplicant(
+                                          quest,
+                                          applicant
+                                        )
+                                      }
+                                      className="border border-red-700/40 px-4 py-2 text-[10px] tracking-[0.24em] text-red-300 disabled:opacity-40"
+                                    >
+                                      {rejected
+                                        ? "REJECTED"
+                                        : "REJECT"}
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            }
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <input
+                      value={
+                        editingQuest[quest.id]?.title ??
+                        quest.title ??
+                        ""
+                      }
+                      onChange={(event) =>
+                        setEditingQuest((current) => ({
+                          ...current,
+                          [quest.id]: {
+                            ...current[quest.id],
+                            title:
+                              event.target.value,
+                          },
+                        }))
+                      }
+                      placeholder="Quest title"
+                      className="border border-white/10 bg-black px-3 py-2 text-sm text-zinc-100 outline-none"
+                    />
+                    <input
+                      value={
+                        editingQuest[quest.id]?.reward ??
+                        quest.reward ??
+                        ""
+                      }
+                      onChange={(event) =>
+                        setEditingQuest((current) => ({
+                          ...current,
+                          [quest.id]: {
+                            ...current[quest.id],
+                            reward:
+                              event.target.value,
+                          },
+                        }))
+                      }
+                      placeholder="Reward"
+                      className="border border-white/10 bg-black px-3 py-2 text-sm text-zinc-100 outline-none"
+                    />
+                    <select
+                      value={
+                        editingQuest[quest.id]
+                          ?.difficulty ??
+                        quest.difficulty ??
+                        "E-RANK"
+                      }
+                      onChange={(event) =>
+                        setEditingQuest((current) => ({
+                          ...current,
+                          [quest.id]: {
+                            ...current[quest.id],
+                            difficulty:
+                              event.target.value,
+                          },
+                        }))
+                      }
+                      className="border border-white/10 bg-black px-3 py-2 text-sm text-zinc-100 outline-none"
+                    >
+                      {[
+                        "E-RANK",
+                        "D-RANK",
+                        "C-RANK",
+                        "B-RANK",
+                        "A-RANK",
+                        "S-RANK",
+                      ].map((rank) => (
+                        <option key={rank} value={rank}>
+                          {rank}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      min="1"
+                      value={
+                        editingQuest[quest.id]
+                          ?.maxApplicants ??
+                        quest.maxApplicants ??
+                        1
+                      }
+                      onChange={(event) =>
+                        setEditingQuest((current) => ({
+                          ...current,
+                          [quest.id]: {
+                            ...current[quest.id],
+                            maxApplicants: Number(
+                              event.target.value
+                            ),
+                          },
+                        }))
+                      }
+                      className="border border-white/10 bg-black px-3 py-2 text-sm text-zinc-100 outline-none"
+                    />
+                    <input
+                      value={
+                        editingQuest[quest.id]?.questType ??
+                        quest.questType ??
+                        ""
+                      }
+                      onChange={(event) =>
+                        setEditingQuest((current) => ({
+                          ...current,
+                          [quest.id]: {
+                            ...current[quest.id],
+                            questType:
+                              event.target.value,
+                          },
+                        }))
+                      }
+                      placeholder="Type"
+                      className="border border-white/10 bg-black px-3 py-2 text-sm text-zinc-100 outline-none"
+                    />
+                    <input
+                      value={
+                        editingQuest[quest.id]?.deadline ??
+                        quest.deadline ??
+                        ""
+                      }
+                      onChange={(event) =>
+                        setEditingQuest((current) => ({
+                          ...current,
+                          [quest.id]: {
+                            ...current[quest.id],
+                            deadline:
+                              event.target.value,
+                          },
+                        }))
+                      }
+                      placeholder="Deadline"
+                      className="border border-white/10 bg-black px-3 py-2 text-sm text-zinc-100 outline-none"
+                    />
+                    <input
+                      value={
+                        editingQuest[quest.id]?.location ??
+                        quest.location ??
+                        ""
+                      }
+                      onChange={(event) =>
+                        setEditingQuest((current) => ({
+                          ...current,
+                          [quest.id]: {
+                            ...current[quest.id],
+                            location:
+                              event.target.value,
+                          },
+                        }))
+                      }
+                      placeholder="Location"
+                      className="border border-white/10 bg-black px-3 py-2 text-sm text-zinc-100 outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        saveQuestEdits(quest)
+                      }
+                      className="border border-yellow-700/40 px-4 py-3 text-[10px] tracking-[0.25em] text-yellow-300"
+                    >
+                      SAVE EDITS
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 xl:w-[440px]">
@@ -261,6 +793,9 @@ export default function TechDashboard() {
                       updateQuest(quest.id, {
                         verified:
                           !quest.verified,
+                        status: quest.verified
+                          ? "pending_review"
+                          : "open",
                       })
                     }
                     className="border border-yellow-700/40 px-4 py-3 text-[10px] tracking-[0.25em] text-yellow-300"

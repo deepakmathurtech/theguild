@@ -8,6 +8,7 @@ import {
 import {
   collection,
   getDocs,
+  limit,
   query,
   where,
 } from "firebase/firestore";
@@ -45,6 +46,8 @@ export type QuestType = {
 
   applicantsCount: number;
 
+  acceptedApplicantsCount: number;
+
   maxApplicants: number;
 
   vacancyRemaining: number;
@@ -81,14 +84,11 @@ export function useVerifiedQuests() {
 
         setError("");
 
-        /* LOAD FROM questsv1 */
+        /* LOAD VERIFIED QUESTS ONLY */
         const questsQuery = query(
           collection(db, "questsv1"),
-
-          where("status", "in", [
-            "open",
-            "OPEN",
-          ])
+          where("verified", "==", true),
+          limit(60)
         );
 
         const snapshot =
@@ -112,9 +112,25 @@ export function useVerifiedQuests() {
               const applicantsCount =
                 applicants.length;
 
+              const acceptedApplicantUids =
+                Array.isArray(
+                  data.acceptedApplicantUids
+                )
+                  ? data.acceptedApplicantUids
+                  : [];
+
+              const acceptedApplicantsCount =
+                acceptedApplicantUids.length ||
+                (Array.isArray(
+                  data.acceptedApplicants
+                )
+                  ? data.acceptedApplicants
+                      .length
+                  : 0);
+
               const vacancyRemaining =
                 maxApplicants -
-                applicantsCount;
+                acceptedApplicantsCount;
 
               /* USER ALREADY APPLIED */
               const userAlreadyApplied =
@@ -168,8 +184,9 @@ export function useVerifiedQuests() {
                   "F-RANK",
 
                 verified:
-                  data.verified ||
-                  false,
+                Boolean(
+                  data.verified
+                ),
 
                 status:
                   status ||
@@ -191,6 +208,8 @@ export function useVerifiedQuests() {
 
                 applicantsCount,
 
+                acceptedApplicantsCount,
+
                 maxApplicants,
 
                 vacancyRemaining,
@@ -208,7 +227,11 @@ export function useVerifiedQuests() {
             /* FILTER INVALID QUESTS */
             .filter((quest) => {
 
-              /* MUST BE OPEN */
+              /* MUST BE VERIFIED + OPEN */
+              if (!quest.verified) {
+                return false;
+              }
+
               if (
                 quest.status !==
                 "open"

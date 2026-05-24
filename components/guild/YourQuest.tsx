@@ -9,6 +9,7 @@ import {
   collection,
   getDocs,
   query,
+  where,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -52,6 +53,11 @@ export default function YourQuest() {
           collection(
             db,
             "questsv1"
+          ),
+          where(
+            "acceptedApplicantUids",
+            "array-contains",
+            user.uid
           )
         );
 
@@ -62,24 +68,16 @@ export default function YourQuest() {
         const matchedQuest =
           snapshot.docs.find(
             (doc) => {
+              const status = String(
+                doc.data().status || ""
+              ).toLowerCase();
 
-              const data =
-                doc.data();
-
-              const applicants =
-                Array.isArray(
-                  data.applicants
-                )
-                  ? data.applicants
-                  : [];
-
-              return applicants.some(
-                (
-                  applicant: any
-                ) =>
-                  applicant.uid ===
-                  user.uid
-              );
+              return [
+                "in_progress",
+                "open",
+                "report_submitted",
+                "completed",
+              ].includes(status);
             }
           );
 
@@ -94,6 +92,21 @@ export default function YourQuest() {
         /* QUEST DATA */
         const questData =
           matchedQuest.data();
+        const reports =
+          Array.isArray(
+            questData.reports
+          )
+            ? questData.reports
+            : [];
+        const userReports =
+          reports.filter(
+            (report: any) =>
+              report.uid === user.uid
+          );
+        const latestUserReport =
+          userReports[
+            userReports.length - 1
+          ];
 
         /* SAVE QUEST */
         setQuest({
@@ -109,6 +122,13 @@ export default function YourQuest() {
               ? questData.applicants
                   .length
               : 0,
+
+          userReportStatus:
+            latestUserReport?.status ||
+            "",
+
+          userReportReputation:
+            latestUserReport?.reputationAward,
         });
 
       } catch (error) {

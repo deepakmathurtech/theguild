@@ -269,7 +269,7 @@ export default function QuestRegisterUI({
                 text-green-900
               "
             >
-              Quest submitted successfully.
+              Quest submitted for guild verification. It will appear on the board after staff approval.
             </div>
           )}
 
@@ -411,8 +411,8 @@ export default function QuestRegisterUI({
             </div>
 
             <GuildInput
-              label="MAX APPLICANTS"
-              placeholder="5"
+              label="ACCEPTED SLOTS"
+              placeholder="How many adventurers can be accepted?"
               value={maxApplicants}
               onChange={(e) =>
                 setMaxApplicants(e.target.value)
@@ -590,6 +590,7 @@ function CheckOption({
       className="
         flex
         w-full
+        sm:w-auto
         text-left
         items-center
         gap-3

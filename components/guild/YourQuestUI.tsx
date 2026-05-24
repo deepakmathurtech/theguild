@@ -10,6 +10,17 @@ export default function YourQuestUI({
   loading,
   quest,
 }: YourQuestUIProps) {
+  const normalizedStatus =
+    String(quest?.status || "")
+      .toLowerCase();
+  const userReportStatus =
+    String(
+      quest?.userReportStatus || ""
+    ).toLowerCase();
+  const userCompleted =
+    userReportStatus === "verified";
+  const userReportSubmitted =
+    userReportStatus === "submitted";
 
   /* LOADING */
   if (loading) {
@@ -176,8 +187,14 @@ export default function YourQuestUI({
 
   /* STATUS STYLE */
   const statusStyles =
-    quest.status ===
-    "REPORT_SUBMITTED"
+    userCompleted
+      ? `
+        border-green-700/30
+        bg-green-500/10
+        text-green-300
+      `
+      : normalizedStatus ===
+      "report_submitted"
       ? `
         border-green-700/30
         bg-green-500/10
@@ -333,7 +350,13 @@ export default function YourQuestUI({
               ${statusStyles}
             `}
           >
-            ● {quest.status}
+            ● {(userCompleted
+              ? "completed"
+              : userReportSubmitted
+              ? "report submitted"
+              : normalizedStatus)
+              .replace("_", " ")
+              .toUpperCase()}
           </div>
 
         </div>
@@ -410,10 +433,12 @@ export default function YourQuestUI({
 
             <ProgressNode
               active={
-                quest.status ===
-                  "REPORT_SUBMITTED" ||
-                quest.status ===
-                  "COMPLETED"
+                normalizedStatus ===
+                  "report_submitted" ||
+                normalizedStatus ===
+                  "completed"
+                || userReportSubmitted
+                || userCompleted
               }
               label="REPORT"
             />
@@ -422,8 +447,9 @@ export default function YourQuestUI({
 
             <ProgressNode
               active={
-                quest.status ===
-                "COMPLETED"
+                normalizedStatus ===
+                "completed" ||
+                userCompleted
               }
               label="REVIEW"
             />
@@ -432,8 +458,9 @@ export default function YourQuestUI({
 
             <ProgressNode
               active={
-                quest.status ===
-                "COMPLETED"
+                normalizedStatus ===
+                "completed" ||
+                userCompleted
               }
               label="COMPLETE"
             />
@@ -443,8 +470,10 @@ export default function YourQuestUI({
         </div>
 
         {/* REPORT PANEL */}
-        {quest.status ===
-          "REPORT_SUBMITTED" && (
+        {(userReportSubmitted ||
+          userCompleted ||
+          normalizedStatus ===
+            "report_submitted") && (
 
           <div
             className="
@@ -481,7 +510,9 @@ export default function YourQuestUI({
                   text-green-400
                 "
               >
-                Awaiting Guild Review
+                {userCompleted
+                  ? "Report Verified"
+                  : "Awaiting Guild Review"}
               </h3>
 
               <p
@@ -495,9 +526,9 @@ export default function YourQuestUI({
                   text-zinc-400
                 "
               >
-                Your operational report has been
-                successfully archived and is now
-                pending guild council review.
+                {userCompleted
+                  ? `Your report has been verified and ${quest.userReportReputation || 0} reputation was added to your guild card.`
+                  : "Your operational report has been successfully archived and is now pending guild council review."}
               </p>
 
             </div>

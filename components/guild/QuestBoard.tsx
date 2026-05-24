@@ -207,6 +207,9 @@ export default function QuestBoard({
             id={quest.id}
             rank={quest.difficulty}
             type={quest.questType}
+            status={quest.status}
+            verified={quest.verified}
+            questTypes={quest.questTypes}
             title={quest.title}
             description={
               quest.description

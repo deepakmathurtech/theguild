@@ -103,6 +103,7 @@ export default function GuildNavbar() {
               alt="Guild Emblem"
               width={38}
               height={38}
+              priority
               className="
                 relative
                 opacity-90
@@ -225,34 +226,6 @@ export default function GuildNavbar() {
               REGISTRY
             </Link>
           )}
-
-          <Link
-            href="/about"
-            className="transition hover:text-yellow-400"
-          >
-            ABOUT
-          </Link>
-
-          <Link
-            href="/terms"
-            className="transition hover:text-yellow-400"
-          >
-            TERMS
-          </Link>
-
-          <Link
-            href="/privacy"
-            className="transition hover:text-yellow-400"
-          >
-            PRIVACY
-          </Link>
-
-          <Link
-            href="/technical"
-            className="transition hover:text-yellow-400"
-          >
-            SYSTEM
-          </Link>
 
         </nav>
 
@@ -491,22 +464,6 @@ export default function GuildNavbar() {
                 REGISTRY
               </Link>
             )}
-
-            <Link href="/about">
-              ABOUT
-            </Link>
-
-            <Link href="/terms">
-              TERMS
-            </Link>
-
-            <Link href="/privacy">
-              PRIVACY
-            </Link>
-
-            <Link href="/technical">
-              SYSTEM
-            </Link>
 
             {user && (
               <Link href="/guild-card">

@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import Image from "next/image";
+import Link from "next/link";
 
 import { useRouter } from "next/navigation";
 
@@ -251,6 +252,7 @@ export default function GuildAuthUI() {
           alt="Guild Emblem"
           width={700}
           height={700}
+          priority
           className="
             w-[120vw]
             max-w-[700px]
@@ -588,6 +590,40 @@ export default function GuildAuthUI() {
           </div>
 
         </form>
+
+        <p
+          className="
+            relative
+            z-10
+            mt-7
+            text-xs
+            leading-6
+            text-[#6a4b32]
+          "
+        >
+          By entering The Guild, you agree to the{" "}
+          <Link
+            href="/terms"
+            className="font-black underline decoration-black/30 underline-offset-4"
+          >
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link
+            href="/privacy"
+            className="font-black underline decoration-black/30 underline-offset-4"
+          >
+            Privacy Policy
+          </Link>
+          . System notes live in the{" "}
+          <Link
+            href="/technical"
+            className="font-black underline decoration-black/30 underline-offset-4"
+          >
+            technical ledger
+          </Link>
+          .
+        </p>
 
       </section>
 

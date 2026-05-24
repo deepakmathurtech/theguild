@@ -6,12 +6,14 @@ import {
 } from "react";
 
 import {
+  arrayUnion,
   collection,
   getDocs,
   query,
   updateDoc,
   where,
   doc,
+  serverTimestamp,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -24,6 +26,7 @@ export default function QuestReport() {
 
   const {
     user,
+    guildProfile,
   } = useGuildAuth();
 
   const [report, setReport] =
@@ -52,32 +55,64 @@ export default function QuestReport() {
       try {
 
         const q = query(
-          collection(db, "quests"),
+          collection(db, "questsv1"),
 
           where(
-            "assignedTo",
-            "==",
+            "acceptedApplicantUids",
+            "array-contains",
             user.uid
-          ),
-
-          where(
-            "status",
-            "==",
-            "ASSIGNED"
           )
         );
 
         const snapshot =
           await getDocs(q);
 
-        if (!snapshot.empty) {
+        const activeQuest =
+          snapshot.docs.find(
+            (quest) => {
+              const status = String(
+                quest.data().status || ""
+              ).toLowerCase();
 
-          const quest =
-            snapshot.docs[0];
+              return [
+                "in_progress",
+                "open",
+                "report_submitted",
+              ].includes(status);
+            }
+          );
+
+        if (activeQuest) {
 
           setQuestId(
-            quest.id
+            activeQuest.id
           );
+
+          const existingReports =
+            Array.isArray(
+              activeQuest.data().reports
+            )
+              ? activeQuest.data().reports
+              : [];
+
+          if (
+            existingReports.some(
+              (storedReport: any) =>
+                storedReport.uid ===
+                  user.uid &&
+                [
+                  "submitted",
+                  "verified",
+                ].includes(
+                  String(
+                    storedReport.status ||
+                      "submitted"
+                  ).toLowerCase()
+                )
+            )
+          ) {
+            setSubmitted(true);
+          }
         }
 
       } catch (error) {
@@ -101,6 +136,14 @@ export default function QuestReport() {
       return;
     }
 
+    if (!user) {
+      setError(
+        "Please login before submitting a report."
+      );
+
+      return;
+    }
+
     if (!questId) {
 
       setError(
@@ -119,7 +162,7 @@ export default function QuestReport() {
       await updateDoc(
         doc(
           db,
-          "quests",
+          "questsv1",
           questId
         ),
         {
@@ -129,12 +172,34 @@ export default function QuestReport() {
           reportText:
             report.trim(),
 
+          reportSubmittedBy:
+            user.uid,
+
+          reportSubmittedByName:
+            guildProfile?.name ||
+            user.displayName ||
+            "Unknown",
+
           reportSubmittedAt:
-            new Date()
-              .toISOString(),
+            serverTimestamp(),
+
+          reports: arrayUnion({
+            uid: user.uid,
+            name:
+              guildProfile?.name ||
+              user.displayName ||
+              "Unknown",
+            text: report.trim(),
+            status: "submitted",
+            submittedAt:
+              new Date().toISOString(),
+          }),
 
           status:
-            "REPORT_SUBMITTED",
+            "report_submitted",
+
+          updatedAt:
+            serverTimestamp(),
         }
       );
 

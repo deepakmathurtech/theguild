@@ -90,12 +90,22 @@ export async function canAcceptQuest({
 
     /* STATUS */
     if (
-      questData.status !== "open"
+      String(
+        questData.status || ""
+      ).toLowerCase() !== "open"
     ) {
       return {
         allowed: false,
         message:
           "Quest is closed.",
+      };
+    }
+
+    if (!questData.verified) {
+      return {
+        allowed: false,
+        message:
+          "Quest is still awaiting guild verification.",
       };
     }
 
@@ -119,23 +129,6 @@ export async function canAcceptQuest({
         allowed: false,
         message:
           "You already applied for this quest.",
-      };
-    }
-
-    /* LIMIT CHECK */
-    const maxApplicants =
-      Number(
-        questData.maxApplicants
-      ) || 1;
-
-    if (
-      applicants.length >=
-      maxApplicants
-    ) {
-      return {
-        allowed: false,
-        message:
-          "Quest applicant limit reached.",
       };
     }
 
@@ -203,10 +196,18 @@ export async function acceptQuest({
 
       /* STATUS */
       if (
-        questData.status !== "open"
+        String(
+          questData.status || ""
+        ).toLowerCase() !== "open"
       ) {
         throw new Error(
           "Quest closed."
+        );
+      }
+
+      if (!questData.verified) {
+        throw new Error(
+          "Quest is not verified."
         );
       }
 
@@ -228,21 +229,6 @@ export async function acceptQuest({
       if (alreadyApplied) {
         throw new Error(
           "Already applied."
-        );
-      }
-
-      /* LIMIT CHECK */
-      const maxApplicants =
-        Number(
-          questData.maxApplicants
-        ) || 1;
-
-      if (
-        applicants.length >=
-        maxApplicants
-      ) {
-        throw new Error(
-          "Applicant limit reached."
         );
       }
 
@@ -271,7 +257,7 @@ export async function acceptQuest({
         avatar:
           guildProfile.avatar || "",
 
-        acceptedAt:
+        appliedAt:
           new Date().toISOString(),
       };
 

@@ -13,6 +13,14 @@ import {
 import { db } from "@/lib/firebase";
 import type { GuildRole } from "@/lib/guildAccess";
 import { upsertPublicAdventurerProfile } from "@/lib/publicAdventurerProfile";
+import {
+  rejectQuestReport,
+  verifyQuestReportAndUpdateProfile,
+} from "@/lib/questCompletion";
+import {
+  acceptQuestApplicant,
+  rejectQuestApplicant,
+} from "@/lib/questStaffActions";
 
 import {
   createAnnouncement,
@@ -45,8 +53,28 @@ type AdminQuest = {
   status?: string;
   verified?: boolean;
   reward?: string;
+  difficulty?: string;
   questType?: string;
+  maxApplicants?: number;
+  deadline?: string;
+  location?: string;
+  reportSubmitted?: boolean;
+  reportSubmittedBy?: string;
+  reportSubmittedByName?: string;
+  reportText?: string;
   applicants?: unknown[];
+  acceptedApplicants?: unknown[];
+  acceptedApplicantUids?: string[];
+  acceptedApplicantsCount?: number;
+  rejectedApplicantUids?: string[];
+  reports?: Array<{
+    uid?: string;
+    name?: string;
+    text?: string;
+    status?: string;
+    submittedAt?: string;
+    reputationAward?: number;
+  }>;
   creatorName?: string;
   featured?: boolean;
 };
@@ -87,6 +115,8 @@ export default function AdminDashboard() {
     );
   const [announcementPinned, setAnnouncementPinned] =
     useState(true);
+  const [reportReputation, setReportReputation] =
+    useState<Record<string, string>>({});
 
   async function loadAdminData() {
     setLoading(true);
@@ -261,6 +291,89 @@ export default function AdminDashboard() {
     );
 
     await loadAdminData();
+  }
+
+  async function handleAcceptApplicant(
+    quest: AdminQuest,
+    applicant: any
+  ) {
+    try {
+      setMessage("");
+      await acceptQuestApplicant(
+        db,
+        quest.id,
+        applicant
+      );
+      await loadAdminData();
+    } catch (error: any) {
+      setMessage(
+        error?.message ||
+          "Unable to accept applicant."
+      );
+    }
+  }
+
+  async function handleRejectApplicant(
+    quest: AdminQuest,
+    applicant: any
+  ) {
+    try {
+      setMessage("");
+      await rejectQuestApplicant(
+        db,
+        quest.id,
+        applicant
+      );
+      await loadAdminData();
+    } catch (error: any) {
+      setMessage(
+        error?.message ||
+          "Unable to reject applicant."
+      );
+    }
+  }
+
+  async function handleVerifyReport(
+    quest: AdminQuest,
+    reportUid: string
+  ) {
+    try {
+      const key = `${quest.id}:${reportUid}`;
+      const reputationAward =
+        Number(reportReputation[key]) || 0;
+
+      await verifyQuestReportAndUpdateProfile(
+        db,
+        quest,
+        reportUid,
+        reputationAward
+      );
+      await loadAdminData();
+    } catch (error: any) {
+      setMessage(
+        error?.message ||
+          "Unable to verify report."
+      );
+    }
+  }
+
+  async function handleRejectReport(
+    quest: AdminQuest,
+    reportUid: string
+  ) {
+    try {
+      await rejectQuestReport(
+        db,
+        quest,
+        reportUid
+      );
+      await loadAdminData();
+    } catch (error: any) {
+      setMessage(
+        error?.message ||
+          "Unable to reject report."
+      );
+    }
   }
 
   async function handleAnnouncementSubmit() {
@@ -533,9 +646,16 @@ export default function AdminDashboard() {
                       |{" "}
                       {quest.reward ||
                         "Unknown reward"}{" "}
-                      | Applicants{" "}
+                      | Applications{" "}
                       {quest.applicants?.length ||
                         0}
+                      {" "} | Accepted{" "}
+                      {quest.acceptedApplicantUids
+                        ?.length ||
+                        quest.acceptedApplicantsCount ||
+                        0}
+                      /
+                      {quest.maxApplicants || 1}
                     </p>
                     <p className="mt-3 text-[10px] tracking-[0.28em] text-yellow-700">
                       STATUS{" "}
@@ -548,15 +668,216 @@ export default function AdminDashboard() {
                         ? "FEATURED"
                         : "STANDARD"}
                     </p>
+                    {Array.isArray(quest.reports) &&
+                      quest.reports.length >
+                        0 && (
+                        <div className="mt-4 border border-green-900/30 bg-green-950/10 p-4">
+                          <p className="text-[10px] tracking-[0.28em] text-green-400">
+                            REPORT REVIEW
+                          </p>
+                          <div className="mt-3 grid gap-3">
+                            {quest.reports.map(
+                              (
+                                report,
+                                index
+                              ) => {
+                                const status =
+                                  String(
+                                    report.status ||
+                                      "submitted"
+                                  ).toLowerCase();
+                                const key = `${quest.id}:${report.uid}`;
+
+                                return (
+                                  <div
+                                    key={`${report.uid}-${report.submittedAt}-${index}`}
+                                    className="border border-white/10 bg-black/20 p-3"
+                                  >
+                                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                                      <div>
+                                        <p className="text-sm text-zinc-100">
+                                          {report.name ||
+                                            "Adventurer"}{" "}
+                                          |{" "}
+                                          {status.toUpperCase()}
+                                        </p>
+                                        <p className="mt-2 text-sm leading-6 text-zinc-300">
+                                          {report.text ||
+                                            "No report text stored."}
+                                        </p>
+                                        {report.reputationAward !==
+                                          undefined && (
+                                          <p className="mt-2 text-xs text-green-300">
+                                            Reputation +{report.reputationAward}
+                                          </p>
+                                        )}
+                                      </div>
+                                      {status ===
+                                        "submitted" && (
+                                        <div className="grid gap-2 sm:grid-cols-[120px_1fr_1fr]">
+                                          <input
+                                            type="number"
+                                            min="0"
+                                            value={
+                                              reportReputation[
+                                                key
+                                              ] || ""
+                                            }
+                                            onChange={(
+                                              event
+                                            ) =>
+                                              setReportReputation(
+                                                (
+                                                  current
+                                                ) => ({
+                                                  ...current,
+                                                  [key]:
+                                                    event
+                                                      .target
+                                                      .value,
+                                                })
+                                              )
+                                            }
+                                            placeholder="+rep"
+                                            className="border border-white/10 bg-black px-3 py-2 text-sm text-zinc-100 outline-none"
+                                          />
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              handleVerifyReport(
+                                                quest,
+                                                report.uid ||
+                                                  ""
+                                              )
+                                            }
+                                            className="border border-green-700/40 px-4 py-2 text-[10px] tracking-[0.24em] text-green-300"
+                                          >
+                                            VERIFY
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              handleRejectReport(
+                                                quest,
+                                                report.uid ||
+                                                  ""
+                                              )
+                                            }
+                                            className="border border-red-700/40 px-4 py-2 text-[10px] tracking-[0.24em] text-red-300"
+                                          >
+                                            REJECT
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              }
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    {Array.isArray(
+                      quest.applicants
+                    ) &&
+                      quest.applicants.length >
+                        0 && (
+                        <div className="mt-4 border border-white/10 bg-black/20 p-4">
+                          <p className="text-[10px] tracking-[0.28em] text-yellow-700">
+                            APPLICANT REVIEW
+                          </p>
+                          <div className="mt-3 grid gap-3">
+                            {quest.applicants.map(
+                              (
+                                applicant: any
+                              ) => {
+                                const accepted =
+                                  quest.acceptedApplicantUids?.includes(
+                                    applicant.uid
+                                  );
+                                const rejected =
+                                  quest.rejectedApplicantUids?.includes(
+                                    applicant.uid
+                                  );
+
+                                return (
+                                  <div
+                                    key={
+                                      applicant.uid
+                                    }
+                                    className="flex flex-col gap-3 border border-white/10 p-3 md:flex-row md:items-center md:justify-between"
+                                  >
+                                    <div>
+                                      <p className="text-sm text-zinc-100">
+                                        {applicant.name ||
+                                          "Unknown"}{" "}
+                                        |{" "}
+                                        {applicant.rank ||
+                                          "F-RANK"}
+                                      </p>
+                                      <p className="mt-1 text-xs text-zinc-500">
+                                        {applicant.email ||
+                                          "No email"}
+                                      </p>
+                                    </div>
+                                    <div className="grid gap-2 sm:grid-cols-2">
+                                      <button
+                                        type="button"
+                                        disabled={
+                                          accepted ||
+                                          rejected
+                                        }
+                                        onClick={() =>
+                                          handleAcceptApplicant(
+                                            quest,
+                                            applicant
+                                          )
+                                        }
+                                        className="border border-green-700/40 px-4 py-2 text-[10px] tracking-[0.24em] text-green-300 disabled:opacity-40"
+                                      >
+                                        {accepted
+                                          ? "ACCEPTED"
+                                          : "ACCEPT"}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={
+                                          accepted ||
+                                          rejected
+                                        }
+                                        onClick={() =>
+                                          handleRejectApplicant(
+                                            quest,
+                                            applicant
+                                          )
+                                        }
+                                        className="border border-red-700/40 px-4 py-2 text-[10px] tracking-[0.24em] text-red-300 disabled:opacity-40"
+                                      >
+                                        {rejected
+                                          ? "REJECTED"
+                                          : "REJECT"}
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                            )}
+                          </div>
+                        </div>
+                      )}
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2 xl:w-full xl:max-w-[440px] xl:grid-cols-3">
+                  <div className="grid gap-3 sm:grid-cols-2 xl:w-full xl:max-w-[520px] xl:grid-cols-3">
                     <button
                       type="button"
                       onClick={() =>
                         updateQuest(quest.id, {
                           verified:
                             !quest.verified,
+                          status:
+                            quest.verified
+                              ? "pending_review"
+                              : "open",
                         })
                       }
                       className="border border-yellow-700/40 px-4 py-3 text-[10px] tracking-[0.25em] text-yellow-300"

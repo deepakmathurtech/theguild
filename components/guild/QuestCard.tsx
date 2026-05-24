@@ -102,7 +102,8 @@ export default function QuestCard({
     "GENERAL QUEST";
 
   const finalStatus =
-    status || "OPEN";
+    String(status || "open")
+      .toLowerCase();
 
   const finalExpired =
     expired || false;
@@ -195,7 +196,7 @@ export default function QuestCard({
       setAccepted(true);
 
       alert(
-        "Quest application submitted successfully."
+        "Quest application submitted. Guild staff will review and accept selected applicants."
       );
 
     } catch (error) {
@@ -379,7 +380,7 @@ export default function QuestCard({
           </span>
         )}
 
-        {finalStatus === "OPEN" && (
+        {finalStatus === "open" && (
           <span
             className="
               border
@@ -532,7 +533,7 @@ export default function QuestCard({
             loading ||
             accepted ||
             finalExpired ||
-            finalStatus !== "OPEN"
+            finalStatus !== "open"
           }
           className="
             group/button
@@ -580,9 +581,9 @@ export default function QuestCard({
               ? "APPLIED"
               : loading
               ? "PROCESSING..."
-              : finalStatus !== "OPEN"
+              : finalStatus !== "open"
               ? "CLOSED"
-              : "ACCEPT QUEST"}
+              : "APPLY"}
 
           </span>
 

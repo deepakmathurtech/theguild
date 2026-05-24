@@ -3,11 +3,11 @@
 import {
   addDoc,
   collection,
-  serverTimestamp,
-  query,
-  where,
   getDocs,
   limit,
+  query,
+  serverTimestamp,
+  where,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -158,14 +158,13 @@ export async function validateQuestSubmission({
 
   if (
     isNaN(parsedApplicants) ||
-    parsedApplicants <= 0 ||
-    parsedApplicants > 100
+    parsedApplicants <= 0
   ) {
     return {
       allowed: false,
 
       message:
-        "Applicants must be between 1 and 100.",
+        "Accepted slots must be at least 1.",
     };
   }
 
@@ -186,16 +185,15 @@ export async function validateQuestSubmission({
   }
 
   /* DUPLICATE QUEST CHECK */
-  const duplicateQuery =
-    query(
-      collection(db, "quests"),
-      where(
-        "titleLower",
-        "==",
-        title.toLowerCase()
-      ),
-      limit(1)
-    );
+  const duplicateQuery = query(
+    collection(db, "questsv1"),
+    where(
+      "titleLower",
+      "==",
+      title.toLowerCase()
+    ),
+    limit(1)
+  );
 
   const duplicateSnapshot =
     await getDocs(
@@ -306,7 +304,7 @@ export async function createQuest({
   /* CREATE */
   const questRef =
     await addDoc(
-      collection(db, "quests"),
+      collection(db, "questsv1"),
       {
         /* MAIN */
         title,
@@ -339,13 +337,16 @@ export async function createQuest({
         questTypes:
           data.questTypes,
 
+        questType:
+          formattedQuestType,
+
         questTypeLabel:
           formattedQuestType,
 
         /* STATUS */
         difficulty,
 
-        status: "OPEN",
+        status: "pending_review",
 
         verified: false,
 
@@ -362,6 +363,18 @@ export async function createQuest({
 
         applicantsCount: 0,
 
+        acceptedApplicants: [],
+
+        acceptedApplicantUids: [],
+
+        acceptedApplicantsCount: 0,
+
+        rejectedApplicantUids: [],
+
+        reports: [],
+
+        completedBy: [],
+
         /* SEARCH */
         searchIndex,
 
@@ -377,12 +390,26 @@ export async function createQuest({
           user.displayName ||
           "Unknown",
 
+        creatorName:
+          guildProfile?.name ||
+          user.displayName ||
+          "Unknown",
+
+        creatorRank:
+          guildProfile?.guildRank ||
+          "F-RANK",
+
+        creatorAvatar:
+          guildProfile?.avatar || "",
+
+        verificationNotes: "",
+
         /* META */
         views: 0,
 
         saves: 0,
 
-        reports: 0,
+        reportsCount: 0,
 
         guildAssigned:
           true,
