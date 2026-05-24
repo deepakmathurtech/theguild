@@ -1,25 +1,15 @@
-import InfoPageShell from "@/components/guild/InfoPageShell";
+import ContentPage from "@/components/guild/ContentPage";
+import { pageMetadata } from "@/lib/site";
+
+export const revalidate = 300;
+
+export const metadata = pageMetadata({
+  title: "About",
+  description:
+    "Learn how The Central Guild turns learning, contribution, and personal growth into an interactive journey through Adventurers, Quests, Ranks, Guild ID profiles, verification, and community.",
+  path: "/about",
+});
 
 export default function AboutPage() {
-  return (
-    <InfoPageShell
-      eyebrow="ABOUT US"
-      title="The Guild"
-      intro="A registry and quest board for builders, creators, and operators who want their work recorded with a little ceremony."
-      blocks={[
-        {
-          title: "What We Do",
-          body: "The Guild helps members create an adventurer profile, receive a guild identity, discover quests, and track reputation as work is completed.",
-        },
-        {
-          title: "How Approval Works",
-          body: "New registrations enter review before full access unlocks. Staff can verify profile details, approve adventurers, and keep public records accurate.",
-        },
-        {
-          title: "Community Standard",
-          body: "Members are expected to submit honest profile details, respect quest owners, communicate clearly, and keep shared spaces useful for everyone.",
-        },
-      ]}
-    />
-  );
+  return <ContentPage slug="about" />;
 }

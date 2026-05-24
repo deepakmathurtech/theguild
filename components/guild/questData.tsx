@@ -32,9 +32,17 @@ export type QuestType = {
 
   questTypes?: string[];
 
+  category?: string;
+
   requiredSkills?: string;
 
   location?: string;
+
+  duration?: string;
+
+  rewardType?: string;
+
+  rewardAmount?: number;
 
   difficulty: string;
 
@@ -167,8 +175,11 @@ export function useVerifiedQuests() {
                   "No description.",
 
                 reward:
-                  data.reward ||
-                  "Unknown",
+                  formatReward(
+                    data.reward,
+                    data.rewardAmount,
+                    data.rewardType
+                  ),
 
                 questType:
                   data.questType ||
@@ -177,6 +188,12 @@ export function useVerifiedQuests() {
                     " / "
                   ) ||
                   "QUEST",
+
+                category:
+                  data.category ||
+                  data.questCategory ||
+                  data.questType ||
+                  "General",
 
                 difficulty:
                   data.difficulty ||
@@ -202,7 +219,20 @@ export function useVerifiedQuests() {
 
                 location:
                   data.location ||
-                  "",
+                  "Remote",
+
+                duration:
+                  data.duration ||
+                  data.timeline ||
+                  "Flexible Duration",
+
+                rewardType:
+                  data.rewardType ||
+                  "Recognition",
+
+                rewardAmount: Number(
+                  data.rewardAmount || 0
+                ),
 
                 applicants,
 
@@ -286,4 +316,24 @@ export function useVerifiedQuests() {
 
     error,
   };
+}
+
+function formatReward(
+  reward: unknown,
+  rewardAmount: unknown,
+  rewardType: unknown
+) {
+  const amount = Number(
+    rewardAmount ?? reward
+  );
+
+  if (!amount) {
+    return "Volunteer / Recognition / XP";
+  }
+
+  return (
+    String(reward || "").trim() ||
+    String(rewardType || "").trim() ||
+    "Recognition"
+  );
 }

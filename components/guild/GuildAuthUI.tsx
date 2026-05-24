@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useGuildAuth } from "./GuildAuthLogic";
+import { trackGuildEvent } from "@/utils/analytics";
 
 export default function GuildAuthUI() {
 
@@ -28,6 +29,9 @@ export default function GuildAuthUI() {
   const [error, setError] =
     useState("");
 
+  const [success, setSuccess] =
+    useState("");
+
   const {
     login,
     register,
@@ -46,6 +50,35 @@ export default function GuildAuthUI() {
       setProcessing(true);
 
       setError("");
+      setSuccess("");
+
+      const normalizedEmail =
+        email.trim();
+
+      if (
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+          normalizedEmail
+        )
+      ) {
+        setError(
+          "Enter a valid email address."
+        );
+        return;
+      }
+
+      if (password.length < 6) {
+        setError(
+          "Password must be at least 6 characters."
+        );
+        return;
+      }
+
+      if (!isLogin && !name.trim()) {
+        setError(
+          "Name is required."
+        );
+        return;
+      }
 
       console.log(
         "AUTH STARTED"
@@ -59,20 +92,23 @@ export default function GuildAuthUI() {
 
       /* LOGIN */
       if (isLogin) {
-
         console.log(
           "TRY LOGIN"
         );
 
         const user =
           await login(
-            email,
+            normalizedEmail,
             password
           );
 
         console.log(
           "LOGIN SUCCESS:",
           user
+        );
+
+        setSuccess(
+          "Login successful. Opening the quest board..."
         );
 
         setTimeout(() => {
@@ -96,13 +132,21 @@ export default function GuildAuthUI() {
       const user =
         await register(
           name.trim(),
-          email,
+          normalizedEmail,
           password
         );
 
       console.log(
         "REGISTER SUCCESS:",
         user
+      );
+
+      setSuccess(
+        "Profile created. Continue your Guild registration..."
+      );
+
+      trackGuildEvent(
+        "register_to_verification"
       );
 
       setTimeout(() => {
@@ -136,8 +180,10 @@ export default function GuildAuthUI() {
 
         case "auth/user-not-found":
 
+          setIsLogin(false);
+
           setError(
-            "Adventurer not found."
+            "No account found. Create your Adventurer profile."
           );
 
           break;
@@ -145,7 +191,7 @@ export default function GuildAuthUI() {
         case "auth/wrong-password":
 
           setError(
-            "Incorrect secret key."
+            "Incorrect password."
           );
 
           break;
@@ -153,15 +199,17 @@ export default function GuildAuthUI() {
         case "auth/invalid-credential":
 
           setError(
-            "Invalid guild credentials."
+            "Invalid email or password."
           );
 
           break;
 
         case "auth/email-already-in-use":
 
+          setIsLogin(true);
+
           setError(
-            "Guild email already registered."
+            "Account already exists. Continue login."
           );
 
           break;
@@ -169,7 +217,7 @@ export default function GuildAuthUI() {
         case "auth/invalid-email":
 
           setError(
-            "Invalid guild email."
+            "Enter a valid email address."
           );
 
           break;
@@ -177,7 +225,7 @@ export default function GuildAuthUI() {
         case "auth/weak-password":
 
           setError(
-            "Secret key too weak."
+            "Password must be at least 6 characters."
           );
 
           break;
@@ -199,7 +247,7 @@ export default function GuildAuthUI() {
 
           setError(
             error?.message ||
-            "Guild authorization failed."
+            "Authentication failed."
           );
       }
 
@@ -225,7 +273,7 @@ export default function GuildAuthUI() {
         overflow-x-hidden
         bg-[#120d08]
         px-3
-        py-14
+        py-24
         text-white
         sm:px-4
         sm:py-20
@@ -279,8 +327,9 @@ export default function GuildAuthUI() {
           p-4
           text-[#1d120a]
           shadow-[0_35px_120px_rgba(0,0,0,0.7)]
-          sm:rotate-[-1deg]
+          sm:rotate-0
           sm:p-8
+          md:rotate-[-1deg]
           md:p-12
         "
       >
@@ -337,17 +386,18 @@ export default function GuildAuthUI() {
           <h1
             className="
               mt-4
-              max-w-[14rem]
-              text-3xl
+              max-w-[12rem]
+              text-2xl
               font-black
-              tracking-[0.04em]
+              tracking-[0.02em]
               sm:max-w-none
-              sm:text-5xl
+              sm:text-4xl
+              md:text-5xl
             "
           >
-            {isLogin
-              ? "Guild Login"
-              : "Guild Registration"}
+          {isLogin
+            ? "Guild Login"
+            : "Guild Registration"}
           </h1>
 
           <p
@@ -388,6 +438,27 @@ export default function GuildAuthUI() {
 
         )}
 
+        {success && (
+
+          <div
+            className="
+              relative
+              z-10
+              mt-8
+              border
+              border-emerald-700/30
+              bg-emerald-700/10
+              px-5
+              py-4
+              text-sm
+              text-emerald-800
+            "
+          >
+            {success}
+          </div>
+
+        )}
+
         {/* Form */}
         <form
           onSubmit={handleSubmit}
@@ -413,7 +484,7 @@ export default function GuildAuthUI() {
                   text-[#6a4b32]
                 "
               >
-                ADVENTURER NAME
+                NAME
               </label>
 
               <input
@@ -436,7 +507,8 @@ export default function GuildAuthUI() {
                   text-base
                   italic
                   outline-none
-                  sm:text-3xl
+                  sm:text-2xl
+                  md:text-3xl
                 "
               />
 
@@ -454,16 +526,16 @@ export default function GuildAuthUI() {
                 text-[#6a4b32]
               "
             >
-              GUILD EMAIL
+              EMAIL
             </label>
 
             <input
-            type="email"
-            value={email}
-            required
-            onChange={(e) =>
-              setEmail(
-                e.target.value
+              type="email"
+              value={email}
+              required
+              onChange={(e) =>
+                setEmail(
+                  e.target.value
                 )
               }
               className="
@@ -477,7 +549,8 @@ export default function GuildAuthUI() {
                 text-base
                 italic
                 outline-none
-                sm:text-3xl
+                sm:text-2xl
+                md:text-3xl
               "
             />
 
@@ -493,17 +566,18 @@ export default function GuildAuthUI() {
                 text-[#6a4b32]
               "
             >
-              SECRET KEY
+              PASSWORD
             </label>
 
             <input
-            type="password"
-            value={password}
-            required
-            minLength={6}
-            onChange={(e) =>
-              setPassword(
-                e.target.value
+              type="password"
+              value={password}
+              required
+              minLength={6}
+              aria-describedby="password-requirements"
+              onChange={(e) =>
+                setPassword(
+                  e.target.value
                 )
               }
               className="
@@ -517,9 +591,17 @@ export default function GuildAuthUI() {
                 text-base
                 italic
                 outline-none
-                sm:text-3xl
+                sm:text-2xl
+                md:text-3xl
               "
             />
+
+            <p
+              id="password-requirements"
+              className="mt-2 text-xs text-[#6a4b32]"
+            >
+              Minimum 6 characters.
+            </p>
 
           </div>
 
@@ -548,10 +630,11 @@ export default function GuildAuthUI() {
               className="
                 text-left
                 text-[10px]
-                tracking-[0.25em]
+                tracking-[0.16em]
                 text-[#6a4b32]
                 transition
                 hover:opacity-70
+                sm:tracking-[0.25em]
               "
             >
               {isLogin
@@ -568,16 +651,18 @@ export default function GuildAuthUI() {
                 border-[3px]
                 border-[#6d4c1c]
                 bg-[#24160d]
-                px-8
+                px-5
                 py-4
                 text-[10px]
                 font-black
-                tracking-[0.3em]
+                tracking-[0.18em]
                 text-[#e8d8b4]
                 transition
                 hover:bg-[#3b2414]
                 disabled:opacity-70
                 md:w-auto
+                sm:px-8
+                sm:tracking-[0.3em]
               "
             >
               {processing

@@ -6,13 +6,6 @@ import Link from "next/link";
 import { useState } from "react";
 
 import {
-  getAuth,
-  signOut,
-} from "firebase/auth";
-
-import { app } from "@/lib/firebase";
-
-import {
   canAccessStaffPages,
   getEffectiveRole,
   isCentralGuildUser,
@@ -27,12 +20,14 @@ export default function GuildNavbar() {
   const {
     user,
     guildProfile,
+    logout,
   } = useGuildAuth();
 
   const [mobileMenu, setMobileMenu] =
     useState(false);
 
-  const auth = getAuth(app);
+  const [profileMenu, setProfileMenu] =
+    useState(false);
 
   const role = getEffectiveRole(
     user,
@@ -47,7 +42,9 @@ export default function GuildNavbar() {
 
   const handleLogout =
     async () => {
-      await signOut(auth);
+      await logout();
+      setProfileMenu(false);
+      setMobileMenu(false);
     };
 
   return (
@@ -152,14 +149,14 @@ export default function GuildNavbar() {
             flex-1
             items-center
             justify-center
-            gap-4
+            gap-3
             text-[9px]
             tracking-[0.2em]
             text-zinc-400
             lg:flex
-            xl:gap-6
+            xl:gap-5
             xl:text-[10px]
-            xl:tracking-[0.24em]
+            xl:tracking-[0.22em]
           "
         >
 
@@ -167,7 +164,14 @@ export default function GuildNavbar() {
             href="/quests"
             className="transition hover:text-yellow-400"
           >
-            QUESTS
+            QUEST
+          </Link>
+
+          <Link
+            href="/about"
+            className="transition hover:text-yellow-400"
+          >
+            ABOUT
           </Link>
 
           {user && (
@@ -175,7 +179,7 @@ export default function GuildNavbar() {
               href="/rankings"
               className="transition hover:text-yellow-400"
             >
-              RANKINGS
+              RANK
             </Link>
           )}
 
@@ -183,21 +187,21 @@ export default function GuildNavbar() {
             href="/tavern"
             className="transition hover:text-yellow-400"
           >
-            TAVERN
+            COMMUNITY
           </Link>
 
           <Link
             href="/questregister"
             className="transition hover:text-yellow-400"
           >
-            ADD QUEST
+            CREATE QUEST
           </Link>
 
           <Link
             href="/myquests"
             className="transition hover:text-yellow-400"
           >
-            MY QUEST
+            MY CONTRIBUTIONS
           </Link>
 
           {showTech && (
@@ -327,7 +331,7 @@ export default function GuildNavbar() {
                     text-zinc-200
                   "
                 >
-                  GUILD CARD
+                  GUILD ID
                 </span>
 
               </div>
@@ -335,7 +339,7 @@ export default function GuildNavbar() {
             </Link>
           )}
 
-          {/* LOGIN / LOGOUT */}
+          {/* LOGIN / PROFILE */}
           {!user ? (
             <Link
               href="/login"
@@ -358,26 +362,78 @@ export default function GuildNavbar() {
               LOGIN
             </Link>
           ) : (
-            <button
-              onClick={handleLogout}
-              className="
-                rounded-xl
-                border border-red-800/30
-                bg-red-950/20
-                px-3 py-2
-                text-[9px]
-                tracking-[0.22em]
-                text-red-400
-                transition-all
-                duration-300
-                hover:border-red-500/40
-                hover:bg-red-900/30
-                sm:px-4
-                sm:text-[10px]
-              "
-            >
-              LOGOUT
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() =>
+                  setProfileMenu(
+                    !profileMenu
+                  )
+                }
+                aria-expanded={profileMenu}
+                className="
+                  rounded-xl
+                  border border-yellow-700/30
+                  bg-yellow-500/10
+                  px-3 py-2
+                  text-[9px]
+                  tracking-[0.22em]
+                  text-yellow-400
+                  transition-all
+                  duration-300
+                  hover:border-yellow-500/40
+                  hover:bg-yellow-500/20
+                  sm:px-4
+                  sm:text-[10px]
+                "
+              >
+                PROFILE
+              </button>
+
+              {profileMenu && (
+                <div
+                  className="
+                    absolute
+                    right-0
+                    mt-3
+                    w-56
+                    border
+                    border-yellow-900/30
+                    bg-black/95
+                    p-3
+                    text-[10px]
+                    tracking-[0.2em]
+                    text-zinc-300
+                    shadow-[0_20px_70px_rgba(0,0,0,0.55)]
+                  "
+                >
+                  <Link
+                    href="/guild-card"
+                    className="block px-3 py-3 transition hover:text-yellow-300"
+                    onClick={() =>
+                      setProfileMenu(false)
+                    }
+                  >
+                    GUILD ID
+                  </Link>
+                  <Link
+                    href="/myquests"
+                    className="block px-3 py-3 transition hover:text-yellow-300"
+                    onClick={() =>
+                      setProfileMenu(false)
+                    }
+                  >
+                    MY CONTRIBUTIONS
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full px-3 py-3 text-left text-red-400 transition hover:text-red-300"
+                  >
+                    LOGOUT
+                  </button>
+                </div>
+              )}
+            </div>
           )}
 
           {/* MOBILE MENU BUTTON */}
@@ -390,14 +446,19 @@ export default function GuildNavbar() {
             }
             className="
               flex h-10 w-10
+              shrink-0
+              flex-col
               items-center justify-center
               rounded-lg
               border border-yellow-800/30
+              gap-1
               text-yellow-500
               lg:hidden
             "
           >
-            MENU
+            <span className="h-[2px] w-5 bg-yellow-500" />
+            <span className="h-[2px] w-5 bg-yellow-500" />
+            <span className="h-[2px] w-5 bg-yellow-500" />
           </button>
 
         </div>
@@ -411,14 +472,16 @@ export default function GuildNavbar() {
           className="
             border-t border-yellow-900/20
             bg-black/95
-            px-6 py-6
+            px-4 py-6
             lg:hidden
           "
         >
 
           <nav
             className="
+              mx-auto
               flex flex-col gap-5
+              max-w-sm
               text-[11px]
               tracking-[0.28em]
               text-zinc-300
@@ -426,25 +489,29 @@ export default function GuildNavbar() {
           >
 
             <Link href="/quests">
-              QUESTS
+              QUEST
+            </Link>
+
+            <Link href="/about">
+              ABOUT
             </Link>
 
             {user && (
               <Link href="/rankings">
-                RANKINGS
+                RANK
               </Link>
             )}
 
             <Link href="/tavern">
-              TAVERN
+              COMMUNITY
             </Link>
 
             <Link href="/questregister">
-              ADD QUEST
+              CREATE QUEST
             </Link>
 
             <Link href="/myquests">
-              MY QUEST
+              MY CONTRIBUTIONS
             </Link>
 
             {showTech && (
@@ -467,8 +534,17 @@ export default function GuildNavbar() {
 
             {user && (
               <Link href="/guild-card">
-                GUILD CARD
+                GUILD ID
               </Link>
+            )}
+
+            {user && (
+              <button
+                onClick={handleLogout}
+                className="text-left text-red-400"
+              >
+                LOGOUT
+              </button>
             )}
 
           </nav>

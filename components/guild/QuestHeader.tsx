@@ -30,8 +30,10 @@ export default function QuestHeader({
         z-10
         mx-auto
         max-w-7xl
-        px-6
-        pt-36
+        px-4
+        pt-32
+        sm:px-6
+        sm:pt-36
       "
     >
 
@@ -48,7 +50,7 @@ export default function QuestHeader({
 
         <div>
 
-          <p className="text-[10px] tracking-[0.45em] text-yellow-700">
+          <p className="text-[10px] tracking-[0.28em] text-yellow-700 sm:tracking-[0.45em]">
             GUILD QUEST BOARD
           </p>
 
@@ -56,12 +58,17 @@ export default function QuestHeader({
             className="
               font-cinzel
               mt-5
-              text-5xl
+              text-4xl
               text-yellow-400
+              sm:text-5xl
             "
           >
             Available Quests
           </h1>
+
+          <p className="mt-5 max-w-2xl text-sm leading-7 text-zinc-500">
+            Verified projects, tasks, challenges, initiatives, and opportunities where Adventurers build real experience through contribution.
+          </p>
 
         </div>
 
@@ -76,7 +83,7 @@ export default function QuestHeader({
 
       </div>
 
-      <div className="mt-8 max-w-2xl">
+      <div className="mt-7 max-w-2xl sm:mt-8">
 
         <label
           htmlFor="quest-search"
@@ -94,7 +101,7 @@ export default function QuestHeader({
               event.target.value
             )
           }
-          placeholder="Search by title, skill, reward, or location"
+          placeholder="Search by quest, skill, project, task, rank, location, or reward"
           className="
             w-full
             border
@@ -103,12 +110,13 @@ export default function QuestHeader({
             px-5
             py-4
             text-sm
-            tracking-[0.08em]
+            tracking-[0.02em]
             text-zinc-100
             outline-none
             backdrop-blur-xl
             placeholder:text-zinc-600
             focus:border-yellow-600/60
+            sm:tracking-[0.08em]
           "
         />
 

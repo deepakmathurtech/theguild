@@ -4,32 +4,27 @@ import "./globals.css";
 import {
   GuildAuthProvider,
 } from "@/components/guild/GuildAuthLogic";
+import {
+  defaultDescription,
+  coreKeywords,
+  siteName,
+  siteUrl,
+} from "@/lib/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    "https://thecentralguild.quest"
+    siteUrl
   ),
 
   title: {
-    default: "The Central Guild",
+    default:
+      "The Central Guild — Build Skills Through Real Projects",
     template: "%s | The Central Guild",
   },
 
-  description:
-    "Enter as unknown. Leave as legend. A quest-driven adventurer association where members build skills, complete real-world quests, and grow with their city guild.",
+  description: defaultDescription,
 
-  keywords: [
-    "The Central Guild",
-    "Guild",
-    "quests",
-    "adventurer",
-    "quest community",
-    "guild card",
-    "guild registry",
-    "skill building",
-    "student community",
-    "city guild",
-  ],
+  keywords: coreKeywords,
 
   icons: {
     icon: "/icon.png",
@@ -38,15 +33,12 @@ export const metadata: Metadata = {
   },
 
   openGraph: {
-    title: "The Central Guild",
-    description:
-      "Enter as unknown. Leave as legend.",
+    title: siteName,
+    description: defaultDescription,
 
-    url:
-      "https://thecentralguild.quest",
+    url: siteUrl,
 
-    siteName:
-      "The Central Guild",
+    siteName,
 
     images: [
       {
@@ -65,11 +57,9 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
 
-    title:
-      "The Central Guild",
+    title: siteName,
 
-    description:
-      "Enter as unknown. Leave as legend.",
+    description: defaultDescription,
 
     images: [
       "/og-image.png",
@@ -95,7 +85,7 @@ export const metadata: Metadata = {
 
   alternates: {
     canonical:
-      "https://thecentralguild.quest",
+      siteUrl,
   },
 };
 

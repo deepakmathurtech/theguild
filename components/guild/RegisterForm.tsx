@@ -211,9 +211,10 @@ export default function RegisterForm() {
         items-center
         justify-center
         px-3
-        py-6
+        py-20
         sm:px-6
-        sm:py-8
+        sm:py-24
+        lg:py-10
       "
     >
       <form
@@ -230,7 +231,7 @@ export default function RegisterForm() {
           p-4
           text-black
           shadow-[0_35px_100px_rgba(0,0,0,0.65)]
-          sm:rotate-[-1.5deg]
+          sm:rotate-0
           sm:p-8
           lg:rotate-0
           lg:p-10
@@ -258,15 +259,19 @@ export default function RegisterForm() {
         <div className="relative z-10 lg:grid lg:grid-cols-[280px_1fr] lg:gap-10">
           <div className="border-b border-black/10 pb-4 sm:pb-5 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-8">
             <div className="lg:sticky lg:top-28">
-              <p className="text-[9px] tracking-[0.26em] text-zinc-600 sm:text-[10px] sm:tracking-[0.4em]">
+              <p className="text-[9px] tracking-[0.18em] text-zinc-600 sm:text-[10px] sm:tracking-[0.32em]">
                 OFFICIAL GUILD DOCUMENT
               </p>
-              <h1 className="mt-3 max-w-[14rem] text-2xl font-black leading-none sm:max-w-none sm:text-4xl lg:text-5xl">
+              <h1 className="mt-3 max-w-[15rem] text-2xl font-black leading-tight sm:max-w-none sm:text-4xl lg:text-5xl">
                 Adventurer Registration
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600 sm:mt-4">
                 Every approved record receives a guild identity like
-                `TG-LDH-26MF-00001`.
+                <span className="break-all font-mono text-xs">
+                  {" "}
+                  TG-LDH-26MF-00001
+                </span>
+                .
               </p>
 
               <div className="mt-8 hidden space-y-4 text-sm text-zinc-700 lg:block">
@@ -434,7 +439,7 @@ export default function RegisterForm() {
 
           <div className="mt-8 flex flex-col gap-5 border-t border-black/10 pt-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-[10px] tracking-[0.3em] text-zinc-600">
+              <p className="text-[10px] tracking-[0.18em] text-zinc-600 sm:tracking-[0.3em]">
                 GUILD AUTHORIZATION
               </p>
               <div className="mt-3 h-[2px] w-44 bg-black/20" />
@@ -452,7 +457,7 @@ export default function RegisterForm() {
                   ? "Submit registration"
                   : "Complete the required fields first"
               }
-              className="min-h-12 w-full border-[3px] border-black bg-black/5 px-7 py-3 text-[10px] font-black tracking-[0.24em] transition hover:bg-black hover:text-[#e8d8b4] active:translate-y-px disabled:cursor-wait disabled:opacity-50 sm:w-auto sm:tracking-[0.3em]"
+              className="min-h-12 w-full border-[3px] border-black bg-black/5 px-5 py-3 text-[10px] font-black tracking-[0.16em] transition hover:bg-black hover:text-[#e8d8b4] active:translate-y-px disabled:cursor-wait disabled:opacity-50 sm:w-auto sm:px-7 sm:tracking-[0.3em]"
             >
               {loading
                 ? "PROCESSING..."

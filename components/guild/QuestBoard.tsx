@@ -27,13 +27,25 @@ export default function QuestBoard({
   const filteredQuests =
     quests.filter((quest) => {
       const type =
-        quest.questType
+        [
+          quest.questType,
+          quest.category,
+          quest.location,
+          quest.duration,
+          quest.rewardType,
+          quest.title,
+          quest.description,
+        ]
+          .join(" ")
           ?.toUpperCase() || "";
 
       const matchesFilter =
         selectedFilter === "ALL" ||
-        type.includes(
+        type.includes(selectedFilter) ||
+        filterAliases(
           selectedFilter
+        ).some((alias) =>
+          type.includes(alias)
         );
 
       const searchable = [
@@ -42,6 +54,9 @@ export default function QuestBoard({
         quest.reward,
         quest.questType,
         quest.location,
+        quest.duration,
+        quest.category,
+        quest.rewardType,
         quest.requiredSkills,
       ]
         .filter(Boolean)
@@ -192,9 +207,13 @@ export default function QuestBoard({
         mx-auto
         grid
         max-w-7xl
-        gap-10
-        px-6
-        py-16
+        gap-8
+        px-4
+        py-10
+        sm:px-6
+        sm:py-14
+        lg:gap-10
+        lg:py-16
         md:grid-cols-2
         xl:grid-cols-3
         animate-[fadeIn_0.25s_ease]
@@ -210,6 +229,14 @@ export default function QuestBoard({
             status={quest.status}
             verified={quest.verified}
             questTypes={quest.questTypes}
+            category={quest.category}
+            location={quest.location}
+            duration={quest.duration}
+            rewardType={quest.rewardType}
+            createdBy={quest.createdBy}
+            rewardAmount={
+              quest.rewardAmount
+            }
             title={quest.title}
             description={
               quest.description
@@ -224,14 +251,58 @@ export default function QuestBoard({
             }
             rotation={
               index % 3 === 0
-                ? "-rotate-1"
+                ? "sm:-rotate-1"
                 : index % 3 === 1
-                ? "rotate-1"
-                : "-rotate-2"
+                ? "sm:rotate-1"
+                : "sm:-rotate-2"
             }
           />
         )
       )}
     </section>
   );
+}
+
+function filterAliases(filter: string) {
+  switch (filter) {
+    case "PROJECTS":
+      return [
+        "PROJECT",
+        "INITIATIVE",
+        "BUILD",
+      ];
+
+    case "TASKS":
+      return [
+        "TASK",
+        "WORK",
+        "ASSIGNMENT",
+      ];
+
+    case "CHALLENGES":
+      return [
+        "CHALLENGE",
+        "CONTEST",
+        "SPRINT",
+      ];
+
+    case "OPPORTUNITIES":
+      return [
+        "OPPORTUNITY",
+        "INTERNSHIP",
+        "ROLE",
+        "OPENING",
+      ];
+
+    case "COMMUNITY":
+      return [
+        "COMMUNITY",
+        "COLLABORATION",
+        "VOLUNTEER",
+        "EVENT",
+      ];
+
+    default:
+      return [];
+  }
 }

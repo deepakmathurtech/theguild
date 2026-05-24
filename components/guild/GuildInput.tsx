@@ -57,7 +57,8 @@ export default function GuildInput({
           placeholder:text-zinc-500
           focus:border-[#8c5d17]
           disabled:opacity-70
-          sm:text-2xl
+          sm:text-xl
+          lg:text-2xl
         "
       />
 

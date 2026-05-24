@@ -2,8 +2,50 @@
 
 import GuildNavbar from "@/components/guild/GuildNavbar";
 import Hero from "@/components/guild/Hero";
+import {
+  defaultDescription,
+  pageMetadata,
+  siteName,
+  siteUrl,
+  socialLinks,
+} from "@/lib/site";
+
+export const metadata = pageMetadata({
+  title:
+    "The Central Guild — Build Skills. Complete Quests. Grow Together.",
+  description: defaultDescription,
+  path: "/",
+});
 
 export default function Home() {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: siteName,
+    url: siteUrl,
+    description: defaultDescription,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${siteUrl}/quests?search={search_term_string}`,
+      "query-input":
+        "required name=search_term_string",
+    },
+    about: [
+      "Adventurers",
+      "Quests",
+      "Ranks",
+      "Guild ID",
+      "Community",
+      "Verified contributions",
+      "Learning by doing",
+    ],
+    sameAs: socialLinks
+      .filter((link) =>
+        link.href.startsWith("http")
+      )
+      .map((link) => link.href),
+  };
+
   return (
     <main
       className="
@@ -15,6 +57,14 @@ export default function Home() {
         text-white
       "
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html:
+            JSON.stringify(structuredData),
+        }}
+      />
+
       {/* Ambient Gold Glow */}
       <div
         className="

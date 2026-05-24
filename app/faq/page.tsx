@@ -4,10 +4,10 @@ import { pageMetadata } from "@/lib/site";
 export const revalidate = 300;
 
 export const metadata = pageMetadata({
-  title: "Privacy",
-  path: "/privacy",
+  title: "FAQ",
+  path: "/faq",
 });
 
-export default function PrivacyPage() {
-  return <ContentPage slug="privacy" />;
+export default function FAQPage() {
+  return <ContentPage slug="faq" />;
 }

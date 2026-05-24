@@ -10,10 +10,6 @@ import {
 import {
   onAuthStateChanged,
   User,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  updateProfile,
-  signOut,
 } from "firebase/auth";
 
 import {
@@ -25,6 +21,13 @@ import {
   auth,
   db,
 } from "@/lib/firebase";
+
+import {
+  emailExists,
+  loginWithEmail,
+  logoutFromGuild,
+  registerWithEmail,
+} from "@/lib/authService";
 
 import {
   type GuildRole,
@@ -100,6 +103,10 @@ type GuildContextType = {
     password: string
   ) => Promise<User>;
 
+  checkEmailExists: (
+    email: string
+  ) => Promise<boolean>;
+
   register: (
     name: string,
     email: string,
@@ -135,6 +142,8 @@ const GuildAuthContext =
         "GuildAuthProvider missing"
       );
     },
+
+    checkEmailExists: async () => false,
 
     logout: async () => {},
   });
@@ -174,19 +183,16 @@ export function GuildAuthProvider({
       "LOGIN FUNCTION START"
     );
 
-    const result =
-      await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-
-    console.log(
-      "FIREBASE LOGIN SUCCESS:",
-      result.user
+    return loginWithEmail(
+      email,
+      password
     );
+  }
 
-    return result.user;
+  async function checkEmailExists(
+    email: string
+  ) {
+    return emailExists(email);
   }
 
   /* -------------------------------- */
@@ -203,31 +209,11 @@ export function GuildAuthProvider({
       "REGISTER FUNCTION START"
     );
 
-    const result =
-      await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-
-    console.log(
-      "REGISTER SUCCESS:",
-      result.user
+    return registerWithEmail(
+      name,
+      email,
+      password
     );
-
-    /* UPDATE PROFILE */
-    await updateProfile(
-      result.user,
-      {
-        displayName: name,
-      }
-    );
-
-    console.log(
-      "AUTH USER CREATED"
-    );
-
-    return result.user;
   }
 
   /* -------------------------------- */
@@ -240,7 +226,7 @@ export function GuildAuthProvider({
       "LOGOUT START"
     );
 
-    await signOut(auth);
+    await logoutFromGuild();
 
     console.log(
       "LOGOUT SUCCESS"
@@ -429,6 +415,8 @@ export function GuildAuthProvider({
         loading,
 
         login,
+
+        checkEmailExists,
 
         register,
 

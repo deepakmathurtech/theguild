@@ -32,6 +32,12 @@ export default function GuildAuthForm() {
   const [loading, setLoading] =
     useState(false);
 
+  const [message, setMessage] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
+
   async function handleAuth(
     event: React.FormEvent<HTMLFormElement>
   ) {
@@ -40,6 +46,29 @@ export default function GuildAuthForm() {
     try {
 
       setLoading(true);
+      setMessage("");
+      setError("");
+
+      const normalizedEmail =
+        email.trim();
+
+      if (
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+          normalizedEmail
+        )
+      ) {
+        setError(
+          "Enter a valid email address."
+        );
+        return;
+      }
+
+      if (password.length < 6) {
+        setError(
+          "Password must be at least 6 characters."
+        );
+        return;
+      }
 
       console.log(
         "AUTH STARTED"
@@ -63,14 +92,13 @@ export default function GuildAuthForm() {
 
       /* LOGIN */
       if (isLogin) {
-
         console.log(
           "TRYING LOGIN..."
         );
 
         const result =
           await login(
-            email,
+            normalizedEmail,
             password
           );
 
@@ -81,6 +109,10 @@ export default function GuildAuthForm() {
 
         console.log(
           "WAITING FOR AUTH STATE..."
+        );
+
+        setMessage(
+          "Login successful. Opening the guild..."
         );
 
         setTimeout(() => {
@@ -103,14 +135,19 @@ export default function GuildAuthForm() {
       }
 
       /* REGISTER */
+      if (!name.trim()) {
+        setError("Name is required.");
+        return;
+      }
+
       console.log(
         "TRYING REGISTER..."
       );
 
-      const result =
+        const result =
         await register(
           name.trim(),
-          email,
+          normalizedEmail,
           password
         );
 
@@ -121,6 +158,10 @@ export default function GuildAuthForm() {
 
       console.log(
         "WAITING FOR PROFILE..."
+      );
+
+      setMessage(
+        "Profile created. Continue your Guild registration..."
       );
 
       setTimeout(() => {
@@ -146,10 +187,34 @@ export default function GuildAuthForm() {
         error?.message
       );
 
-      alert(
-        error.message ||
-          "Guild authentication failed."
-      );
+      if (
+        error?.code ===
+        "auth/email-already-in-use"
+      ) {
+        setIsLogin(true);
+        setError(
+          "Account already exists. Continue login."
+        );
+      } else if (
+        error?.code === "auth/user-not-found"
+      ) {
+        setIsLogin(false);
+        setError(
+          "No account found. Create your Adventurer profile."
+        );
+      } else if (
+        error?.code ===
+        "auth/invalid-credential"
+      ) {
+        setError(
+          "Invalid email or password."
+        );
+      } else {
+        setError(
+          error.message ||
+            "Authentication failed."
+        );
+      }
 
     } finally {
 
@@ -191,8 +256,9 @@ export default function GuildAuthForm() {
           p-4
           text-black
           shadow-[0_35px_120px_rgba(0,0,0,0.7)]
-          sm:rotate-[-1deg]
+          sm:rotate-0
           sm:p-8
+          md:rotate-[-1deg]
           md:p-10
         "
       >
@@ -279,9 +345,9 @@ export default function GuildAuthForm() {
               className="
                 font-cinzel
                 mt-3
-                text-3xl
+                text-2xl
                 font-semibold
-                tracking-[0.05em]
+                tracking-[0.02em]
                 text-[#24160d]
                 sm:text-4xl
                 md:text-5xl
@@ -310,6 +376,25 @@ export default function GuildAuthForm() {
           </div>
 
           {/* Form */}
+          {(error || message) && (
+            <div
+              className={`
+                mt-6
+                border
+                px-5
+                py-4
+                text-sm
+                ${
+                  error
+                    ? "border-red-500/30 bg-red-500/10 text-red-700"
+                    : "border-emerald-700/30 bg-emerald-700/10 text-emerald-800"
+                }
+              `}
+            >
+              {error || message}
+            </div>
+          )}
+
           <form
             onSubmit={handleAuth}
             className="mt-6 space-y-6 sm:mt-8 sm:space-y-8"
@@ -327,7 +412,7 @@ export default function GuildAuthForm() {
                     text-[#6a4b32]
                   "
                 >
-                  ADVENTURER NAME
+                  NAME
                 </label>
 
                 <input
@@ -350,7 +435,8 @@ export default function GuildAuthForm() {
                     text-base
                     italic
                     outline-none
-                    sm:text-3xl
+                    sm:text-2xl
+                    md:text-3xl
                   "
                 />
 
@@ -368,7 +454,7 @@ export default function GuildAuthForm() {
                   text-[#6a4b32]
                 "
               >
-                GUILD EMAIL
+                EMAIL
               </label>
 
               <input
@@ -391,7 +477,8 @@ export default function GuildAuthForm() {
                   text-base
                   italic
                   outline-none
-                  sm:text-3xl
+                  sm:text-2xl
+                  md:text-3xl
                 "
               />
 
@@ -407,7 +494,7 @@ export default function GuildAuthForm() {
                   text-[#6a4b32]
                 "
               >
-                SECRET KEY
+                PASSWORD
               </label>
 
               <input
@@ -431,7 +518,8 @@ export default function GuildAuthForm() {
                   text-base
                   italic
                   outline-none
-                  sm:text-3xl
+                  sm:text-2xl
+                  md:text-3xl
                 "
               />
 
@@ -462,10 +550,11 @@ export default function GuildAuthForm() {
                 className="
                   text-left
                   text-[10px]
-                  tracking-[0.25em]
+                  tracking-[0.16em]
                   text-[#6a4b32]
                   transition
                   hover:opacity-70
+                  sm:tracking-[0.25em]
                 "
               >
                 {isLogin
@@ -482,16 +571,18 @@ export default function GuildAuthForm() {
                   border-[3px]
                   border-[#6d4c1c]
                   bg-[#24160d]
-                  px-8
+                  px-5
                   py-4
                   text-[10px]
                   font-black
-                  tracking-[0.3em]
+                  tracking-[0.18em]
                   text-[#e8d8b4]
                   transition
                   hover:bg-[#3b2414]
                   disabled:opacity-70
                   md:w-auto
+                  sm:px-8
+                  sm:tracking-[0.3em]
                 "
               >
                 {loading

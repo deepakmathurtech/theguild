@@ -3,6 +3,9 @@ import Link from "next/link";
 import AmbientGlow from "./AmbientGlow";
 import BackgroundEmblem from "./BackgroundEmblem";
 import GuildNavbar from "./GuildNavbar";
+import {
+  socialLinks,
+} from "@/lib/site";
 
 type InfoBlock = {
   title: string;
@@ -14,6 +17,7 @@ type InfoPageShellProps = {
   title: string;
   intro: string;
   blocks: InfoBlock[];
+  updatedAt?: string;
 };
 
 export default function InfoPageShell({
@@ -21,7 +25,12 @@ export default function InfoPageShell({
   title,
   intro,
   blocks,
+  updatedAt,
 }: InfoPageShellProps) {
+  const showSocialLinks =
+    eyebrow.toLowerCase().includes("about") ||
+    title.toLowerCase().includes("guild");
+
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#120d08] text-white">
       <div className="fixed inset-0">
@@ -61,6 +70,40 @@ export default function InfoPageShell({
                 REGISTRY
               </Link>
             </div>
+            {updatedAt && (
+              <p className="mt-6 text-[10px] tracking-[0.25em] text-zinc-600">
+                UPDATED {updatedAt}
+              </p>
+            )}
+
+            {showSocialLinks && (
+              <div className="mt-8 border-t border-yellow-900/20 pt-6">
+                <p className="text-[10px] tracking-[0.35em] text-yellow-700">
+                  FIND THE GUILD
+                </p>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  {socialLinks.map((link) => (
+                    <Link
+                      key={link.label}
+                      href={link.href}
+                      target={
+                        link.href.startsWith("http")
+                          ? "_blank"
+                          : undefined
+                      }
+                      rel={
+                        link.href.startsWith("http")
+                          ? "noreferrer"
+                          : undefined
+                      }
+                      className="border border-white/10 px-4 py-2 text-[10px] tracking-[0.22em] text-zinc-300 transition hover:border-yellow-700/50 hover:text-yellow-300"
+                    >
+                      {link.label.toUpperCase()}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </header>
 
           <div className="grid gap-4">

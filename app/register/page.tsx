@@ -54,7 +54,7 @@ export default function RegisterPage() {
           min-h-screen
           items-center
           justify-center
-          overflow-hidden
+          overflow-x-hidden
           bg-[#120d08]
           text-white
         "
@@ -83,7 +83,9 @@ export default function RegisterPage() {
             flex
             items-center
             justify-center
-            px-6
+            px-4
+            py-24
+            sm:px-6
           "
         >
 
@@ -97,8 +99,9 @@ export default function RegisterPage() {
               border
               border-yellow-900/20
               bg-black/40
-              p-14
+              p-6
               backdrop-blur-xl
+              sm:p-14
             "
           >
 
@@ -107,7 +110,7 @@ export default function RegisterPage() {
 
             <div className="relative z-10">
 
-              <p className="text-[10px] tracking-[0.45em] text-yellow-700">
+              <p className="text-[10px] tracking-[0.22em] text-yellow-700 sm:tracking-[0.45em]">
                 GUILD REGISTRY
               </p>
 
@@ -115,8 +118,9 @@ export default function RegisterPage() {
                 className="
                   font-cinzel
                   mt-5
-                  text-5xl
+                  text-3xl
                   text-yellow-400
+                  sm:text-5xl
                 "
               >
                 Already Registered
@@ -126,32 +130,36 @@ export default function RegisterPage() {
                 className="
                   font-cormorant
                   mt-8
-                  text-3xl
+                  text-xl
                   italic
                   leading-relaxed
                   text-zinc-400
+                  sm:text-3xl
                 "
               >
                 Your adventurer registration already
                 exists within the guild archives.
               </p>
 
-              <div className="mt-12 flex gap-5">
+              <div className="mt-10 flex flex-col gap-3 sm:mt-12 sm:flex-row sm:gap-5">
 
                 <Link
                   href="/guild-card"
                   className="
                     border-[3px]
                     border-yellow-700
-                    px-8
+                    px-5
                     py-3
                     text-[10px]
                     font-black
-                    tracking-[0.35em]
+                    tracking-[0.18em]
                     text-yellow-400
                     transition
                     hover:bg-yellow-500
                     hover:text-black
+                    text-center
+                    sm:px-8
+                    sm:tracking-[0.35em]
                   "
                 >
                   VIEW GUILD CARD
@@ -162,14 +170,17 @@ export default function RegisterPage() {
                   className="
                     border
                     border-white/10
-                    px-8
+                    px-5
                     py-3
                     text-[10px]
-                    tracking-[0.35em]
+                    tracking-[0.18em]
                     text-zinc-400
                     transition
                     hover:border-white/20
                     hover:text-white
+                    text-center
+                    sm:px-8
+                    sm:tracking-[0.35em]
                   "
                 >
                   VIEW QUESTS

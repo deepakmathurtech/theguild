@@ -10,9 +10,11 @@ type QuestFiltersProps = {
 
 const filters = [
   "ALL",
-  "REMOTE",
-  "FIELD",
-  "ELITE",
+  "PROJECTS",
+  "TASKS",
+  "CHALLENGES",
+  "OPPORTUNITIES",
+  "COMMUNITY",
 ];
 
 export default function QuestFilters({
@@ -25,7 +27,8 @@ export default function QuestFilters({
       className="
         flex
         flex-wrap
-        gap-3
+        gap-2
+        sm:gap-3
       "
     >
 
@@ -44,12 +47,14 @@ export default function QuestFilters({
               relative
               overflow-hidden
               border
-              px-5
+              px-3
               py-2
               text-[10px]
-              tracking-[0.35em]
+              tracking-[0.16em]
               transition
               duration-300
+              sm:px-5
+              sm:tracking-[0.35em]
 
               ${
                 active

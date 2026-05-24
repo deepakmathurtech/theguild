@@ -142,8 +142,11 @@ export default function QuestRegisterUI({
         min-h-screen
         items-center
         justify-center
-        px-6
-        py-20
+        px-3
+        py-24
+        sm:px-6
+        sm:py-28
+        lg:py-20
       "
     >
 
@@ -153,14 +156,18 @@ export default function QuestRegisterUI({
           relative
           w-full
           max-w-5xl
-          rotate-[-1deg]
+          rotate-0
           overflow-hidden
-          border-[5px]
+          border-[4px]
           border-[#c9ae7b]
           bg-[#e8d8b4]
-          p-10
+          p-4
           text-black
           shadow-[0_35px_120px_rgba(0,0,0,0.7)]
+          sm:border-[5px]
+          sm:p-8
+          lg:rotate-[-1deg]
+          lg:p-10
         "
       >
 
@@ -171,20 +178,24 @@ export default function QuestRegisterUI({
         <div
           className="
             absolute
-            right-8
-            top-8
-            rotate-[18deg]
-            opacity-70
+            right-3
+            top-3
+            rotate-[12deg]
+            opacity-45
             mix-blend-multiply
+            sm:right-8
+            sm:top-8
+            sm:rotate-[18deg]
+            sm:opacity-70
           "
         >
 
           <Image
             src="/stamp.png"
             alt="Guild Stamp"
-            width={140}
-            height={140}
-            className="select-none blur-[0.2px]"
+            width={92}
+            height={92}
+            className="select-none blur-[0.2px] sm:h-[140px] sm:w-[140px]"
           />
 
         </div>
@@ -193,24 +204,29 @@ export default function QuestRegisterUI({
         <div
           className="
             absolute
-            right-14
-            bottom-24
+            right-4
+            bottom-16
             rotate-[-12deg]
             border-[3px]
             border-red-800
-            px-5
+            px-3
             py-2
-            text-lg
+            text-xs
             font-black
-            tracking-[0.3em]
+            tracking-[0.16em]
             text-red-900/60
+            sm:right-14
+            sm:bottom-24
+            sm:px-5
+            sm:text-lg
+            sm:tracking-[0.3em]
           "
         >
           PENDING
         </div>
 
         {/* WATERMARK */}
-        <div className="absolute bottom-0 right-6 text-[160px] font-black text-black/[0.04]">
+        <div className="absolute bottom-0 right-2 text-[92px] font-black text-black/[0.04] sm:right-6 sm:text-[160px]">
           ⚔
         </div>
 
@@ -220,13 +236,7 @@ export default function QuestRegisterUI({
           {/* HEADER */}
           <div className="border-b border-black/10 pb-6">
 
-            <p
-              className="
-                text-[10px]
-                tracking-[0.45em]
-                text-[#6a4b32]
-              "
-            >
+            <p className="text-[10px] tracking-[0.22em] text-[#6a4b32] sm:tracking-[0.45em]">
               OFFICIAL GUILD DOCUMENT
             </p>
 
@@ -234,10 +244,12 @@ export default function QuestRegisterUI({
               className="
                 font-cinzel
                 mt-3
-                text-5xl
+                text-3xl
                 font-semibold
-                tracking-[0.08em]
+                tracking-[0.03em]
                 text-[#24160d]
+                sm:text-5xl
+                sm:tracking-[0.08em]
               "
             >
               Quest Registration
@@ -247,8 +259,9 @@ export default function QuestRegisterUI({
               className="
                 mt-4
                 text-xs
-                tracking-[0.35em]
+                tracking-[0.16em]
                 text-[#7b5a3f]
+                sm:tracking-[0.35em]
               "
             >
               REQUEST FOR GUILD ASSISTANCE
@@ -291,7 +304,7 @@ export default function QuestRegisterUI({
           )}
 
           {/* FORM */}
-          <div className="mt-10 grid gap-x-10 gap-y-8 md:grid-cols-2">
+          <div className="mt-8 grid gap-x-10 gap-y-6 md:grid-cols-2 lg:mt-10 lg:gap-y-8">
 
             <GuildInput
               label="QUEST TITLE"
@@ -331,20 +344,21 @@ export default function QuestRegisterUI({
           </div>
 
           {/* QUEST TYPES */}
-          <div className="mt-10">
+          <div className="mt-8 lg:mt-10">
 
             <p
               className="
                 mb-4
                 text-[10px]
-                tracking-[0.35em]
+                tracking-[0.18em]
                 text-[#6a4b32]
+                sm:tracking-[0.35em]
               "
             >
               QUEST TYPE
             </p>
 
-            <div className="flex flex-wrap gap-5">
+            <div className="flex flex-wrap gap-3 sm:gap-5">
 
               <CheckOption
                 label="REMOTE QUEST"
@@ -375,7 +389,7 @@ export default function QuestRegisterUI({
           </div>
 
           {/* GUILD FILLED */}
-          <div className="mt-10 grid gap-x-10 gap-y-8 md:grid-cols-2">
+          <div className="mt-8 grid gap-x-10 gap-y-6 md:grid-cols-2 lg:mt-10 lg:gap-y-8">
 
             <div>
 
@@ -384,8 +398,9 @@ export default function QuestRegisterUI({
                   mb-2
                   block
                   text-[10px]
-                  tracking-[0.35em]
+                  tracking-[0.18em]
                   text-[#6a4b32]
+                  sm:tracking-[0.35em]
                 "
               >
                 DIFFICULTY RANK
@@ -394,15 +409,16 @@ export default function QuestRegisterUI({
               <div
                 className="
                   flex
-                  h-[58px]
+                  min-h-[58px]
                   items-center
                   border-b-2
                   border-dashed
                   border-black/20
                   px-1
-                  text-lg
+                  text-base
                   italic
                   text-black/40
+                  sm:text-lg
                 "
               >
                 To be assigned by guild council
@@ -422,15 +438,16 @@ export default function QuestRegisterUI({
           </div>
 
           {/* DESCRIPTION */}
-          <div className="mt-10">
+          <div className="mt-8 lg:mt-10">
 
             <label
               className="
                 mb-2
                 block
                 text-[10px]
-                tracking-[0.35em]
+                tracking-[0.18em]
                 text-[#6a4b32]
+                sm:tracking-[0.35em]
               "
             >
               QUEST DESCRIPTION
@@ -444,31 +461,33 @@ export default function QuestRegisterUI({
               placeholder="Describe the quest objectives..."
               className="
                 font-cormorant
-                h-32
+                min-h-32
                 w-full
-                resize-none
+                resize-y
                 border-b-2
                 border-black/20
                 bg-transparent
-                text-2xl
+                text-lg
                 italic
                 outline-none
                 focus:border-[#8c5d17]
+                sm:text-2xl
               "
             />
 
           </div>
 
           {/* SKILLS */}
-          <div className="mt-10">
+          <div className="mt-8 lg:mt-10">
 
             <label
               className="
                 mb-2
                 block
                 text-[10px]
-                tracking-[0.35em]
+                tracking-[0.18em]
                 text-[#6a4b32]
+                sm:tracking-[0.35em]
               "
             >
               REQUIRED SKILLS
@@ -482,23 +501,24 @@ export default function QuestRegisterUI({
               placeholder="Editing, Development..."
               className="
                 font-cormorant
-                h-24
+                min-h-24
                 w-full
-                resize-none
+                resize-y
                 border-b-2
                 border-black/20
                 bg-transparent
-                text-2xl
+                text-lg
                 italic
                 outline-none
                 focus:border-[#8c5d17]
+                sm:text-2xl
               "
             />
 
           </div>
 
           {/* LOCATION */}
-          <div className="mt-10">
+          <div className="mt-8 lg:mt-10">
 
             <GuildInput
               label="LOCATION"
@@ -512,21 +532,22 @@ export default function QuestRegisterUI({
           </div>
 
           {/* FOOTER */}
-          <div className="mt-12 flex items-end justify-between border-t border-black/10 pt-6">
+          <div className="mt-10 flex flex-col gap-6 border-t border-black/10 pt-6 sm:mt-12 sm:flex-row sm:items-end sm:justify-between">
 
             <div>
 
               <p
                 className="
                   text-[10px]
-                  tracking-[0.35em]
+                  tracking-[0.18em]
                   text-[#6a4b32]
+                  sm:tracking-[0.35em]
                 "
               >
                 QUEST AUTHORIZATION
               </p>
 
-              <div className="mt-3 h-[2px] w-52 bg-black/20" />
+              <div className="mt-3 h-[2px] w-40 bg-black/20 sm:w-52" />
 
               <p
                 className="
@@ -550,15 +571,19 @@ export default function QuestRegisterUI({
                 border-[3px]
                 border-[#24160d]
                 bg-black/5
-                px-8
+                px-5
                 py-3
                 text-[10px]
                 font-black
-                tracking-[0.35em]
+                tracking-[0.18em]
                 transition
                 hover:bg-[#24160d]
                 hover:text-[#e8d8b4]
                 disabled:opacity-50
+                w-full
+                sm:w-auto
+                sm:px-8
+                sm:tracking-[0.35em]
               "
             >
               {loading
@@ -594,6 +619,7 @@ function CheckOption({
         text-left
         items-center
         gap-3
+        min-h-11
       "
     >
 
@@ -621,7 +647,8 @@ function CheckOption({
       <p
         className="
           text-sm
-          tracking-[0.25em]
+          tracking-[0.14em]
+          sm:tracking-[0.25em]
         "
       >
         {label}

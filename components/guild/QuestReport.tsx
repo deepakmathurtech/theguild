@@ -230,8 +230,9 @@ export default function QuestReport() {
           border
           border-green-900/20
           bg-green-950/10
-          p-10
+          p-5
           backdrop-blur-xl
+          sm:p-10
         "
       >
 
@@ -240,8 +241,9 @@ export default function QuestReport() {
           <p
             className="
               text-[10px]
-              tracking-[0.45em]
+              tracking-[0.22em]
               text-green-500
+              sm:tracking-[0.45em]
             "
           >
             GUILD REPORT
@@ -251,8 +253,9 @@ export default function QuestReport() {
             className="
               font-cinzel
               mt-5
-              text-4xl
+              text-3xl
               text-green-400
+              sm:text-4xl
             "
           >
             Report Submitted
@@ -262,10 +265,11 @@ export default function QuestReport() {
             className="
               font-cormorant
               mt-6
-              text-2xl
+              text-xl
               italic
               leading-relaxed
               text-zinc-400
+              sm:text-2xl
             "
           >
             Your operational report has been
@@ -288,8 +292,9 @@ export default function QuestReport() {
         border
         border-yellow-900/20
         bg-black/30
-        p-10
+        p-5
         backdrop-blur-xl
+        sm:p-10
       "
     >
 
@@ -301,8 +306,9 @@ export default function QuestReport() {
         <p
           className="
             text-[10px]
-            tracking-[0.45em]
+            tracking-[0.22em]
             text-yellow-700
+            sm:tracking-[0.45em]
           "
         >
           GUILD REPORT
@@ -312,8 +318,9 @@ export default function QuestReport() {
           className="
             font-cinzel
             mt-5
-            text-4xl
+            text-3xl
             text-yellow-400
+            sm:text-4xl
           "
         >
           Submit Mission Report
@@ -323,10 +330,11 @@ export default function QuestReport() {
           className="
             font-cormorant
             mt-6
-            text-2xl
+            text-xl
             italic
             leading-relaxed
             text-zinc-500
+            sm:text-2xl
           "
         >
           Submit your mission progress and
@@ -362,27 +370,31 @@ export default function QuestReport() {
           placeholder="Describe completed objectives, encountered issues, operational progress, and guild notes..."
           className="
             font-cormorant
-            mt-10
-            h-52
+            mt-8
+            min-h-44
             w-full
-            resize-none
+            resize-y
             rounded-[24px]
             border
             border-yellow-900/10
             bg-black/20
-            p-6
-            text-2xl
+            p-4
+            text-lg
             italic
             leading-relaxed
             text-zinc-200
             outline-none
             placeholder:text-zinc-600
             focus:border-yellow-700/40
+            sm:mt-10
+            sm:min-h-52
+            sm:p-6
+            sm:text-2xl
           "
         />
 
         {/* BUTTON */}
-        <div className="mt-8 flex justify-end">
+        <div className="mt-6 flex justify-stretch sm:mt-8 sm:justify-end">
 
           <button
             onClick={
@@ -395,14 +407,18 @@ export default function QuestReport() {
               border
               border-yellow-700
               bg-yellow-500/10
-              px-8
+              px-5
               py-3
               text-[10px]
-              tracking-[0.35em]
+              tracking-[0.18em]
               text-yellow-300
               transition
               hover:bg-yellow-500/20
               disabled:opacity-50
+              w-full
+              sm:w-auto
+              sm:px-8
+              sm:tracking-[0.35em]
             "
           >
             {loading

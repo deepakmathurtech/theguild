@@ -5,6 +5,14 @@ import BackgroundEmblem from "@/components/guild/BackgroundEmblem";
 import GuildNavbar from "@/components/guild/GuildNavbar";
 
 import QuestSection from "@/components/guild/QuestSection";
+import { pageMetadata } from "@/lib/site";
+
+export const metadata = pageMetadata({
+  title: "Quest",
+  description:
+    "Explore verified Quests from The Central Guild: real-world projects, tasks, challenges, initiatives, and opportunities where Adventurers build skills through contribution.",
+  path: "/quests",
+});
 
 export default function QuestsPage() {
 

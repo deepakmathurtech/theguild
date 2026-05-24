@@ -1,5 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
+
+import { trackGuildEvent } from "@/utils/analytics";
+
 type YourQuestUIProps = {
   loading: boolean;
 
@@ -22,6 +26,23 @@ export default function YourQuestUI({
   const userReportSubmitted =
     userReportStatus === "submitted";
 
+  useEffect(() => {
+    if (userCompleted) {
+      trackGuildEvent(
+        "quest_to_completion",
+        {
+          questId: String(
+            quest?.id || quest?.questId || ""
+          ),
+        }
+      );
+    }
+  }, [
+    quest?.id,
+    quest?.questId,
+    userCompleted,
+  ]);
+
   /* LOADING */
   if (loading) {
     return (
@@ -33,8 +54,10 @@ export default function YourQuestUI({
           border
           border-yellow-900/20
           bg-black/50
-          p-14
+          p-5
           backdrop-blur-2xl
+          sm:p-10
+          lg:p-14
         "
       >
 
@@ -65,8 +88,9 @@ export default function YourQuestUI({
           <p
             className="
               text-[10px]
-              tracking-[0.55em]
+              tracking-[0.24em]
               text-yellow-700
+              sm:tracking-[0.55em]
             "
           >
             GUILD ARCHIVES
@@ -76,9 +100,11 @@ export default function YourQuestUI({
             className="
               font-cinzel
               mt-8
-              text-6xl
+              text-3xl
               leading-tight
               text-yellow-400
+              sm:text-5xl
+              lg:text-6xl
             "
           >
             Syncing Mission
@@ -114,8 +140,10 @@ export default function YourQuestUI({
           border
           border-yellow-900/20
           bg-black/50
-          p-14
+          p-5
           backdrop-blur-2xl
+          sm:p-10
+          lg:p-14
         "
       >
 
@@ -128,10 +156,12 @@ export default function YourQuestUI({
             absolute
             right-[-30px]
             top-[-10px]
-            text-[280px]
+            text-[120px]
             font-black
             text-yellow-500/[0.03]
             select-none
+            sm:text-[220px]
+            lg:text-[280px]
           "
         >
           ⚔
@@ -142,8 +172,9 @@ export default function YourQuestUI({
           <p
             className="
               text-[10px]
-              tracking-[0.55em]
+              tracking-[0.24em]
               text-yellow-700
+              sm:tracking-[0.55em]
             "
           >
             ROYAL GUILD OPERATIONS
@@ -153,9 +184,11 @@ export default function YourQuestUI({
             className="
               font-cinzel
               mt-8
-              text-7xl
+              text-4xl
               leading-[0.95]
               text-yellow-400
+              sm:text-6xl
+              lg:text-7xl
             "
           >
             No Active
@@ -168,10 +201,11 @@ export default function YourQuestUI({
               font-cormorant
               mt-10
               max-w-3xl
-              text-3xl
+              text-xl
               italic
               leading-relaxed
               text-zinc-500
+              sm:text-3xl
             "
           >
             The guild council currently has no
@@ -216,8 +250,10 @@ export default function YourQuestUI({
         border
         border-yellow-900/20
         bg-black/50
-        p-14
+        p-5
         backdrop-blur-2xl
+        sm:p-10
+        lg:p-14
       "
     >
 
@@ -249,10 +285,12 @@ export default function YourQuestUI({
           absolute
           right-[-30px]
           top-[-40px]
-          text-[240px]
+          text-[110px]
           font-black
           text-yellow-500/[0.04]
           select-none
+          sm:text-[190px]
+          lg:text-[240px]
         "
       >
         {quest.difficulty || "E"}
@@ -274,6 +312,8 @@ export default function YourQuestUI({
           tracking-[0.45em]
           text-yellow-300
           backdrop-blur-xl
+          hidden
+          sm:block
         "
       >
         ELITE OPERATION
@@ -303,8 +343,9 @@ export default function YourQuestUI({
             <p
               className="
                 text-[10px]
-                tracking-[0.55em]
+                tracking-[0.22em]
                 text-yellow-700
+                sm:tracking-[0.55em]
               "
             >
               ⚔ ROYAL GUILD OPERATION
@@ -314,9 +355,12 @@ export default function YourQuestUI({
               className="
                 font-cinzel
                 mt-8
-                text-7xl
+                break-words
+                text-4xl
                 leading-[0.92]
                 text-yellow-400
+                sm:text-6xl
+                lg:text-7xl
               "
             >
               {quest.title}
@@ -326,10 +370,11 @@ export default function YourQuestUI({
               className="
                 font-cormorant
                 mt-10
-                text-3xl
+                text-xl
                 italic
                 leading-relaxed
                 text-zinc-400
+                sm:text-3xl
               "
             >
               {quest.description}
@@ -342,11 +387,14 @@ export default function YourQuestUI({
             className={`
               rounded-full
               border
-              px-7
-              py-4
+              px-4
+              py-3
               text-[10px]
-              tracking-[0.45em]
+              tracking-[0.16em]
               backdrop-blur-xl
+              sm:px-7
+              sm:py-4
+              sm:tracking-[0.45em]
               ${statusStyles}
             `}
           >
@@ -410,19 +458,20 @@ export default function YourQuestUI({
         </div>
 
         {/* PROGRESS */}
-        <div className="mt-16">
+        <div className="mt-12 sm:mt-16">
 
           <p
             className="
               text-[10px]
-              tracking-[0.45em]
+              tracking-[0.18em]
               text-yellow-700
+              sm:tracking-[0.45em]
             "
           >
             OPERATION STATUS
           </p>
 
-          <div className="mt-8 flex items-center gap-4">
+          <div className="mt-8 grid grid-cols-4 items-start gap-2 sm:flex sm:items-center sm:gap-4">
 
             <ProgressNode
               active
@@ -484,7 +533,8 @@ export default function YourQuestUI({
               border
               border-green-700/20
               bg-green-950/10
-              p-8
+              p-5
+              sm:p-8
             "
           >
 
@@ -495,8 +545,9 @@ export default function YourQuestUI({
               <p
                 className="
                   text-[10px]
-                  tracking-[0.45em]
+                  tracking-[0.18em]
                   text-green-500
+                  sm:tracking-[0.45em]
                 "
               >
                 ◆ REPORT ARCHIVED ◆
@@ -506,8 +557,9 @@ export default function YourQuestUI({
                 className="
                   font-cinzel
                   mt-5
-                  text-4xl
+                  text-3xl
                   text-green-400
+                  sm:text-4xl
                 "
               >
                 {userCompleted
@@ -520,10 +572,11 @@ export default function YourQuestUI({
                   font-cormorant
                   mt-6
                   max-w-4xl
-                  text-2xl
+                  text-xl
                   italic
                   leading-relaxed
                   text-zinc-400
+                  sm:text-2xl
                 "
               >
                 {userCompleted
@@ -561,11 +614,12 @@ function StatCard({
         border
         border-yellow-900/10
         bg-black/20
-        p-7
+        p-5
         transition
         duration-300
         hover:border-yellow-700/30
         hover:bg-black/30
+        sm:p-7
       "
     >
 
@@ -576,8 +630,9 @@ function StatCard({
         <p
           className="
             text-[10px]
-            tracking-[0.35em]
+            tracking-[0.18em]
             text-yellow-700
+            sm:tracking-[0.35em]
           "
         >
           {label}
@@ -588,10 +643,11 @@ function StatCard({
             font-cormorant
             mt-4
             break-words
-            text-3xl
+            text-2xl
             italic
             leading-tight
             text-zinc-200
+            sm:text-3xl
           "
         >
           {value}
@@ -617,8 +673,8 @@ function ProgressNode({
 
       <div
         className={`
-          h-5
-          w-5
+          h-4
+          w-4
           rounded-full
           border
 
@@ -641,7 +697,8 @@ function ProgressNode({
         className={`
           mt-3
           text-[10px]
-          tracking-[0.35em]
+          tracking-[0.12em]
+          sm:tracking-[0.35em]
 
           ${
             active
@@ -668,6 +725,8 @@ function ProgressLine() {
         bg-gradient-to-r
         from-yellow-700/40
         to-transparent
+        hidden
+        sm:block
       "
     />
   );

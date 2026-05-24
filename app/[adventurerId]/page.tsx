@@ -2,6 +2,20 @@ import AmbientGlow from "@/components/guild/AmbientGlow";
 import BackgroundEmblem from "@/components/guild/BackgroundEmblem";
 import GuildNavbar from "@/components/guild/GuildNavbar";
 import PublicAdventurerProfile from "@/components/guild/PublicAdventurerProfile";
+import { pageMetadata } from "@/lib/site";
+
+export async function generateMetadata(
+  props: PageProps<"/[adventurerId]">
+) {
+  const { adventurerId } =
+    await props.params;
+
+  return pageMetadata({
+    title: "Profile",
+    description: `Public Guild ID profile for ${adventurerId.toUpperCase()}.`,
+    path: `/${adventurerId}`,
+  });
+}
 
 export default async function AdventurerPublicPage(
   props: PageProps<"/[adventurerId]">

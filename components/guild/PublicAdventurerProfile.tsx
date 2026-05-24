@@ -24,6 +24,8 @@ type PublicProfile = {
   cityName?: string;
   publicTagline?: string;
   skillsVerified?: string[];
+  achievements?: string[];
+  departments?: string[];
   portfolioUrl?: string;
   questsCompleted?: number;
   reputation?: number;
@@ -120,7 +122,7 @@ export default function PublicAdventurerProfile({
 
         <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           <ProfileStat
-            label="ADVENTURER ID"
+            label="GUILD ID"
             value={
               profile.adventurerId
             }
@@ -187,6 +189,19 @@ export default function PublicAdventurerProfile({
           </Link>
         )}
       </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <ProfileList
+          label="ACHIEVEMENTS"
+          items={profile.achievements || []}
+          empty="No achievements have been recorded yet."
+        />
+        <ProfileList
+          label="DEPARTMENTS"
+          items={profile.departments || []}
+          empty="No departments have been assigned yet."
+        />
+      </section>
     </div>
   );
 }
@@ -207,5 +222,39 @@ function ProfileStat({
         {value || "Unavailable"}
       </p>
     </div>
+  );
+}
+
+function ProfileList({
+  label,
+  items,
+  empty,
+}: {
+  label: string;
+  items: string[];
+  empty: string;
+}) {
+  return (
+    <section className="border border-yellow-900/20 bg-black/35 p-5 backdrop-blur-xl sm:p-8">
+      <p className="text-[10px] tracking-[0.45em] text-yellow-700">
+        {label}
+      </p>
+      <div className="mt-5 flex flex-wrap gap-3">
+        {items.length ? (
+          items.map((item) => (
+            <span
+              key={item}
+              className="border border-yellow-700/30 bg-yellow-500/10 px-4 py-2 text-[10px] tracking-[0.2em] text-yellow-200"
+            >
+              {item}
+            </span>
+          ))
+        ) : (
+          <p className="text-zinc-500">
+            {empty}
+          </p>
+        )}
+      </div>
+    </section>
   );
 }
