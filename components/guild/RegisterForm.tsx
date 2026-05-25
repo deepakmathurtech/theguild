@@ -110,6 +110,7 @@ export default function RegisterForm() {
         await generateAdventurerId(
           db,
           {
+            cityName,
             cityCode,
             genderCode,
             rankCode:
@@ -194,7 +195,9 @@ export default function RegisterForm() {
         registrationError
       );
       setError(
-        "Failed to register adventurer."
+        registrationError instanceof Error
+          ? registrationError.message
+          : "Failed to register adventurer."
       );
     } finally {
       setLoading(false);

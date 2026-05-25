@@ -7,6 +7,7 @@ import {
 } from "firebase/firestore";
 
 type AdventurerIdInput = {
+  cityName: string;
   cityCode: string;
   genderCode: string;
   rankCode: string;
@@ -22,6 +23,23 @@ function normalizeCode(
     .toUpperCase()
     .slice(0, length)
     .padEnd(length, "X");
+}
+
+function normalizeCityName(
+  value: string
+) {
+  return value.trim().replace(/\s+/g, " ");
+}
+
+function normalizeCityKey(
+  value: string
+) {
+  return normalizeCityName(value)
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 export function getRankCode(
@@ -45,10 +63,24 @@ export async function generateAdventurerId(
       registeredAt.getFullYear()
     ).slice(-2);
 
-  const cityCode = normalizeCode(
+  const requestedCityCode = normalizeCode(
     input.cityCode,
     3
   );
+
+  const cityName = normalizeCityName(
+    input.cityName
+  );
+
+  const cityKey = normalizeCityKey(
+    cityName
+  );
+
+  if (!cityKey) {
+    throw new Error(
+      "Enter a valid city name."
+    );
+  }
 
   const genderCode =
     normalizeCode(
@@ -61,23 +93,60 @@ export async function generateAdventurerId(
     1
   );
 
-  const counterKey = [
-    cityCode,
-    yearCode,
-    genderCode,
-    rankCode,
-  ].join("-");
-
-  const counterRef = doc(
+  const cityRef = doc(
     db,
-    "guildCounters",
-    counterKey
+    "guildCities",
+    cityKey
   );
 
-  const adventurerId =
+  const generatedIdentity =
     await runTransaction(
       db,
       async (transaction) => {
+        const citySnapshot =
+          await transaction.get(cityRef);
+
+        const cityCode =
+          citySnapshot.exists()
+            ? String(
+                citySnapshot.data()
+                  .cityCode ||
+                  requestedCityCode
+              )
+            : requestedCityCode;
+
+        const codeRef = doc(
+          db,
+          "guildCityCodes",
+          cityCode
+        );
+
+        const codeSnapshot =
+          await transaction.get(codeRef);
+
+        if (
+          codeSnapshot.exists() &&
+          codeSnapshot.data().cityKey !==
+            cityKey
+        ) {
+          throw new Error(
+            "That city code is already assigned to another city."
+          );
+        }
+
+        const counterKey = [
+          cityCode,
+          yearCode,
+          genderCode,
+          rankCode,
+        ].join("-");
+
+        const counterRef = doc(
+          db,
+          "guildCounters",
+          counterKey
+        );
+
         const snapshot =
           await transaction.get(
             counterRef
@@ -88,6 +157,34 @@ export async function generateAdventurerId(
             ? (snapshot.data()
                 .lastSeries || 0) + 1
             : 1;
+
+        transaction.set(
+          cityRef,
+          {
+            cityKey,
+            cityName,
+            cityCode,
+            updatedAt:
+              serverTimestamp(),
+          },
+          {
+            merge: true,
+          }
+        );
+
+        transaction.set(
+          codeRef,
+          {
+            cityKey,
+            cityName,
+            cityCode,
+            updatedAt:
+              serverTimestamp(),
+          },
+          {
+            merge: true,
+          }
+        );
 
         transaction.set(
           counterRef,
@@ -105,15 +202,20 @@ export async function generateAdventurerId(
           }
         );
 
-        return `TG-${cityCode}-${yearCode}${genderCode}${rankCode}-${String(
-          nextSeries
-        ).padStart(5, "0")}`;
+        return {
+          adventurerId: `TG-${cityCode}-${yearCode}${genderCode}${rankCode}-${String(
+            nextSeries
+          ).padStart(5, "0")}`,
+          cityCode,
+        };
       }
     );
 
   return {
-    adventurerId,
-    cityCode,
+    adventurerId:
+      generatedIdentity.adventurerId,
+    cityCode:
+      generatedIdentity.cityCode,
     genderCode,
     yearCode,
     rankCode,

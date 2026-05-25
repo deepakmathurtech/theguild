@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local Guild Card generation tools and generated exports
+/generated_cards/
+/cardgen.py
+/qrgen.py
+/Generate Guild Cards.bat
+/Copy of THE GUILD.zip
+/1.png
+/2.png
+/3.png
+/logo.png

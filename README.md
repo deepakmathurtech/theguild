@@ -51,3 +51,39 @@ Optional social URL overrides:
 - `NEXT_PUBLIC_GUILD_INSTAGRAM`
 - `NEXT_PUBLIC_GUILD_LINKEDIN`
 - `NEXT_PUBLIC_GUILD_X`
+
+## Guild ID City Codes
+
+New Adventurer registration stores canonical city-to-code mappings in Firestore:
+
+- `guildCities/{normalized-city-name}` stores the city's assigned code.
+- `guildCityCodes/{CITYCODE}` prevents a code from being assigned to a different city.
+
+Before accepting additional registrations for a city already present in legacy `adventurers` data, seed these two mapping documents with its existing code.
+
+## Guild Card Generator
+
+Double-click `Generate Guild Cards.bat` to read the shared spreadsheet, generate print-ready member cards, and open the visual summary page.
+
+Generated card files are stored in `generated_cards/`:
+
+- `index.html` shows which cards are `NEW`, `UPDATED`, or `UNCHANGED`.
+- `generation_history.csv` keeps a simple run-by-run record of card statuses.
+- `new_cards/<date_time>/` contains only cards that are new or changed in that run, including their print PDFs.
+- `*_print.pdf` is the file to print: a two-page front/back card PDF sized `3.5 x 2 in` at `300 DPI`.
+- `*_front.png` and `*_back.png` are 300-DPI preview files.
+
+The PDF embeds card artwork losslessly, and the QR is rendered with high contrast, intact square modules, and a full quiet border for dependable printed scanning.
+
+Optional spreadsheet column: add `Title` (or `Role` / `Designation`) when a member should use the titled design from `3.png`, for example `FOUNDER`. Leave it blank to use the normal `1.png` card design.
+
+If the same `GuildID` is submitted again, the newest spreadsheet response replaces the older card. This lets you correct a member or add a title without creating duplicate printable cards.
+
+Print the PDF at `Actual size` or `100%` scale. For double-sided printing, choose flip on the short edge if your printer offers that setting.
+
+Command-line use:
+
+```powershell
+python -B cardgen.py --open-report
+python -B cardgen.py --name "Deepak Mathur" --city Ludhiana --rank "F-Rank Adventurer" --guild-id TG-LDH-26MF-00001 --title Founder
+```

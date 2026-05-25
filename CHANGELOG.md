@@ -21,6 +21,8 @@
 - Supported Firestore fields are `slug`, `title`, `body`, and `updatedAt`. The markdown `body` should use `#`, `Eyebrow:`, `Intro:`, and `##` sections.
 - Existing quest documents remain compatible. New optional fields are `category`, `tags`, `location`, `duration`, `rewardType`, `rewardAmount`, `status`, `createdBy`, and `verified`.
 - Existing profile documents remain compatible. New optional public fields are `achievements` and `departments`.
+- New Adventurer registrations reserve canonical city mappings in `guildCities` and `guildCityCodes`; once a city is registered, later registrations reuse its assigned three-letter code.
+- For legacy cities already represented in `adventurers`, seed a matching `guildCities/{normalized-city-name}` and `guildCityCodes/{CITYCODE}` record before opening additional registrations for that city.
 
 ## Manual Test Checklist
 
