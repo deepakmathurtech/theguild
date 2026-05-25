@@ -16,6 +16,7 @@ import { updateProfile } from "firebase/auth";
 import { db } from "@/lib/firebase";
 import {
   generateAdventurerId,
+  getCityCode,
   getRankCode,
 } from "@/lib/adventurerId";
 import { upsertPublicAdventurerProfile } from "@/lib/publicAdventurerProfile";
@@ -46,8 +47,6 @@ export default function RegisterForm() {
     useState("");
   const [cityName, setCityName] =
     useState("");
-  const [cityCode, setCityCode] =
-    useState("");
   const [genderCode, setGenderCode] =
     useState("M");
   const [publicTagline, setPublicTagline] =
@@ -64,7 +63,6 @@ export default function RegisterForm() {
         contact.trim() &&
         experience.trim() &&
         cityName.trim() &&
-        cityCode.trim() &&
         genderCode
     );
 
@@ -86,7 +84,6 @@ export default function RegisterForm() {
       !contact.trim() ||
       !experience.trim() ||
       !cityName.trim() ||
-      !cityCode.trim() ||
       !genderCode
     ) {
       setError(
@@ -111,7 +108,6 @@ export default function RegisterForm() {
           db,
           {
             cityName,
-            cityCode,
             genderCode,
             rankCode:
               getRankCode(
@@ -343,15 +339,14 @@ export default function RegisterForm() {
             />
 
             <GuildInput
-              label="CITY CODE"
-              placeholder="LDH"
-              value={cityCode}
-              onChange={(event) =>
-                setCityCode(
-                  event.target.value
-                    .toUpperCase()
-                )
+              label="CITY CODE (AUTO)"
+              placeholder="Generated from city"
+              value={
+                cityName.trim()
+                  ? getCityCode(cityName)
+                  : ""
               }
+              disabled
             />
 
             <GuildInput

@@ -54,12 +54,7 @@ Optional social URL overrides:
 
 ## Guild ID City Codes
 
-New Adventurer registration stores canonical city-to-code mappings in Firestore:
-
-- `guildCities/{normalized-city-name}` stores the city's assigned code.
-- `guildCityCodes/{CITYCODE}` prevents a code from being assigned to a different city.
-
-Before accepting additional registrations for a city already present in legacy `adventurers` data, seed these two mapping documents with its existing code.
+New Adventurer registrations derive the city code from the city name instead of accepting a separate manually chosen code. For example, `Delhi` always becomes `DEL`, avoiding multiple new codes for the same city without requiring new Firestore permissions.
 
 ## Guild Card Generator
 
