@@ -19,6 +19,7 @@ import {
   getCityCode,
   getRankCode,
 } from "@/lib/adventurerId";
+import { guildCities } from "@/lib/cities";
 import { upsertPublicAdventurerProfile } from "@/lib/publicAdventurerProfile";
 
 import { useGuildAuth } from "./GuildAuthLogic";
@@ -304,7 +305,7 @@ export default function RegisterForm() {
 
           <div>
             {error && (
-              <div className="mt-6 border border-red-900/20 bg-red-950/10 p-4 text-sm text-red-800 lg:mt-0">
+              <div role="alert" className="mt-6 border border-red-900/20 bg-red-950/10 p-4 text-sm text-red-800 lg:mt-0">
                 {error}
               </div>
             )}
@@ -327,16 +328,34 @@ export default function RegisterForm() {
               disabled
             />
 
-            <GuildInput
-              label="CITY"
-              placeholder="Ludhiana"
-              value={cityName}
-              onChange={(event) =>
-                setCityName(
-                  event.target.value
-                )
-              }
-            />
+            <div>
+              <label htmlFor="guild-city" className="mb-2 block text-[10px] tracking-[0.22em] text-zinc-700 sm:mb-3 sm:text-xs sm:tracking-[0.3em]">
+                CITY
+              </label>
+              <select
+                id="guild-city"
+                value={cityName}
+                required
+                onChange={(event) =>
+                  setCityName(
+                    event.target.value
+                  )
+                }
+                className="min-h-12 w-full border-2 border-black/10 bg-black/[0.02] p-3 text-base outline-none focus:border-[#8c5d17] sm:p-4"
+              >
+                <option value="">
+                  Select your city
+                </option>
+                {guildCities.map((city) => (
+                  <option
+                    key={city.code}
+                    value={city.name}
+                  >
+                    {city.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <GuildInput
               label="CITY CODE (AUTO)"
@@ -361,10 +380,11 @@ export default function RegisterForm() {
             />
 
             <div>
-              <label className="mb-2 block text-[10px] tracking-[0.22em] text-zinc-700 sm:mb-3 sm:text-xs sm:tracking-[0.3em]">
+              <label htmlFor="guild-gender-code" className="mb-2 block text-[10px] tracking-[0.22em] text-zinc-700 sm:mb-3 sm:text-xs sm:tracking-[0.3em]">
                 GENDER CODE
               </label>
               <select
+                id="guild-gender-code"
                 value={genderCode}
                 onChange={(event) =>
                   setGenderCode(
@@ -420,10 +440,11 @@ export default function RegisterForm() {
           </div>
 
           <div className="mt-5 sm:mt-6">
-            <label className="mb-2 block text-[10px] tracking-[0.22em] text-zinc-700 sm:mb-3 sm:text-xs sm:tracking-[0.3em]">
+            <label htmlFor="guild-experience" className="mb-2 block text-[10px] tracking-[0.22em] text-zinc-700 sm:mb-3 sm:text-xs sm:tracking-[0.3em]">
               ABILITIES & EXPERIENCE
             </label>
             <textarea
+              id="guild-experience"
               value={experience}
               onChange={(event) =>
                 setExperience(
@@ -455,11 +476,11 @@ export default function RegisterForm() {
                   ? "Submit registration"
                   : "Complete the required fields first"
               }
-              className="min-h-12 w-full border-[3px] border-black bg-black/5 px-5 py-3 text-[10px] font-black tracking-[0.16em] transition hover:bg-black hover:text-[#e8d8b4] active:translate-y-px disabled:cursor-wait disabled:opacity-50 sm:w-auto sm:px-7 sm:tracking-[0.3em]"
+              className="min-h-12 w-full border-[3px] border-[#6d4c1c] bg-[#24160d] px-5 py-3 text-[10px] font-black tracking-[0.16em] text-[#e8d8b4] transition hover:bg-[#3b2414] active:translate-y-px disabled:cursor-wait disabled:opacity-50 sm:w-auto sm:px-7 sm:tracking-[0.3em]"
             >
               {loading
                 ? "PROCESSING..."
-                : "SUBMIT DOCUMENT"}
+                : "SUBMIT REGISTRATION"}
             </button>
           </div>
           </div>

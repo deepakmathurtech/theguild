@@ -13,6 +13,9 @@
 - Added About, FAQ, Community Guidelines, Terms, and Privacy content routes.
 - Added page metadata helpers, canonical URLs, OpenGraph defaults, `robots.txt`, and `sitemap.xml`.
 - Added lightweight launch funnel event hooks for landing, registration, first quest, and completion milestones.
+- Strengthened the mobile-visible auth actions and added a direct account-creation path after an unsuccessful login while preserving the email field.
+- Added canonical railway city-code configuration in `content/cities.json`, with registration selecting from the managed list.
+- Added admin adventurer filters for pending/approved review state and city.
 
 ## Migration Notes
 
@@ -21,7 +24,8 @@
 - Supported Firestore fields are `slug`, `title`, `body`, and `updatedAt`. The markdown `body` should use `#`, `Eyebrow:`, `Intro:`, and `##` sections.
 - Existing quest documents remain compatible. New optional fields are `category`, `tags`, `location`, `duration`, `rewardType`, `rewardAmount`, `status`, `createdBy`, and `verified`.
 - Existing profile documents remain compatible. New optional public fields are `achievements` and `departments`.
-- New Adventurer registrations automatically derive their three-letter city code from the city name, so the same city cannot be submitted under multiple newly selected codes.
+- New Adventurer registrations select a city from `content/cities.json`; add each supported city and its canonical railway code before launch.
+- Existing generated Guild IDs remain valid. New IDs can use 2 to 5 character railway codes such as `LDH` or `NDLS`.
 
 ## Manual Test Checklist
 
@@ -33,6 +37,8 @@
 - Confirm `/about`, `/terms`, `/privacy`, `/faq`, and `/guidelines` render from content.
 - Confirm `/robots.txt` and `/sitemap.xml` load.
 - Confirm mobile navigation opens and includes Logout inside the authenticated menu.
+- Confirm a city can only be selected from `content/cities.json` and the matching railway code is displayed read-only.
+- Confirm the admin adventurer list filters by pending/approved status and by city.
 
 ## Rollback Notes
 

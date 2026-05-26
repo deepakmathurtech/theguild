@@ -6,6 +6,8 @@ import {
   type Firestore,
 } from "firebase/firestore";
 
+import { findGuildCity } from "@/lib/cities";
+
 type AdventurerIdInput = {
   cityName: string;
   genderCode: string;
@@ -24,12 +26,6 @@ function normalizeCode(
     .padEnd(length, "X");
 }
 
-function normalizeCityName(
-  value: string
-) {
-  return value.trim().replace(/\s+/g, " ");
-}
-
 export function getRankCode(
   guildRank: string
 ) {
@@ -42,10 +38,7 @@ export function getRankCode(
 export function getCityCode(
   cityName: string
 ) {
-  return normalizeCode(
-    normalizeCityName(cityName),
-    3
-  );
+  return findGuildCity(cityName)?.code || "";
 }
 
 export async function generateAdventurerId(
@@ -60,17 +53,16 @@ export async function generateAdventurerId(
       registeredAt.getFullYear()
     ).slice(-2);
 
-  const cityName = normalizeCityName(
-    input.cityName
-  );
+  const city =
+    findGuildCity(input.cityName);
 
-  if (!cityName) {
+  if (!city) {
     throw new Error(
-      "Enter a valid city name."
+      "Select a city from the Guild railway code list."
     );
   }
 
-  const cityCode = getCityCode(cityName);
+  const cityCode = city.code;
 
   const genderCode =
     normalizeCode(
@@ -147,7 +139,7 @@ export async function backfillCounterRecord(
   adventurerId: string
 ) {
   const match =
-    /^TG-([A-Z]{3})-(\d{2})([A-Z])([A-Z])-(\d{5})$/.exec(
+    /^TG-([A-Z0-9]{2,5})-(\d{2})([A-Z])([A-Z])-(\d{5})$/.exec(
       adventurerId
     );
 

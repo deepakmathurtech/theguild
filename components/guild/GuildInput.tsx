@@ -1,4 +1,5 @@
 type Props = {
+  id?: string;
   label: string;
   placeholder?: string;
   type?: string;
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export default function GuildInput({
+  id,
   label,
   placeholder,
   type = "text",
@@ -20,10 +22,18 @@ export default function GuildInput({
   disabled,
   onChange,
 }: Props) {
+  const inputId =
+    id ||
+    `guild-${label
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")}`;
+
   return (
     <div>
 
       <label
+        htmlFor={inputId}
         className="
           mb-2
           block
@@ -39,6 +49,7 @@ export default function GuildInput({
       </label>
 
       <input
+        id={inputId}
         type={type}
         value={value}
         disabled={disabled}

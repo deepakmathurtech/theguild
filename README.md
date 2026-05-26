@@ -52,9 +52,18 @@ Optional social URL overrides:
 - `NEXT_PUBLIC_GUILD_LINKEDIN`
 - `NEXT_PUBLIC_GUILD_X`
 
-## Guild ID City Codes
+## Guild ID Railway City Codes
 
-New Adventurer registrations derive the city code from the city name instead of accepting a separate manually chosen code. For example, `Delhi` always becomes `DEL`, avoiding multiple new codes for the same city without requiring new Firestore permissions.
+Registration city choices and Guild ID codes are managed in `content/cities.json`. Add one entry per supported city using the railway code selected by the Guild:
+
+```json
+[
+  { "name": "Delhi", "code": "NDLS" },
+  { "name": "Ludhiana", "code": "LDH" }
+]
+```
+
+City codes accept 2 to 5 uppercase letters or digits. The build rejects duplicated city mappings or a code assigned to multiple cities. Editing this repository file requires rebuilding and deploying the website.
 
 ## Guild Card Generator
 

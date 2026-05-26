@@ -94,6 +94,11 @@ const guildRanks = [
   "S-RANK",
 ];
 
+type AdventurerReviewFilter =
+  | "all"
+  | "pending"
+  | "approved";
+
 export default function AdminDashboard() {
   const [adventurers, setAdventurers] =
     useState<AdminAdventurer[]>([]);
@@ -117,6 +122,16 @@ export default function AdminDashboard() {
     useState(true);
   const [reportReputation, setReportReputation] =
     useState<Record<string, string>>({});
+  const [
+    adventurerReviewFilter,
+    setAdventurerReviewFilter,
+  ] = useState<AdventurerReviewFilter>(
+    "pending"
+  );
+  const [
+    adventurerCityFilter,
+    setAdventurerCityFilter,
+  ] = useState("all");
 
   async function loadAdminData() {
     setLoading(true);
@@ -211,6 +226,55 @@ export default function AdminDashboard() {
     announcements,
     quests,
   ]);
+
+  const adventurerCities = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          adventurers
+            .map((adventurer) =>
+              String(
+                adventurer.cityName || ""
+              ).trim()
+            )
+            .filter(Boolean)
+        )
+      ).sort((first, second) =>
+        first.localeCompare(second)
+      ),
+    [adventurers]
+  );
+
+  const visibleAdventurers = useMemo(
+    () =>
+      adventurers.filter(
+        (adventurer) => {
+          const matchesReview =
+            adventurerReviewFilter ===
+              "all" ||
+            (adventurerReviewFilter ===
+              "approved"
+              ? Boolean(
+                  adventurer.approved
+                )
+              : !adventurer.approved);
+          const matchesCity =
+            adventurerCityFilter ===
+              "all" ||
+            adventurer.cityName ===
+              adventurerCityFilter;
+
+          return (
+            matchesReview && matchesCity
+          );
+        }
+      ),
+    [
+      adventurers,
+      adventurerCityFilter,
+      adventurerReviewFilter,
+    ]
+  );
 
   async function updateAdventurer(
     uid: string,
@@ -469,8 +533,74 @@ export default function AdminDashboard() {
               </button>
             </div>
 
+            <div className="mt-6 grid gap-3 border border-white/10 bg-black/20 p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+              <div>
+                <label className="mb-2 block text-[10px] tracking-[0.24em] text-yellow-700">
+                  REVIEW STATUS
+                </label>
+                <select
+                  value={adventurerReviewFilter}
+                  onChange={(event) =>
+                    setAdventurerReviewFilter(
+                      event.target
+                        .value as AdventurerReviewFilter
+                    )
+                  }
+                  className="min-h-12 w-full border border-white/10 bg-black px-4 py-3 text-sm text-zinc-200"
+                >
+                  <option value="pending">
+                    Unapproved / Pending
+                  </option>
+                  <option value="approved">
+                    Approved
+                  </option>
+                  <option value="all">
+                    All applications
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-2 block text-[10px] tracking-[0.24em] text-yellow-700">
+                  CITY
+                </label>
+                <select
+                  value={adventurerCityFilter}
+                  onChange={(event) =>
+                    setAdventurerCityFilter(
+                      event.target.value
+                    )
+                  }
+                  className="min-h-12 w-full border border-white/10 bg-black px-4 py-3 text-sm text-zinc-200"
+                >
+                  <option value="all">
+                    All cities
+                  </option>
+                  {adventurerCities.map(
+                    (city) => (
+                      <option
+                        key={city}
+                        value={city}
+                      >
+                        {city}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
+              <p className="pb-3 text-[10px] tracking-[0.22em] text-zinc-400">
+                {visibleAdventurers.length}{" "}
+                RECORDS
+              </p>
+            </div>
+
             <div className="mt-6 grid gap-4">
-              {adventurers.map(
+              {visibleAdventurers.length ===
+                0 && (
+                <p className="border border-white/10 bg-black/25 p-5 text-sm text-zinc-400">
+                  No adventurer applications match these filters.
+                </p>
+              )}
+              {visibleAdventurers.map(
                 (adventurer) => (
                   <article
                     key={adventurer.uid}
@@ -490,6 +620,9 @@ export default function AdminDashboard() {
                         |{" "}
                         {adventurer.specialization ||
                           "No specialization"}
+                        {" "} |{" "}
+                        {adventurer.cityName ||
+                          "No city"}
                       </p>
                       <p className="mt-3 text-[10px] tracking-[0.28em] text-yellow-700">
                         {adventurer.approved

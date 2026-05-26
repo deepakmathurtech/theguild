@@ -32,6 +32,11 @@ export default function GuildAuthUI() {
   const [success, setSuccess] =
     useState("");
 
+  const [
+    suggestRegistration,
+    setSuggestRegistration,
+  ] = useState(false);
+
   const {
     login,
     register,
@@ -39,6 +44,24 @@ export default function GuildAuthUI() {
 
   const [processing, setProcessing] =
     useState(false);
+
+  function revealAuthForm() {
+    window.requestAnimationFrame(() => {
+      window.scrollTo({
+        top: 0,
+      });
+    });
+  }
+
+  function switchMode(
+    nextIsLogin: boolean
+  ) {
+    setIsLogin(nextIsLogin);
+    setError("");
+    setSuccess("");
+    setSuggestRegistration(false);
+    revealAuthForm();
+  }
 
   async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>
@@ -51,6 +74,7 @@ export default function GuildAuthUI() {
 
       setError("");
       setSuccess("");
+      setSuggestRegistration(false);
 
       const normalizedEmail =
         email.trim();
@@ -181,6 +205,7 @@ export default function GuildAuthUI() {
         case "auth/user-not-found":
 
           setIsLogin(false);
+          revealAuthForm();
 
           setError(
             "No account found. Create your Adventurer profile."
@@ -198,8 +223,9 @@ export default function GuildAuthUI() {
 
         case "auth/invalid-credential":
 
+          setSuggestRegistration(true);
           setError(
-            "Invalid email or password."
+            "No login found with those details. New here? Create your Adventurer account. Returning members should check their password."
           );
 
           break;
@@ -207,6 +233,8 @@ export default function GuildAuthUI() {
         case "auth/email-already-in-use":
 
           setIsLogin(true);
+          setSuggestRegistration(false);
+          revealAuthForm();
 
           setError(
             "Account already exists. Continue login."
@@ -273,7 +301,8 @@ export default function GuildAuthUI() {
         overflow-x-hidden
         bg-[#120d08]
         px-3
-        py-24
+        pb-8
+        pt-6
         text-white
         sm:px-4
         sm:py-20
@@ -434,6 +463,18 @@ export default function GuildAuthUI() {
             "
           >
             {error}
+            {isLogin &&
+              suggestRegistration && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    switchMode(false)
+                  }
+                  className="mt-4 block min-h-11 w-full border border-red-900/30 bg-[#24160d] px-4 py-3 text-center text-[10px] font-black tracking-[0.16em] text-[#e8d8b4] transition hover:bg-[#3b2414] sm:w-auto sm:tracking-[0.24em]"
+                >
+                  CREATE ADVENTURER ACCOUNT
+                </button>
+              )}
           </div>
 
         )}
@@ -441,6 +482,7 @@ export default function GuildAuthUI() {
         {success && (
 
           <div
+            role="alert"
             className="
               relative
               z-10
@@ -478,6 +520,7 @@ export default function GuildAuthUI() {
             <div>
 
               <label
+                htmlFor="auth-name"
                 className="
                   text-[10px]
                   tracking-[0.3em]
@@ -488,6 +531,7 @@ export default function GuildAuthUI() {
               </label>
 
               <input
+                id="auth-name"
                 type="text"
                 value={name}
                 required={!isLogin}
@@ -520,6 +564,7 @@ export default function GuildAuthUI() {
           <div>
 
             <label
+              htmlFor="auth-email"
               className="
                 text-[10px]
                 tracking-[0.3em]
@@ -530,13 +575,17 @@ export default function GuildAuthUI() {
             </label>
 
             <input
+              id="auth-email"
               type="email"
               value={email}
               required
               onChange={(e) =>
-                setEmail(
-                  e.target.value
-                )
+                {
+                  setEmail(
+                    e.target.value
+                  );
+                  setSuggestRegistration(false);
+                }
               }
               className="
                 mt-3
@@ -560,6 +609,7 @@ export default function GuildAuthUI() {
           <div>
 
             <label
+              htmlFor="auth-password"
               className="
                 text-[10px]
                 tracking-[0.3em]
@@ -570,6 +620,7 @@ export default function GuildAuthUI() {
             </label>
 
             <input
+              id="auth-password"
               type="password"
               value={password}
               required
@@ -607,6 +658,8 @@ export default function GuildAuthUI() {
 
           {/* Footer */}
           <div
+            role="status"
+            aria-live="polite"
             className="
               flex
               flex-col
@@ -619,28 +672,6 @@ export default function GuildAuthUI() {
               md:justify-between
             "
           >
-
-            <button
-              type="button"
-              onClick={() =>
-                setIsLogin(
-                  !isLogin
-                )
-              }
-              className="
-                text-left
-                text-[10px]
-                tracking-[0.16em]
-                text-[#6a4b32]
-                transition
-                hover:opacity-70
-                sm:tracking-[0.25em]
-              "
-            >
-              {isLogin
-                ? "REGISTER"
-                : "ALREADY REGISTERED?"}
-            </button>
 
             <button
               type="submit"
@@ -669,9 +700,28 @@ export default function GuildAuthUI() {
                 ? "PROCESSING..."
                 : isLogin
                 ? "ENTER GUILD"
-                : "REGISTER"}
+                : "CREATE ACCOUNT"}
             </button>
 
+          </div>
+
+          <div className="border-t border-black/10 pt-5">
+            <p className="mb-3 text-[10px] tracking-[0.16em] text-[#6a4b32] sm:tracking-[0.25em]">
+              {isLogin
+                ? "NEW TO THE GUILD?"
+                : "ALREADY HAVE AN ACCOUNT?"}
+            </p>
+            <button
+              type="button"
+              onClick={() =>
+                switchMode(!isLogin)
+              }
+              className="min-h-12 w-full border-2 border-[#6d4c1c] px-5 py-3 text-center text-[10px] font-black tracking-[0.16em] text-[#6a4b32] transition hover:bg-[#6d4c1c] hover:text-[#e8d8b4] sm:tracking-[0.25em]"
+            >
+              {isLogin
+                ? "CREATE ADVENTURER ACCOUNT"
+                : "CONTINUE LOGIN"}
+            </button>
           </div>
 
         </form>
