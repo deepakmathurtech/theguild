@@ -27,6 +27,7 @@ import {
   loginWithEmail,
   logoutFromGuild,
   registerWithEmail,
+  sendGuildPasswordReset,
 } from "@/lib/authService";
 
 import {
@@ -113,6 +114,10 @@ type GuildContextType = {
     password: string
   ) => Promise<User>;
 
+  resetPassword: (
+    email: string
+  ) => Promise<void>;
+
   logout: () => Promise<void>;
 };
 
@@ -144,6 +149,8 @@ const GuildAuthContext =
     },
 
     checkEmailExists: async () => false,
+
+    resetPassword: async () => {},
 
     logout: async () => {},
   });
@@ -213,6 +220,14 @@ export function GuildAuthProvider({
       name,
       email,
       password
+    );
+  }
+
+  async function resetPassword(
+    email: string
+  ) {
+    return sendGuildPasswordReset(
+      email
     );
   }
 
@@ -419,6 +434,8 @@ export function GuildAuthProvider({
         checkEmailExists,
 
         register,
+
+        resetPassword,
 
         logout,
       }}

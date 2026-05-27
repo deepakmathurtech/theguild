@@ -16,6 +16,9 @@
 - Strengthened the mobile-visible auth actions and added a direct account-creation path after an unsuccessful login while preserving the email field.
 - Added canonical railway city-code configuration in `content/cities.json`, with registration selecting from the managed list.
 - Added admin adventurer filters for pending/approved review state and city.
+- Upgraded admin and tech operations with shared attention queues for verification, submitted reports, and undecided applicants.
+- Added admin record/quest search, tech quest search and location filtering, priority ordering, workload counters, and refresh visibility.
+- Added forgot-password support through the auth service with email validation, loading feedback, and reset-link success/error states.
 
 ## Migration Notes
 
@@ -39,6 +42,9 @@
 - Confirm mobile navigation opens and includes Logout inside the authenticated menu.
 - Confirm a city can only be selected from `content/cities.json` and the matching railway code is displayed read-only.
 - Confirm the admin adventurer list filters by pending/approved status and by city.
+- Confirm admin quest queues can isolate verification, report, and applicant work and surface attention badges.
+- Confirm tech quest queues search and filter by location, with waiting items sorted above quiet quests.
+- Confirm login shows "Forgot password?", validates email before sending, and reports reset-link feedback.
 
 ## Rollback Notes
 

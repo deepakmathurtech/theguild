@@ -12,6 +12,15 @@ import {
 
 import { db } from "@/lib/firebase";
 import {
+  pendingApplicantCount,
+  pendingReportCount,
+  prioritySort,
+  questMatchesFilter,
+  questMatchesSearch,
+  questQueueStats,
+  type QuestQueueFilter,
+} from "@/lib/operationsQueue";
+import {
   rejectQuestReport,
   verifyQuestReportAndUpdateProfile,
 } from "@/lib/questCompletion";
@@ -80,6 +89,16 @@ export default function TechDashboard() {
     );
   const [reportReputation, setReportReputation] =
     useState<Record<string, string>>({});
+  const [questQueueFilter, setQuestQueueFilter] =
+    useState<QuestQueueFilter>(
+      "attention"
+    );
+  const [questSearch, setQuestSearch] =
+    useState("");
+  const [locationFilter, setLocationFilter] =
+    useState("all");
+  const [refreshedAt, setRefreshedAt] =
+    useState<Date | null>(null);
 
   async function loadTechData() {
     setLoading(true);
@@ -110,6 +129,7 @@ export default function TechDashboard() {
               "event"
         )
       );
+      setRefreshedAt(new Date());
     } catch (error) {
       console.log(error);
       setMessage(
@@ -131,6 +151,8 @@ export default function TechDashboard() {
   }, []);
 
   const stats = useMemo(() => {
+    const queue = questQueueStats(quests);
+
     return {
       total: quests.length,
       open: quests.filter(
@@ -138,21 +160,6 @@ export default function TechDashboard() {
           String(
             quest.status || ""
           ).toLowerCase() === "open"
-      ).length,
-      closed: quests.filter(
-        (quest) =>
-          String(
-            quest.status || ""
-          ).toLowerCase() === "closed"
-      ).length,
-      applied: quests.reduce(
-        (total, quest) =>
-          total +
-          (quest.applicants?.length || 0),
-        0
-      ),
-      featured: quests.filter(
-        (quest) => quest.featured
       ).length,
       accepted: quests.reduce(
         (total, quest) =>
@@ -163,8 +170,53 @@ export default function TechDashboard() {
             0),
         0
       ),
+      queue,
     };
   }, [quests]);
+
+  const locations = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          quests
+            .map((quest) =>
+              String(
+                quest.location || ""
+              ).trim()
+            )
+            .filter(Boolean)
+        )
+      ).sort((first, second) =>
+        first.localeCompare(second)
+      ),
+    [quests]
+  );
+
+  const visibleQuests = useMemo(
+    () =>
+      prioritySort(
+        quests.filter(
+          (quest) =>
+            questMatchesFilter(
+              quest,
+              questQueueFilter
+            ) &&
+            questMatchesSearch(
+              quest,
+              questSearch
+            ) &&
+            (locationFilter === "all" ||
+              quest.location ===
+                locationFilter)
+        )
+      ),
+    [
+      locationFilter,
+      quests,
+      questQueueFilter,
+      questSearch,
+    ]
+  );
 
   async function updateQuest(
     id: string,
@@ -331,7 +383,7 @@ export default function TechDashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <ConsoleStat
           label="TOTAL"
           value={String(stats.total)}
@@ -341,20 +393,30 @@ export default function TechDashboard() {
           value={String(stats.open)}
         />
         <ConsoleStat
-          label="CLOSED"
-          value={String(stats.closed)}
+          label="NEEDS ATTENTION"
+          value={String(
+            stats.queue.attention
+          )}
         />
         <ConsoleStat
-          label="APPLICATIONS"
-          value={String(stats.applied)}
+          label="TO VERIFY"
+          value={String(
+            stats.queue.verification
+          )}
+        />
+        <ConsoleStat
+          label="REPORTS WAITING"
+          value={String(stats.queue.reports)}
+        />
+        <ConsoleStat
+          label="APPLICANTS WAITING"
+          value={String(
+            stats.queue.applicants
+          )}
         />
         <ConsoleStat
           label="ACCEPTED"
           value={String(stats.accepted)}
-        />
-        <ConsoleStat
-          label="FEATURED"
-          value={String(stats.featured)}
         />
       </div>
 
@@ -383,13 +445,120 @@ export default function TechDashboard() {
           </button>
         </div>
 
+        <div className="mt-6 grid gap-3 border border-white/10 bg-black/20 p-4 sm:grid-cols-2 xl:grid-cols-[1.25fr_1fr_1fr_auto] xl:items-end">
+          <div>
+            <label htmlFor="tech-quest-search" className="mb-2 block text-[10px] tracking-[0.24em] text-yellow-700">
+              SEARCH QUESTS
+            </label>
+            <input
+              id="tech-quest-search"
+              type="search"
+              value={questSearch}
+              onChange={(event) =>
+                setQuestSearch(
+                  event.target.value
+                )
+              }
+              placeholder="Title, type, location, status"
+              className="min-h-12 w-full border border-white/10 bg-black px-4 py-3 text-sm text-zinc-200 outline-none placeholder:text-zinc-600"
+            />
+          </div>
+          <div>
+            <label htmlFor="tech-queue-filter" className="mb-2 block text-[10px] tracking-[0.24em] text-yellow-700">
+              WORK QUEUE
+            </label>
+            <select
+              id="tech-queue-filter"
+              value={questQueueFilter}
+              onChange={(event) =>
+                setQuestQueueFilter(
+                  event.target
+                    .value as QuestQueueFilter
+                )
+              }
+              className="min-h-12 w-full border border-white/10 bg-black px-4 py-3 text-sm text-zinc-200"
+            >
+              <option value="attention">
+                Needs attention
+              </option>
+              <option value="verification">
+                Awaiting verification
+              </option>
+              <option value="reports">
+                Reports to review
+              </option>
+              <option value="applicants">
+                Applicants to decide
+              </option>
+              <option value="open">
+                Open quests
+              </option>
+              <option value="closed">
+                Closed quests
+              </option>
+              <option value="all">
+                All quests
+              </option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="tech-location-filter" className="mb-2 block text-[10px] tracking-[0.24em] text-yellow-700">
+              LOCATION
+            </label>
+            <select
+              id="tech-location-filter"
+              value={locationFilter}
+              onChange={(event) =>
+                setLocationFilter(
+                  event.target.value
+                )
+              }
+              className="min-h-12 w-full border border-white/10 bg-black px-4 py-3 text-sm text-zinc-200"
+            >
+              <option value="all">
+                All locations
+              </option>
+              {locations.map((location) => (
+                <option
+                  key={location}
+                  value={location}
+                >
+                  {location}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="pb-3 text-[10px] tracking-[0.2em] text-zinc-500">
+            <p>
+              {visibleQuests.length} QUESTS
+            </p>
+            {refreshedAt && (
+              <p className="mt-2">
+                UPDATED{" "}
+                {refreshedAt.toLocaleTimeString(
+                  [],
+                  {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }
+                )}
+              </p>
+            )}
+          </div>
+        </div>
+
         {loading ? (
           <p className="mt-8 text-[10px] tracking-[0.4em] text-yellow-500">
             LOADING QUESTS...
           </p>
         ) : (
           <div className="mt-6 grid gap-4">
-            {quests.map((quest) => (
+            {!visibleQuests.length && (
+              <p className="border border-white/10 bg-black/25 p-5 text-sm text-zinc-400">
+                No quests match this work queue.
+              </p>
+            )}
+            {visibleQuests.map((quest) => (
               <article
                 key={quest.id}
                 className="grid gap-4 border border-white/10 bg-black/25 p-4 sm:p-5 xl:grid-cols-[1fr_auto]"
@@ -427,6 +596,28 @@ export default function TechDashboard() {
                       ? "FEATURED"
                       : "STANDARD"}
                   </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {!quest.verified && (
+                      <AttentionBadge label="VERIFY QUEST" />
+                    )}
+                    {pendingReportCount(quest) >
+                      0 && (
+                      <AttentionBadge
+                        label={`${pendingReportCount(
+                          quest
+                        )} REPORTS`}
+                      />
+                    )}
+                    {pendingApplicantCount(
+                      quest
+                    ) > 0 && (
+                      <AttentionBadge
+                        label={`${pendingApplicantCount(
+                          quest
+                        )} APPLICANTS`}
+                      />
+                    )}
+                  </div>
                   {Array.isArray(quest.reports) &&
                     quest.reports.length >
                       0 && (
@@ -960,5 +1151,17 @@ function ConsoleStat({
         {value}
       </p>
     </div>
+  );
+}
+
+function AttentionBadge({
+  label,
+}: {
+  label: string;
+}) {
+  return (
+    <span className="border border-yellow-700/40 bg-yellow-500/10 px-2 py-1 text-[9px] tracking-[0.18em] text-yellow-300">
+      {label}
+    </span>
   );
 }

@@ -3,6 +3,7 @@
 import {
   createUserWithEmailAndPassword,
   fetchSignInMethodsForEmail,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
@@ -53,6 +54,15 @@ export async function registerWithEmail(
   });
 
   return result.user;
+}
+
+export async function sendGuildPasswordReset(
+  email: string
+) {
+  await sendPasswordResetEmail(
+    auth,
+    email.trim()
+  );
 }
 
 export async function logoutFromGuild() {

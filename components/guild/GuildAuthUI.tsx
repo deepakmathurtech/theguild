@@ -40,10 +40,15 @@ export default function GuildAuthUI() {
   const {
     login,
     register,
+    resetPassword,
   } = useGuildAuth();
 
   const [processing, setProcessing] =
     useState(false);
+  const [
+    resetProcessing,
+    setResetProcessing,
+  ] = useState(false);
 
   function revealAuthForm() {
     window.requestAnimationFrame(() => {
@@ -290,6 +295,71 @@ export default function GuildAuthUI() {
     }
   }
 
+  async function handlePasswordReset() {
+    const normalizedEmail =
+      email.trim();
+
+    setError("");
+    setSuccess("");
+    setSuggestRegistration(false);
+
+    if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+        normalizedEmail
+      )
+    ) {
+      setError(
+        "Enter your account email first, then request a password reset."
+      );
+      return;
+    }
+
+    try {
+      setResetProcessing(true);
+
+      await resetPassword(normalizedEmail);
+
+      setSuccess(
+        "Password reset link sent. Check your email and return here to login."
+      );
+    } catch (error: any) {
+      console.log(
+        "PASSWORD RESET ERROR:",
+        error
+      );
+
+      switch (error?.code) {
+        case "auth/invalid-email":
+          setError(
+            "Enter a valid email address."
+          );
+          break;
+
+        case "auth/user-not-found":
+          setIsLogin(false);
+          revealAuthForm();
+          setError(
+            "No account found. Create your Adventurer profile."
+          );
+          break;
+
+        case "auth/network-request-failed":
+          setError(
+            "Network connection failed."
+          );
+          break;
+
+        default:
+          setError(
+            error?.message ||
+              "Unable to send password reset email."
+          );
+      }
+    } finally {
+      setResetProcessing(false);
+    }
+  }
+
   return (
     <main
       className="
@@ -449,6 +519,7 @@ export default function GuildAuthUI() {
         {error && (
 
           <div
+            role="alert"
             className="
               relative
               z-10
@@ -482,7 +553,8 @@ export default function GuildAuthUI() {
         {success && (
 
           <div
-            role="alert"
+            role="status"
+            aria-live="polite"
             className="
               relative
               z-10
@@ -653,6 +725,22 @@ export default function GuildAuthUI() {
             >
               Minimum 6 characters.
             </p>
+
+            {isLogin && (
+              <button
+                type="button"
+                onClick={handlePasswordReset}
+                disabled={
+                  processing ||
+                  resetProcessing
+                }
+                className="mt-3 text-left text-[10px] font-black tracking-[0.18em] text-[#6a4b32] underline decoration-black/20 underline-offset-4 transition hover:text-[#24160d] disabled:opacity-60 sm:tracking-[0.25em]"
+              >
+                {resetProcessing
+                  ? "SENDING RESET LINK..."
+                  : "FORGOT PASSWORD?"}
+              </button>
+            )}
 
           </div>
 

@@ -6,12 +6,12 @@ const routes = [
   "",
   "/about",
   "/quests",
-  "/login",
-  "/register",
-  "/terms",
-  "/privacy",
+  "/rankings",
+  "/technical",
   "/faq",
   "/guidelines",
+  "/privacy",
+  "/terms",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -19,9 +19,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     url: `${siteUrl}${route}`,
     lastModified: new Date(),
     changeFrequency:
-      route === "/quests"
+      route === "/quests" ||
+      route === "/rankings"
         ? "daily"
         : "weekly",
-    priority: route === "" ? 1 : 0.7,
+    priority:
+      route === ""
+        ? 1
+        : route === "/quests" ||
+            route === "/rankings"
+          ? 0.8
+          : 0.7,
   }));
 }

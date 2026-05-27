@@ -12,6 +12,15 @@ import {
 
 import { db } from "@/lib/firebase";
 import type { GuildRole } from "@/lib/guildAccess";
+import {
+  pendingApplicantCount,
+  pendingReportCount,
+  prioritySort,
+  questMatchesFilter,
+  questMatchesSearch,
+  questQueueStats,
+  type QuestQueueFilter,
+} from "@/lib/operationsQueue";
 import { upsertPublicAdventurerProfile } from "@/lib/publicAdventurerProfile";
 import {
   rejectQuestReport,
@@ -132,6 +141,18 @@ export default function AdminDashboard() {
     adventurerCityFilter,
     setAdventurerCityFilter,
   ] = useState("all");
+  const [
+    adventurerSearch,
+    setAdventurerSearch,
+  ] = useState("");
+  const [questQueueFilter, setQuestQueueFilter] =
+    useState<QuestQueueFilter>(
+      "attention"
+    );
+  const [questSearch, setQuestSearch] =
+    useState("");
+  const [refreshedAt, setRefreshedAt] =
+    useState<Date | null>(null);
 
   async function loadAdminData() {
     setLoading(true);
@@ -173,6 +194,7 @@ export default function AdminDashboard() {
       setAnnouncements(
         loadedAnnouncements
       );
+      setRefreshedAt(new Date());
     } catch (error) {
       console.log(error);
       setMessage(
@@ -194,6 +216,8 @@ export default function AdminDashboard() {
   }, []);
 
   const stats = useMemo(() => {
+    const queue = questQueueStats(quests);
+
     return {
       pendingAdventurers:
         adventurers.filter(
@@ -205,21 +229,12 @@ export default function AdminDashboard() {
           (adventurer) =>
             adventurer.approved
         ).length,
-      openQuests: quests.filter(
-        (quest) =>
-          String(
-            quest.status || ""
-          ).toLowerCase() === "open"
-      ).length,
-      featuredQuests:
-        quests.filter(
-          (quest) => quest.featured
-        ).length,
       liveAnnouncements:
         announcements.filter(
           (announcement) =>
             announcement.active
         ).length,
+      queue,
     };
   }, [
     adventurers,
@@ -263,9 +278,28 @@ export default function AdminDashboard() {
               "all" ||
             adventurer.cityName ===
               adventurerCityFilter;
+          const query =
+            adventurerSearch
+              .trim()
+              .toLowerCase();
+          const matchesSearch =
+            !query ||
+            [
+              adventurer.name,
+              adventurer.email,
+              adventurer.adventurerId,
+              adventurer.specialization,
+              adventurer.cityName,
+            ].some((value) =>
+              String(value || "")
+                .toLowerCase()
+                .includes(query)
+            );
 
           return (
-            matchesReview && matchesCity
+            matchesReview &&
+            matchesCity &&
+            matchesSearch
           );
         }
       ),
@@ -273,6 +307,29 @@ export default function AdminDashboard() {
       adventurers,
       adventurerCityFilter,
       adventurerReviewFilter,
+      adventurerSearch,
+    ]
+  );
+
+  const visibleQuests = useMemo(
+    () =>
+      prioritySort(
+        quests.filter(
+          (quest) =>
+            questMatchesFilter(
+              quest,
+              questQueueFilter
+            ) &&
+            questMatchesSearch(
+              quest,
+              questSearch
+            )
+        )
+      ),
+    [
+      quests,
+      questQueueFilter,
+      questSearch,
     ]
   );
 
@@ -471,7 +528,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="PENDING"
           value={String(
@@ -485,13 +542,25 @@ export default function AdminDashboard() {
           )}
         />
         <StatCard
-          label="OPEN QUESTS"
-          value={String(stats.openQuests)}
+          label="NEEDS ATTENTION"
+          value={String(stats.queue.attention)}
         />
         <StatCard
-          label="FEATURED"
+          label="QUEST VERIFICATION"
           value={String(
-            stats.featuredQuests
+            stats.queue.verification
+          )}
+        />
+        <StatCard
+          label="REPORTS WAITING"
+          value={String(
+            stats.queue.reports
+          )}
+        />
+        <StatCard
+          label="APPLICANTS WAITING"
+          value={String(
+            stats.queue.applicants
           )}
         />
         <StatCard
@@ -533,12 +602,30 @@ export default function AdminDashboard() {
               </button>
             </div>
 
-            <div className="mt-6 grid gap-3 border border-white/10 bg-black/20 p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+            <div className="mt-6 grid gap-3 border border-white/10 bg-black/20 p-4 sm:grid-cols-2 xl:grid-cols-[1.3fr_1fr_1fr_auto] xl:items-end">
               <div>
-                <label className="mb-2 block text-[10px] tracking-[0.24em] text-yellow-700">
+                <label htmlFor="admin-adventurer-search" className="mb-2 block text-[10px] tracking-[0.24em] text-yellow-700">
+                  SEARCH RECORDS
+                </label>
+                <input
+                  id="admin-adventurer-search"
+                  type="search"
+                  value={adventurerSearch}
+                  onChange={(event) =>
+                    setAdventurerSearch(
+                      event.target.value
+                    )
+                  }
+                  placeholder="Name, email, Guild ID, city"
+                  className="min-h-12 w-full border border-white/10 bg-black px-4 py-3 text-sm text-zinc-200 outline-none placeholder:text-zinc-600"
+                />
+              </div>
+              <div>
+                <label htmlFor="admin-review-filter" className="mb-2 block text-[10px] tracking-[0.24em] text-yellow-700">
                   REVIEW STATUS
                 </label>
                 <select
+                  id="admin-review-filter"
                   value={adventurerReviewFilter}
                   onChange={(event) =>
                     setAdventurerReviewFilter(
@@ -560,10 +647,11 @@ export default function AdminDashboard() {
                 </select>
               </div>
               <div>
-                <label className="mb-2 block text-[10px] tracking-[0.24em] text-yellow-700">
+                <label htmlFor="admin-city-filter" className="mb-2 block text-[10px] tracking-[0.24em] text-yellow-700">
                   CITY
                 </label>
                 <select
+                  id="admin-city-filter"
                   value={adventurerCityFilter}
                   onChange={(event) =>
                     setAdventurerCityFilter(
@@ -755,15 +843,97 @@ export default function AdminDashboard() {
           </section>
 
           <section className="border border-yellow-900/20 bg-black/35 p-4 sm:p-6 backdrop-blur-xl">
-            <p className="text-[10px] tracking-[0.45em] text-yellow-700">
-              QUEST CONTROL
-            </p>
-            <h2 className="font-cinzel mt-3 text-2xl sm:text-3xl text-yellow-400">
-              Verification, Visibility, Status
-            </h2>
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-[10px] tracking-[0.45em] text-yellow-700">
+                  QUEST CONTROL
+                </p>
+                <h2 className="font-cinzel mt-3 text-2xl sm:text-3xl text-yellow-400">
+                  Verification, Visibility, Status
+                </h2>
+              </div>
+              {refreshedAt && (
+                <p className="text-[10px] tracking-[0.2em] text-zinc-500">
+                  UPDATED{" "}
+                  {refreshedAt.toLocaleTimeString(
+                    [],
+                    {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }
+                  )}
+                </p>
+              )}
+            </div>
+
+            <div className="mt-6 grid gap-3 border border-white/10 bg-black/20 p-4 xl:grid-cols-[1.2fr_1fr_auto] xl:items-end">
+              <div>
+                <label htmlFor="admin-quest-search" className="mb-2 block text-[10px] tracking-[0.24em] text-yellow-700">
+                  SEARCH QUESTS
+                </label>
+                <input
+                  id="admin-quest-search"
+                  type="search"
+                  value={questSearch}
+                  onChange={(event) =>
+                    setQuestSearch(
+                      event.target.value
+                    )
+                  }
+                  placeholder="Title, type, location, status"
+                  className="min-h-12 w-full border border-white/10 bg-black px-4 py-3 text-sm text-zinc-200 outline-none placeholder:text-zinc-600"
+                />
+              </div>
+              <div>
+                <label htmlFor="admin-quest-queue" className="mb-2 block text-[10px] tracking-[0.24em] text-yellow-700">
+                  WORK QUEUE
+                </label>
+                <select
+                  id="admin-quest-queue"
+                  value={questQueueFilter}
+                  onChange={(event) =>
+                    setQuestQueueFilter(
+                      event.target
+                        .value as QuestQueueFilter
+                    )
+                  }
+                  className="min-h-12 w-full border border-white/10 bg-black px-4 py-3 text-sm text-zinc-200"
+                >
+                  <option value="attention">
+                    Needs attention
+                  </option>
+                  <option value="verification">
+                    Awaiting verification
+                  </option>
+                  <option value="reports">
+                    Reports to review
+                  </option>
+                  <option value="applicants">
+                    Applicants to decide
+                  </option>
+                  <option value="open">
+                    Open quests
+                  </option>
+                  <option value="closed">
+                    Closed quests
+                  </option>
+                  <option value="all">
+                    All quests
+                  </option>
+                </select>
+              </div>
+              <p className="pb-3 text-[10px] tracking-[0.22em] text-zinc-400">
+                {visibleQuests.length} QUESTS
+              </p>
+            </div>
 
             <div className="mt-6 grid gap-4">
-              {quests.map((quest) => (
+              {!visibleQuests.length && (
+                <p className="border border-white/10 bg-black/25 p-5 text-sm text-zinc-400">
+                  No quests match this work queue.
+                </p>
+              )}
+              {visibleQuests.map((quest) => (
                 <article
                   key={quest.id}
                   className="grid gap-4 border border-white/10 bg-black/25 p-4 sm:p-5 xl:grid-cols-[1fr_auto]"
@@ -801,6 +971,28 @@ export default function AdminDashboard() {
                         ? "FEATURED"
                         : "STANDARD"}
                     </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {!quest.verified && (
+                        <QueueBadge label="VERIFY QUEST" />
+                      )}
+                      {pendingReportCount(quest) >
+                        0 && (
+                        <QueueBadge
+                          label={`${pendingReportCount(
+                            quest
+                          )} REPORTS`}
+                        />
+                      )}
+                      {pendingApplicantCount(
+                        quest
+                      ) > 0 && (
+                        <QueueBadge
+                          label={`${pendingApplicantCount(
+                            quest
+                          )} APPLICANTS`}
+                        />
+                      )}
+                    </div>
                     {Array.isArray(quest.reports) &&
                       quest.reports.length >
                         0 && (
@@ -1235,5 +1427,17 @@ function StatCard({
         {value}
       </p>
     </div>
+  );
+}
+
+function QueueBadge({
+  label,
+}: {
+  label: string;
+}) {
+  return (
+    <span className="border border-yellow-700/40 bg-yellow-500/10 px-2 py-1 text-[9px] tracking-[0.18em] text-yellow-300">
+      {label}
+    </span>
   );
 }
