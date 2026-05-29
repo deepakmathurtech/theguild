@@ -949,14 +949,14 @@ export default function CreatorAssemblyClient() {
               {/* DISCORD USERNAME */}
               <div>
                 <label htmlFor="reg-discord" className="block text-[10px] tracking-[0.22em] text-zinc-500 uppercase font-black mb-2">
-                  DISCORD USERNAME
+                  Phone Number 
                 </label>
                 <input
                   id="reg-discord"
                   type="text"
                   required
                   disabled={submitting || success}
-                  placeholder="e.g. alistair#1234 or alistair_vance"
+                  placeholder="e.g. 1234567890"
                   value={discordUsername}
                   onChange={(e) => setDiscordUsername(e.target.value)}
                   className="w-full min-h-12 border border-yellow-900/30 bg-black/40 px-4 rounded-xl text-zinc-200 placeholder:text-zinc-700 outline-none focus:border-yellow-600 focus:ring-1 focus:ring-yellow-600/30 transition-all duration-300"
