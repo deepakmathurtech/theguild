@@ -105,7 +105,7 @@ export default function CreatorAssemblyClient() {
 
       // Auto-redirect to Discord invite after 2.5 seconds
       setTimeout(() => {
-        window.location.href = process.env.NEXT_PUBLIC_GUILD_DISCORD_INVITE || "https://discord.gg/thecentralguild";
+        window.location.href = process.env.NEXT_PUBLIC_GUILD_DISCORD_INVITE || "https://discord.gg/tS9Me7aFT";
       }, 2500);
 
     } catch (err: any) {
@@ -113,7 +113,7 @@ export default function CreatorAssemblyClient() {
       // Fallback redirect if Firestore write fails (e.g. firestore rules / offline)
       setError("Entering the Assembly... Redirecting to Guild Hall.");
       setTimeout(() => {
-        window.location.href = process.env.NEXT_PUBLIC_GUILD_DISCORD_INVITE || "https://discord.gg/thecentralguild";
+        window.location.href = process.env.NEXT_PUBLIC_GUILD_DISCORD_INVITE || "https://discord.gg/tS9Me7aFT";
       }, 2000);
     } finally {
       setSubmitting(false);
