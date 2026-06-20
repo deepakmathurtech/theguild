@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { fetchQuests } from '../lib/repository';
+import { fetchQuests, getMemberActionItems, type ActionItem } from '../lib/repository';
 import type { Quest } from '../types/guild';
 import { Link } from 'react-router-dom';
-import { Award, Compass, TrendingUp, CheckCircle, AlertTriangle, ArrowRight, Star, ShieldAlert } from 'lucide-react';
+import { Award, Compass, TrendingUp, CheckCircle, AlertTriangle, ArrowRight, Star, ShieldAlert, HelpCircle, BookOpen, Users, Target } from 'lucide-react';
+import ActionCenter from '../components/ActionCenter';
 
 const RANK_STEPS = ['Applicant', 'F', 'E', 'D', 'C', 'B', 'A', 'S'];
 
@@ -11,6 +12,17 @@ export default function GrowthDashboard() {
   const { profile } = useAuth();
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Generate action items for member
+  const actionItems = useMemo(() => {
+    if (!profile) return [];
+    return getMemberActionItems(profile, quests);
+  }, [profile, quests]);
+
+  // Get critical/high priority items for quick display
+  const urgentItems = useMemo(() => {
+    return actionItems.filter(i => i.priority === 'critical' || i.priority === 'high');
+  }, [actionItems]);
 
   useEffect(() => {
     async function loadData() {
@@ -80,6 +92,14 @@ export default function GrowthDashboard() {
             <strong className="text-2xl font-black text-[var(--text)] block mt-1">{profile.experiencePoints}</strong>
           </div>
         </div>
+
+        {/* Action Items Quick View */}
+        {actionItems.length > 0 && (
+          <div className="mt-4 md:mt-0">
+            <span className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] font-black block mb-2">Your Action Items</span>
+            <ActionCenter items={actionItems.slice(0, 3)} title="" maxItems={3} />
+          </div>
+        )}
       </div>
 
       {/* Row 2: Rank Progress & Profile Completion */}
@@ -111,8 +131,48 @@ export default function GrowthDashboard() {
           </div>
 
           <div className="bg-[var(--card-subtle)] border border-[var(--border)] rounded-xl p-3.5 text-xs text-[var(--text-secondary)] leading-relaxed">
-            <strong className="block text-[var(--text)] font-semibold mb-1">Rank Up Condition:</strong>
-            Claim and execute higher difficulty quests (Rank C, B, A, or S) and submit documented playbooks in the Knowledge Hub.
+            <strong className="block text-[var(--text)] font-semibold mb-1">Rank Up How:</strong>
+            Complete quests to earn reputation. Higher difficulty quests (C, B, A, S) unlock at higher ranks. Submit documented playbooks in the Knowledge Hub to claim rank bonuses.
+          </div>
+        </div>
+
+        {/* Member Understanding FAQ */}
+        <div className="panel space-y-4">
+          <h3 className="text-sm font-bold uppercase tracking-wider flex items-center gap-1.5">
+            <HelpCircle size={16} className="text-[var(--primary)]" />
+            Guild Basics
+          </h3>
+
+          <div className="space-y-3">
+            <Link to="/impact" className="block p-3 bg-[var(--card-subtle)] border border-[var(--border)] rounded-lg hover:border-[var(--primary)]/30 transition-all">
+              <div className="flex items-start gap-2.5">
+                <Target size={14} className="text-[var(--primary)] mt-0.5 flex-shrink-0" />
+                <div>
+                  <span className="text-xs font-bold text-[var(--text)] block">What is Guild?</span>
+                  <span className="text-[10px] text-[var(--text-muted)] leading-relaxed">A professional network connecting organizations with verified student and professional contractors for real-world project experience.</span>
+                </div>
+              </div>
+            </Link>
+
+            <Link to="/quests" className="block p-3 bg-[var(--card-subtle)] border border-[var(--border)] rounded-lg hover:border-[var(--primary)]/30 transition-all">
+              <div className="flex items-start gap-2.5">
+                <Compass size={14} className="text-[var(--primary)] mt-0.5 flex-shrink-0" />
+                <div>
+                  <span className="text-xs font-bold text-[var(--text)] block">How do quests help me grow?</span>
+                  <span className="text-[10px] text-[var(--text-muted)] leading-relaxed">Quests are real projects posted by organizations. Completing them earns reputation points, validates your skills, and builds your portfolio.</span>
+                </div>
+              </div>
+            </Link>
+
+            <Link to="/branches" className="block p-3 bg-[var(--card-subtle)] border border-[var(--border)] rounded-lg hover:border-[var(--primary)]/30 transition-all">
+              <div className="flex items-start gap-2.5">
+                <Users size={14} className="text-[var(--primary)] mt-0.5 flex-shrink-0" />
+                <div>
+                  <span className="text-xs font-bold text-[var(--text)] block">Where do I belong?</span>
+                  <span className="text-[10px] text-[var(--text-muted)] leading-relaxed">Your local branch ({profile.jurisdiction?.guildBranchName || 'Ludhiana'}) coordinates opportunities, verification, and community events.</span>
+                </div>
+              </div>
+            </Link>
           </div>
         </div>
 

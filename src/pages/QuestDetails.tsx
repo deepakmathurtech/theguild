@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { applyForQuest, submitQuestCompletion, nowIso, RECEPTIONISTS } from '../lib/repository';
+import { applyForQuest, submitQuestCompletion, nowIso, RECEPTIONISTS, getVerificationRequirement, meetsVerificationRequirement } from '../lib/repository';
 import type { Quest } from '../types/guild';
 import { ArrowLeft, Compass, Award, Calendar, Clock, MapPin, Check, Send, ShieldAlert, Sparkles } from 'lucide-react';
 import { PAGE_SEO } from '../components/SEO';
@@ -38,7 +38,8 @@ export default function QuestDetails() {
         const docRef = doc(db, 'quests', id);
         const snap = await getDoc(docRef);
         if (snap.exists()) {
-          setQuest({ id: snap.id, ...snap.data() } as Quest);
+          const loadedQuest = { id: snap.id, ...snap.data() } as Quest;
+          setQuest(loadedQuest);
         } else {
           setError('Quest details not found in ledger.');
         }
@@ -78,6 +79,12 @@ export default function QuestDetails() {
       navigate('/auth');
       return;
     }
+    // Check verification requirement
+    const requirement = getVerificationRequirement('joinQuest');
+    if (!meetsVerificationRequirement(profile, requirement)) {
+      setError(`Verification required: ${requirement} level needed to apply for this quest.`);
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
@@ -93,6 +100,14 @@ export default function QuestDetails() {
   const handleSubmission = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
+    // Check verification for paid quests (paymentAmount > 0)
+    if ((quest.paymentAmount || 0) > 0) {
+      const requirement = getVerificationRequirement('receivePayment');
+      if (!meetsVerificationRequirement(profile, requirement)) {
+        setError(`Payment requires full verification. Complete your verification to receive rewards.`);
+        return;
+      }
+    }
     setSubmitting(true);
     setError('');
     try {
@@ -151,10 +166,12 @@ export default function QuestDetails() {
             </div>
 
             <h1 className="text-2xl md:text-3xl font-black tracking-tight leading-tight">{quest.title}</h1>
-            
+
             <p className="text-xs text-[var(--text-muted)] flex items-center gap-2">
               <span>Posted by: <strong className="text-[var(--text-secondary)] font-bold">{quest.organizationName || 'Guild Hub'}</strong></span>
               <span>•</span>
+              {/* Debug: show user role */}
+              <span className="text-[10px] text-gray-500">Your role: {profile?.role}</span>
               <span>Status: <strong className="text-[var(--primary)] uppercase tracking-wider">{quest.status}</strong></span>
             </p>
           </div>

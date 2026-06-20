@@ -4,8 +4,8 @@ import { db } from '../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import { RECEPTIONISTS } from '../lib/repository';
-import type { Need } from '../types/guild';
-import { ArrowLeft, Clock, FileText, ChevronRight, CheckCircle, AlertCircle, Loader } from 'lucide-react';
+import type { Need, Quest, Opportunity } from '../types/guild';
+import { ArrowLeft, Clock, FileText, ChevronRight, CheckCircle, AlertCircle, Loader, ArrowDown, Briefcase, Target, Award, Circle } from 'lucide-react';
 
 const STATUS_LABELS: Record<string, { label: string; desc: string; color: string }> = {
   submitted: { label: 'Submitted', desc: 'Your need has been received', color: 'text-slate-400' },
@@ -29,6 +29,8 @@ export default function NeedDetails() {
   const { id } = useParams<{ id: string }>();
   const { profile } = useAuth();
   const [need, setNeed] = useState<Need | null>(null);
+  const [linkedQuest, setLinkedQuest] = useState<Quest | null>(null);
+  const [linkedOpportunity, setLinkedOpportunity] = useState<Opportunity | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,7 +39,24 @@ export default function NeedDetails() {
       try {
         const snap = await getDoc(doc(db, 'needs', id));
         if (snap.exists()) {
-          setNeed({ id: snap.id, ...snap.data() } as Need);
+          const needData = { id: snap.id, ...snap.data() } as Need;
+          setNeed(needData);
+
+          // Load linked quest if questId exists
+          if (needData.questId) {
+            const questSnap = await getDoc(doc(db, 'quests', needData.questId));
+            if (questSnap.exists()) {
+              setLinkedQuest({ id: questSnap.id, ...questSnap.data() } as Quest);
+            }
+          }
+
+          // Load linked opportunity if opportunityId exists
+          if (needData.opportunityId) {
+            const oppSnap = await getDoc(doc(db, 'opportunities', needData.opportunityId));
+            if (oppSnap.exists()) {
+              setLinkedOpportunity({ id: oppSnap.id, ...oppSnap.data() } as Opportunity);
+            }
+          }
         }
       } catch (err) {
         console.error(err);
@@ -99,6 +118,89 @@ export default function NeedDetails() {
           </div>
         </div>
 
+        {/* Workflow Chain */}
+        <div className="mb-8">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">Workflow Progress</h3>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+            {/* Step 1: Need */}
+            <div className={`p-3 rounded-xl border text-center ${
+              need.status !== 'submitted' && need.status !== 'underReview' && need.status !== 'accepted'
+                ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-[var(--card-subtle)] border-[var(--border)]'
+            }`}>
+              <Circle size={16} className={`mx-auto mb-1 ${
+                need.status !== 'submitted' && need.status !== 'underReview' && need.status !== 'accepted'
+                  ? 'text-emerald-400' : 'text-[var(--text-muted)]'
+              }`} />
+              <div className="text-[10px] font-bold">Need</div>
+              <div className="text-[9px] text-[var(--text-muted)]">Submitted</div>
+            </div>
+
+            {/* Arrow 1 */}
+            <div className="flex items-center justify-center">
+              <ArrowDown size={16} className="text-[var(--text-muted)]" />
+            </div>
+
+            {/* Step 2: Opportunity */}
+            <div className={`p-3 rounded-xl border text-center ${
+              (need.status === 'convertedToOpportunity' || need.status === 'questCreationInProgress' || need.status === 'inProgress' || need.status === 'completed')
+                ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-[var(--card-subtle)] border-[var(--border)]'
+            }`}>
+              <Briefcase size={16} className={`mx-auto mb-1 ${
+                (need.status === 'convertedToOpportunity' || need.status === 'questCreationInProgress' || need.status === 'inProgress' || need.status === 'completed')
+                  ? 'text-emerald-400' : 'text-[var(--text-muted)]'
+              }`} />
+              <div className="text-[10px] font-bold">Opportunity</div>
+              <div className="text-[9px] text-[var(--text-muted)]">{need.opportunityId ? 'Created' : 'Pending'}</div>
+              {need.opportunityId && (
+                <Link to={`/opportunities/${need.opportunityId}`} className="text-[9px] text-[var(--primary)] hover:underline mt-1 block">
+                  View →
+                </Link>
+              )}
+            </div>
+
+            {/* Arrow 2 */}
+            <div className="flex items-center justify-center">
+              <ArrowDown size={16} className="text-[var(--text-muted)]" />
+            </div>
+
+            {/* Step 3: Quest */}
+            <div className={`p-3 rounded-xl border text-center ${
+              (need.status === 'questCreationInProgress' || need.status === 'inProgress' || need.status === 'completed')
+                ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-[var(--card-subtle)] border-[var(--border)]'
+            }`}>
+              <Target size={16} className={`mx-auto mb-1 ${
+                (need.status === 'questCreationInProgress' || need.status === 'inProgress' || need.status === 'completed')
+                  ? 'text-emerald-400' : 'text-[var(--text-muted)]'
+              }`} />
+              <div className="text-[10px] font-bold">Quest</div>
+              <div className="text-[9px] text-[var(--text-muted)]">{need.questId ? 'Posted' : 'Pending'}</div>
+              {need.questId && (
+                <Link to={`/quests/${need.questId}`} className="text-[9px] text-[var(--primary)] hover:underline mt-1 block">
+                  View →
+                </Link>
+              )}
+            </div>
+
+            {/* Arrow 3 */}
+            <div className="flex items-center justify-center">
+              <ArrowDown size={16} className="text-[var(--text-muted)]" />
+            </div>
+
+            {/* Step 4: Outcome */}
+            <div className={`p-3 rounded-xl border text-center ${
+              need.status === 'completed'
+                ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-[var(--card-subtle)] border-[var(--border)]'
+            }`}>
+              <Award size={16} className={`mx-auto mb-1 ${
+                need.status === 'completed'
+                  ? 'text-emerald-400' : 'text-[var(--text-muted)]'
+              }`} />
+              <div className="text-[10px] font-bold">Outcome</div>
+              <div className="text-[9px] text-[var(--text-muted)]">{need.status === 'completed' ? 'Delivered' : 'Pending'}</div>
+            </div>
+          </div>
+        </div>
+
         {/* Description */}
         <div className="mb-6">
           <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2 flex items-center gap-1">
@@ -116,7 +218,7 @@ export default function NeedDetails() {
         )}
 
         {/* Meta Info */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
           <div className="p-3 rounded-lg bg-[var(--card-subtle)] border border-[var(--border)]">
             <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Category</div>
             <div className="text-sm font-bold">{need.category}</div>
@@ -125,6 +227,12 @@ export default function NeedDetails() {
             <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Timeline</div>
             <div className="text-sm font-bold">{need.timeline || 'To be discussed'}</div>
           </div>
+          {need.organizationId && (
+            <Link to={`/org/${need.organizationId}`} className="p-3 rounded-lg bg-[var(--primary)]/10 border border-[var(--primary)]/30 hover:bg-[var(--primary)]/20 transition-colors">
+              <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Organization</div>
+              <div className="text-sm font-bold text-[var(--primary)]">{need.organizationName || 'View Organization'}</div>
+            </Link>
+          )}
           {need.budgetRange && (
             <div className="p-3 rounded-lg bg-[var(--card-subtle)] border border-[var(--border)]">
               <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Budget</div>

@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, Compass, Building, User, BookOpen, X } from 'lucide-react';
 import { db } from '../lib/firebase';
-import { collection, query, getDocs, limit, where } from 'firebase/firestore';
+import { collection, query, getDocs, limit, where, or } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
+import { fetchUserDirectory, fetchOrgDirectory } from '../lib/repository';
 
 interface SearchResult {
   id: string;
@@ -46,8 +47,13 @@ export default function GlobalSearch() {
       const searchLower = term.toLowerCase();
 
       try {
-        // Query Quests
-        const questSnap = await getDocs(query(collection(db, 'quests'), limit(10)));
+        // OPTIMIZED: Use where clauses to filter on server side, then client-side match for more specific results
+        // Query Quests - filter by archiveStatus first
+        const questSnap = await getDocs(query(
+          collection(db, 'quests'),
+          where('archiveStatus', '==', 'active'),
+          limit(20)
+        ));
         questSnap.docs.forEach(doc => {
           const d = doc.data();
           if (d.title?.toLowerCase().includes(searchLower) || d.description?.toLowerCase().includes(searchLower)) {
@@ -61,38 +67,40 @@ export default function GlobalSearch() {
           }
         });
 
-        // Query Orgs
-        const orgSnap = await getDocs(query(collection(db, 'organizations'), limit(10)));
-        orgSnap.docs.forEach(doc => {
-          const d = doc.data();
-          if (d.name?.toLowerCase().includes(searchLower) || d.description?.toLowerCase().includes(searchLower)) {
+        // OPTIMIZED: Use organizationDirectory instead of full organizations collection
+        const orgDir = await fetchOrgDirectory(undefined, 20);
+        orgDir.forEach(org => {
+          if (org.name?.toLowerCase().includes(searchLower)) {
             output.push({
-              id: doc.id,
+              id: org.id,
               type: 'organization',
-              title: d.name,
-              subtitle: `Organization • ${d.category || 'General'}`,
+              title: org.name,
+              subtitle: `Organization • ${org.category || 'General'} • ${org.branchName || ''}`,
               url: `/organizations`
             });
           }
         });
 
-        // Query Users
-        const userSnap = await getDocs(query(collection(db, 'users'), limit(10)));
-        userSnap.docs.forEach(doc => {
-          const d = doc.data();
-          if (d.fullName?.toLowerCase().includes(searchLower) || d.skills?.some((s: string) => s.toLowerCase().includes(searchLower))) {
+        // OPTIMIZED: Use userDirectory instead of full users collection
+        const userDir = await fetchUserDirectory(undefined, 20);
+        userDir.forEach(user => {
+          if (user.fullName?.toLowerCase().includes(searchLower)) {
             output.push({
-              id: doc.id,
+              id: user.uid,
               type: 'profile',
-              title: d.fullName,
-              subtitle: `Member • Rank ${d.guildRank || 'Applicant'} • ${d.skills?.slice(0, 3).join(', ') || 'No skills'}`,
+              title: user.fullName,
+              subtitle: `Member • Rank ${user.guildRank || 'Applicant'} • ${user.branchName || 'No branch'}`,
               url: `/profile`
             });
           }
         });
 
-        // Query Docs / Knowledge Base
-        const kbSnap = await getDocs(query(collection(db, 'knowledgeBase'), limit(10)));
+        // Query Docs / Knowledge Base - filter by status
+        const kbSnap = await getDocs(query(
+          collection(db, 'knowledgeBase'),
+          where('status', '==', 'published'),
+          limit(20)
+        ));
         kbSnap.docs.forEach(doc => {
           const d = doc.data();
           if (d.title?.toLowerCase().includes(searchLower) || d.lessonsLearned?.toLowerCase().includes(searchLower)) {
@@ -106,10 +114,12 @@ export default function GlobalSearch() {
           }
         });
 
+        // Limit final results
+        setResults(output.slice(0, 10));
+
       } catch (err) {
         console.error('Search error:', err);
       } finally {
-        setResults(output);
         setSearching(false);
       }
     }, 400);

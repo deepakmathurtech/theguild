@@ -1,15 +1,17 @@
-export type GuildRole = 
-  | 'applicant' 
-  | 'member' 
-  | 'contributor' 
-  | 'receptionistCandidate' 
-  | 'receptionist' 
-  | 'cityGuildMaster' 
-  | 'stateGuildMaster' 
-  | 'centralGuildMaster' 
-  | 'nationalGuildMaster' 
+export type GuildRole =
+  | 'applicant'
+  | 'member'
+  | 'contributor'
+  | 'receptionistCandidate'
+  | 'receptionist'
+  | 'cityGuildMaster'
+  | 'stateGuildMaster'
+  | 'centralGuildMaster'
+  | 'nationalGuildMaster'
   | 'guildFounder'
-  | 'founder';
+  | 'founder'
+  | 'organizationRepresentative'  // For converted organization accounts
+  | 'organization';  // Alternative role for organization access
 
 export type UserStatus = 
   | 'active' 
@@ -22,7 +24,7 @@ export type UserStatus =
 
 export type VerificationStatus = 'pending' | 'verified' | 'rejected';
 export type ArchiveStatus = 'active' | 'archived';
-export type OrganizationStatus = 'new' | 'contacted' | 'active' | 'partner' | 'inactive';
+export type OrganizationStatus = 'new' | 'contacted' | 'active' | 'partner' | 'inactive' | 'verified' | 'trusted';
 export type GuildRank = 'Applicant' | 'F' | 'E' | 'D' | 'C' | 'B' | 'A' | 'S';
 export type OpportunityStatus = 'draft' | 'open' | 'matching' | 'assigned' | 'inProgress' | 'completed' | 'archived';
 export type SubmissionStatus = 'pending' | 'approved' | 'rejected';
@@ -126,6 +128,10 @@ export interface GuildUser extends AuditFields {
   proofs?: ProofOfWork[];
   certificates?: Certificate[];
   achievements?: Achievement[];
+
+  // Branch & Jurisdiction Assignment
+  branchId?: string;
+  branchName?: string;
 }
 
 export interface Organization extends AuditFields {
@@ -151,8 +157,29 @@ export interface Organization extends AuditFields {
   // Receptionist matching
   assignedReceptionistId?: string;
 
+  // Branch assignment
+  branchId?: string;
+  branchName?: string;
+
+  // Owner info for organization login
+  ownerEmail?: string;
+
   // Verification
   verificationStatus?: 'pending' | 'verified' | 'rejected';
+
+  // Visibility Controls
+  visibility?: 'public' | 'guildMembers' | 'private' | 'draft';
+
+  // Additional fields for display
+  industry?: string;
+  needsProcessed?: number;
+  opportunitiesCreated?: number;
+  questsCreated?: number;
+  outcomesDelivered?: number;
+  website?: string;
+  socialLinks?: Record<string, string>;
+  coverImage?: string;
+  logo?: string;
 }
 
 export interface InteractionRecord {
@@ -195,6 +222,11 @@ export interface Need extends AuditFields {
   assignedReceptionistId?: string;
   lastUpdatedAt?: string;
   nextAction?: string;
+  // Review fields for queue
+  reviewNotes?: string;
+  // Legacy fields for compatibility
+  budget?: string;
+  expectedOutcome?: string;
 }
 
 export interface Opportunity extends AuditFields {
@@ -351,6 +383,134 @@ export interface RevenueEvent extends AuditFields {
   date: string;
 }
 
+// ========== PAYMENT SYSTEM TYPES ==========
+
+export type PaymentMethod = 'upi' | 'bankTransfer' | 'cash' | 'cheque' | 'card' | 'gateway' | 'other';
+export type PaymentStatus = 'pending' | 'submitted' | 'underReview' | 'verified' | 'recorded' | 'rejected' | 'refunded';
+export type PaymentType = 'membership' | 'donation' | 'sponsorship' | 'serviceFee' | 'eventFee' | 'certification' | 'other';
+
+export interface UPIDetails {
+  upiTransactionId?: string;
+  utrNumber?: string;
+  paymentApp?: 'phonepe' | 'googlePay' | 'paytm' | 'bhim' | 'paytm' | 'other';
+}
+
+export interface BankTransferDetails {
+  transactionReference?: string;
+  bankName?: string;
+  transferDate?: string;
+  accountNumber?: string;
+}
+
+export interface CashDetails {
+  cashReceiptNumber?: string;
+  collectedBy?: string;
+  collectionDate?: string;
+}
+
+export interface ChequeDetails {
+  chequeNumber?: string;
+  bankName?: string;
+  chequeDate?: string;
+}
+
+export interface PaymentRecord extends AuditFields {
+  id: string;
+  // Relationships
+  revenueEventId?: string;
+  payerId?: string;
+  payerName?: string;
+  payerOrganizationId?: string;
+  receiverId?: string;
+  receiverOrganizationId?: string;
+  // Core fields
+  amount: number;
+  currency: string;
+  paymentMethod: PaymentMethod;
+  paymentType: PaymentType;
+  referenceNumber?: string;
+  status: PaymentStatus;
+  // Method-specific data (stored as JSON string in Firestore)
+  upiDetails?: UPIDetails;
+  bankTransferDetails?: BankTransferDetails;
+  cashDetails?: CashDetails;
+  chequeDetails?: ChequeDetails;
+  // Verification
+  submittedAt?: string;
+  submittedBy?: string;
+  verifiedAt?: string;
+  verifiedBy?: string;
+  rejectionReason?: string;
+  // Receipt
+  receiptId?: string;
+  // Notes & Attachments
+  notes?: string;
+  attachments?: string[];
+}
+
+export type ReceiptType = 'digital' | 'manual' | 'cash' | 'donation' | 'membership' | 'service' | 'event';
+
+export interface Receipt extends AuditFields {
+  id: string;
+  paymentId?: string;
+  receiptNumber: string;
+  receiptType: ReceiptType;
+  // Recipient
+  recipientId?: string;
+  recipientName?: string;
+  recipientEmail?: string;
+  recipientOrganizationId?: string;
+  // Amount
+  amount: number;
+  currency: string;
+  // Related entities
+  questId?: string;
+  opportunityId?: string;
+  organizationId?: string;
+  memberId?: string;
+  // Issue details
+  issuedAt?: string;
+  issuedBy?: string;
+  // Status
+  status: 'issued' | 'cancelled' | 'replaced';
+  originalReceiptId?: string;
+}
+
+export interface FinancialAuditLog extends AuditFields {
+  id: string;
+  // Action type
+  action: 'paymentCreated' | 'paymentSubmitted' | 'paymentVerified' | 'paymentRejected' | 'paymentRecorded' | 'receiptIssued' | 'receiptCancelled' | 'auditEntry';
+  // User references
+  userId?: string;
+  userName?: string;
+  // Organization
+  organizationId?: string;
+  organizationName?: string;
+  // Branch/Jurisdiction
+  jurisdictionId?: string;
+  jurisdictionName?: string;
+  // Payment reference
+  paymentId?: string;
+  receiptId?: string;
+  // Details
+  amount?: number;
+  currency?: string;
+  notes?: string;
+}
+
+export interface OutstandingPayment extends AuditFields {
+  id: string;
+  paymentType: PaymentType;
+  organizationId?: string;
+  memberId?: string;
+  amount: number;
+  currency: string;
+  dueDate?: string;
+  status: 'pendingVerification' | 'pendingCollection' | 'outstanding' | 'overdue' | 'resolved';
+  resolvedAt?: string;
+  resolutionNotes?: string;
+}
+
 export interface KnowledgeRecord extends AuditFields {
   id: string;
   title: string;
@@ -419,7 +579,11 @@ export type LedgerCollection =
   | 'transferRecords'
   | 'leaveRecords'
   | 'escalationRecords'
-  | 'disputeRecords';
+  | 'disputeRecords'
+  | 'payments'
+  | 'receipts'
+  | 'financialAuditLogs'
+  | 'outstandingPayments';
 
 export type NotificationType = 
   | "quest_assigned"

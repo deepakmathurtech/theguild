@@ -271,9 +271,9 @@ export const PAGE_SEO = {
     keywords: ['quest', 'project', 'gig']
   },
   organizations: {
-    title: 'Organizations',
-    description: 'Connect with verified organizations in your area. Browse needs and opportunities from trusted partners.',
-    keywords: ['organizations', 'companies', 'partners', 'business']
+    title: 'Organizations Directory | Guild',
+    description: 'Discover verified organizations in the Guild ecosystem. Browse trusted NGOs, businesses, and institutions driving community outcomes. Find partners, explore opportunities, and join the network.',
+    keywords: ['organizations directory', 'verified organizations', 'NGO partners', 'business network', 'community impact', 'Guild ecosystem']
   },
   orgLanding: {
     title: 'For Organizations',

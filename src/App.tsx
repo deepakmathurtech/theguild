@@ -9,7 +9,7 @@ import { useTheme } from './context/ThemeContext';
 import {
   TrendingUp, Compass, Building, Bell, User, Settings as SettingsIcon, Shield, LogOut,
   Menu, X, Sun, Moon, Award, Network, FileText, Target, ChevronRight,
-  ShieldCheck, Home as HomeIcon, BarChart3
+  ShieldCheck, Home as HomeIcon, BarChart3, ArrowLeftRight, Handshake, Users
 } from 'lucide-react';
 
 // Pages
@@ -17,11 +17,14 @@ import Home from './pages/Home';
 import Auth from './pages/Auth';
 import MemberOnboarding from './features/onboarding/MemberOnboarding';
 import OrgOnboarding from './features/onboarding/OrgOnboarding';
+import PublicOrgRegistration from './features/onboarding/PublicOrgRegistration';
 import OrgLanding from './pages/OrgLanding';
 import OrgDashboard from './pages/OrgDashboard';
 import OrgOutcomes from './pages/OrgOutcomes';
 import QuestBoard from './pages/QuestBoard';
 import QuestDetails from './pages/QuestDetails';
+import MyQuests from './pages/MyQuests';
+import QuestApplications from './pages/QuestApplications';
 import MemberProfile from './pages/MemberProfile';
 import BranchesPage from './pages/Branches';
 import Organizations from './pages/Organizations';
@@ -32,7 +35,6 @@ import Settings from './pages/Settings';
 import Impact from './pages/Impact';
 import NeedDetails from './pages/NeedDetails';
 import NeedWizard from './pages/NeedWizard';
-import SubmissionReviewQueue from './pages/SubmissionReviewQueue';
 import GrowthDashboard from './pages/GrowthDashboard';
 
 import './styles.css';
@@ -41,16 +43,37 @@ import './styles.css';
 const navItems = [
   { to: '/', label: 'Growth', icon: TrendingUp, end: true },
   { to: '/quests', label: 'Quests', icon: Compass },
-  { to: '/organizations', label: 'Orgs', icon: Building },
+  { to: '/organizations', label: 'Organizations', icon: Building },
   { to: '/branches', label: 'Network', icon: Network },
   { to: '/docs', label: 'Knowledge', icon: FileText },
   { to: '/impact', label: 'Impact', icon: Target },
+  { to: '/org-register', label: 'Partner With Us', icon: Handshake },
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
 
 const memberItems = [
   { to: '/profile', label: 'Profile', icon: User },
+  { to: '/my-quests', label: 'My Quests', icon: Compass },
   { to: '/notifications', label: 'Alerts', icon: Bell },
+  { to: '/settings', label: 'Settings', icon: SettingsIcon },
+];
+
+// Organization Representative navigation - exclusive when logged in as org rep
+const organizationItems = [
+  { to: '/org-dashboard', label: 'Dashboard', icon: HomeIcon, end: true },
+  { to: '/org-outcomes', label: 'Outcomes', icon: Award },
+  { to: '/need-submit', label: 'Post Need', icon: Target },
+  { to: '/my-needs', label: 'My Needs', icon: FileText },
+  { to: '/submission-reviews', label: 'Reviews', icon: ShieldCheck },
+  { to: '/org-team', label: 'Team', icon: Users },
+  { to: '/org-messages', label: 'Messages', icon: Bell },
+  { to: '/settings', label: 'Settings', icon: SettingsIcon },
+];
+
+// Add a link to switch to Guild OS (admin portal) - visible to receptionist+ roles
+const adminSwitchItems = [
+  { to: '/quest-applications', label: 'Quest Reviews', icon: Compass },
+  { to: '/submission-reviews', label: 'Submission Reviews', icon: ShieldCheck },
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
 
@@ -84,7 +107,35 @@ function AppShell() {
           </div>
         </div>
 
-        <nav className="flex-1 space-y-6 overflow-y-auto">
+        <nav className="flex-1 space-y-6 overflow-y-auto custom-scrollbar">
+          {/* Hide main nav for organization representatives - show ONLY org nav */}
+          {profile?.role === 'organizationRepresentative' || profile?.role === 'organization' ? (
+            <div>
+              <div className="px-4 mb-4 p-3 rounded-lg bg-[var(--primary)]/10 border border-[var(--primary)]/20">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--primary)] mb-1">Organization Mode</p>
+                <p className="text-xs text-[var(--text-secondary)]">Your organization's workspace</p>
+              </div>
+              {organizationItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.end}
+                    className={({ isActive }) => `
+                      relative flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all
+                      ${isActive
+                        ? 'bg-[var(--primary)]/20 text-[var(--primary)] ring-1 ring-[var(--primary)]/30'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--card-subtle)]/50'}
+                    `}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {item.label}
+                  </NavLink>
+                );
+              })}
+            </div>
+          ) : (
           <div>
             <p className="px-4 mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-60">
               Core
@@ -109,8 +160,10 @@ function AppShell() {
               );
             })}
           </div>
+          )}
 
-          {profile && (
+          {/* Show member/admin items only for NON-org-rep users */}
+          {profile && profile.role !== 'organizationRepresentative' && (
             <div>
               <p className="px-4 mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-60">
                 Personal
@@ -133,6 +186,16 @@ function AppShell() {
                   </NavLink>
                 );
               })}
+              {/* Show link to Guild OS admin portal for receptionist+ ( guild admin roles only ) */}
+              {['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder'].includes(profile.role) && (
+                <a
+                  href="/admin"
+                  className="relative flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-[var(--primary)] hover:bg-[var(--primary)]/10 transition-all"
+                >
+                  <ArrowLeftRight className="w-4 h-4" />
+                  Guild OS
+                </a>
+              )}
             </div>
           )}
         </nav>
@@ -146,7 +209,7 @@ function AppShell() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold truncate">{profile.fullName}</p>
-                <p className="text-[10px] text-[var(--text-muted)]">Rank {profile.guildRank}</p>
+                <p className="text-[10px] text-[var(--text-muted)]">{profile.role === 'organizationRepresentative' ? 'Organization' : profile.role && ['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder'].includes(profile.role) ? 'Admin' : `Rank ${profile.guildRank}`}</p>
               </div>
               <button
                 onClick={handleLogout}
@@ -182,35 +245,20 @@ function AppShell() {
             </button>
           </div>
 
-          <nav className="flex-1 space-y-4 overflow-y-auto pb-6">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.end}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={({ isActive }) => `
-                    flex gap-3 items-center px-4 py-3.5 rounded-2xl font-semibold text-sm transition-all
-                    ${isActive ? 'bg-[var(--primary)] text-black shadow-lg' : 'bg-[var(--card-subtle)] text-[var(--text-secondary)] border border-[var(--border)]'}
-                  `}
-                >
-                  <Icon className="w-5 h-5" />
-                  {item.label}
-                </NavLink>
-              );
-            })}
-
-            {profile && (
+          <nav className="flex-1 space-y-4 overflow-y-auto pb-6 custom-scrollbar">
+            {/* Hide main nav for organization representatives - show ONLY org nav */}
+            {profile?.role === 'organizationRepresentative' || profile?.role === 'organization' ? (
               <>
-                <div className="h-px bg-[var(--border)] my-4" />
-                {memberItems.map((item) => {
+                <div className="mb-4 p-3 rounded-lg bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-center">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--primary)]">Organization Mode</span>
+                </div>
+                {organizationItems.map((item) => {
                   const Icon = item.icon;
                   return (
                     <NavLink
                       key={item.to}
                       to={item.to}
+                      end={item.end}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={({ isActive }) => `
                         flex gap-3 items-center px-4 py-3.5 rounded-2xl font-semibold text-sm transition-all
@@ -223,7 +271,64 @@ function AppShell() {
                   );
                 })}
               </>
-            )}
+            ) : (
+            <>
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.end}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={({ isActive }) => `
+                      flex gap-3 items-center px-4 py-3.5 rounded-2xl font-semibold text-sm transition-all
+                      ${isActive ? 'bg-[var(--primary)] text-black shadow-lg' : 'bg-[var(--card-subtle)] text-[var(--text-secondary)] border border-[var(--border)]'}
+                    `}
+                  >
+                    <Icon className="w-5 h-5" />
+                    {item.label}
+                  </NavLink>
+                );
+              })}
+
+              {/* Show member/admin items only for NON-org-rep users */}
+              {profile && profile.role as string !== 'organizationRepresentative' && (
+                <>
+                  <div className="h-px bg-[var(--border)] my-4" />
+                  {memberItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={({ isActive }) => `
+                          flex gap-3 items-center px-4 py-3.5 rounded-2xl font-semibold text-sm transition-all
+                          ${isActive ? 'bg-[var(--primary)] text-black shadow-lg' : 'bg-[var(--card-subtle)] text-[var(--text-secondary)] border border-[var(--border)]'}
+                        `}
+                      >
+                        <Icon className="w-5 h-5" />
+                        {item.label}
+                      </NavLink>
+                    );
+                  })}
+                  {/* Show link to Guild OS admin portal for receptionist+ */}
+                  {['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder'].includes(profile.role) && (
+                    <a
+                      href="/admin"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex gap-3 items-center px-4 py-3.5 rounded-2xl font-semibold text-sm bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/30"
+                    >
+                      <ArrowLeftRight className="w-5 h-5" />
+                      Guild OS
+                    </a>
+                  )}
+                </>
+              )}
+            </>
+          )}
+
           </nav>
 
           <button
@@ -318,7 +423,7 @@ function AppShell() {
 }
 
 // Role check types
-type RequiredRole = 'applicant' | 'member' | 'receptionist' | 'cityGuildMaster' | 'stateGuildMaster' | 'centralGuildMaster' | 'guildFounder' | 'organizationRepresentative';
+type RequiredRole = 'applicant' | 'member' | 'receptionist' | 'cityGuildMaster' | 'stateGuildMaster' | 'centralGuildMaster' | 'guildFounder' | 'founder' | 'organizationRepresentative' | 'organization';
 
 // Protected Route Guard
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -335,7 +440,7 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Role-based Route Guard
+// Role-based Route Guard - ONLY checks actual role (One Account, One Active Role)
 function RoleRoute({ children, requiredRole }: { children: React.ReactNode; requiredRole: RequiredRole[] }) {
   const { firebaseUser, profile, loading } = useAuth();
 
@@ -351,17 +456,50 @@ function RoleRoute({ children, requiredRole }: { children: React.ReactNode; requ
     return <Navigate to="/onboarding" replace />;
   }
 
-  const userRole = profile.preferredRole || profile.role;
+  // PHASE 1 FIX: Only use actual role - no preferredRole dual access
+  const userRole = profile.role;
   const hasAccess = requiredRole.some(role => {
-    if (role === 'organizationRepresentative') return userRole === 'Organization Representative';
-    return userRole === role || profile.role === role;
+    // Handle organizationRepresentative as a converted role check
+    if (role === 'organizationRepresentative') {
+      // User must have converted TO organization representative role
+      return userRole === 'organizationRepresentative';
+    }
+    // Otherwise check against actual guild role
+    return userRole === role;
   });
 
   if (!hasAccess) {
+    // Generate redirect URL based on whether onboarding is completed
+    const redirectPath = !profile.onboardingCompleted ? '/onboarding' : '/';
+    const roleDisplay = profile.role || 'Member';
+
+    // Build context-specific guidance based on required role strings (case-insensitive)
+    let guidance = 'Return to your dashboard to continue.';
+    const requiredRoleStr = requiredRole.join(' ').toLowerCase();
+    const currentRole = roleDisplay.toLowerCase();
+    if (requiredRoleStr.includes('organizationrepresentative') && currentRole === 'member') {
+      guidance = 'Organization Representative access requires account conversion. Visit /org-landing to start the conversion process.';
+    } else if (requiredRoleStr.includes('receptionist') && currentRole === 'member') {
+      guidance = 'Receptionist access requires verification. Contact your local branch for receptionist certification.';
+    } else if (requiredRoleStr.includes('cityguildmaster') && currentRole === 'receptionist') {
+      guidance = 'City Guild Master role required. Progress through the Guild ranks to qualify.';
+    }
+
     return (
-      <div className="p-12 text-center">
-        <h2 className="text-xl font-bold text-red-500">Access Denied</h2>
-        <p className="text-xs text-[var(--text-muted)] mt-2">You don't have permission to view this page.</p>
+      <div className="p-12 text-center max-w-md mx-auto">
+        <h2 className="text-xl font-bold text-[var(--text)]">Restricted Access</h2>
+        <p className="text-xs text-[var(--text-muted)] mt-3">
+          This page requires: <span className="text-[var(--primary)] font-bold">{requiredRole.join(' or ')}</span>
+        </p>
+        <p className="text-xs text-[var(--text-secondary)] mt-2 leading-relaxed">
+          Your current access level: <span className="text-[var(--text)] font-semibold">{roleDisplay}</span>
+        </p>
+        <p className="text-xs text-[var(--text-muted)] mt-3">
+          {guidance}
+        </p>
+        <a href={redirectPath} className="inline-block mt-4 primary px-4 py-2 rounded-xl text-xs font-bold">
+          Continue
+        </a>
       </div>
     );
   }
@@ -402,16 +540,26 @@ const routerConfig = createBrowserRouter([
       },
       { path: '/auth', element: <Auth /> },
       { path: '/onboarding', element: <PrivateRoute><MemberOnboarding /></PrivateRoute> },
-      // Public quests (visible to all logged in users)
-      { path: '/quests', element: <PrivateRoute><QuestBoard /></PrivateRoute> },
-      { path: '/quests/:id', element: <PrivateRoute><QuestDetails /></PrivateRoute> },
-      // Organizations (visible to all logged in users)
-      { path: '/organizations', element: <PrivateRoute><Organizations /></PrivateRoute> },
+      // Public quests (visible to all users - guests can browse, members can apply)
+      { path: '/quests', element: <QuestBoard /> },
+      { path: '/quests/:id', element: <QuestDetails /> },
+      // User quest management (requires login)
+      { path: '/my-quests', element: <PrivateRoute><MyQuests /></PrivateRoute> },
+      // Receptionist quest management
+      { path: '/quest-applications', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><QuestApplications /></RoleRoute> },
+      // Organizations - Public directory (visible to everyone without login)
+      { path: '/organizations', element: <Organizations /> },
+      { path: '/org/:id', element: <Organizations /> },  // Public org profile
       { path: '/org-landing', element: <OrgLanding /> },
+      { path: '/org-register', element: <PublicOrgRegistration /> },
       // Organization Representative only
-      { path: '/org-onboarding', element: <RoleRoute requiredRole={['organizationRepresentative']}><OrgOnboarding /></RoleRoute> },
-      { path: '/org-dashboard', element: <RoleRoute requiredRole={['organizationRepresentative']}><OrgDashboard /></RoleRoute> },
-      { path: '/org-outcomes', element: <RoleRoute requiredRole={['organizationRepresentative']}><OrgOutcomes /></RoleRoute> },
+      { path: '/org-onboarding', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgOnboarding /></RoleRoute> },
+      { path: '/org-dashboard', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgDashboard /></RoleRoute> },
+      { path: '/org-outcomes', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgOutcomes /></RoleRoute> },
+      // Organization workspace routes
+      { path: '/my-needs', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedWizard organizationId="" organizationName="" /></RoleRoute> },
+      { path: '/org-team', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgDashboard /></RoleRoute> },
+      { path: '/org-messages', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NotificationCenter /></RoleRoute> },
       // Network/Branches visible to all
       { path: '/branches', element: <PrivateRoute><BranchesPage /></PrivateRoute> },
       // Legacy route for backward compatibility
@@ -422,24 +570,29 @@ const routerConfig = createBrowserRouter([
       { path: '/impact', element: <Impact /> },
       // Profile (private, all members)
       { path: '/profile', element: <PrivateRoute><MemberProfile /></PrivateRoute> },
-      // Verification Center - Receptionist+ only
-      { path: '/verification', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder']}><VerificationCenter /></RoleRoute> },
+      // Verification Center - redirect to Guild OS (admin portal)
+      { path: '/verification', element: <Navigate to="/admin" replace /> },
       // Notifications
       { path: '/notifications', element: <PrivateRoute><NotificationCenter /></PrivateRoute> },
       // Settings
       { path: '/settings', element: <PrivateRoute><Settings /></PrivateRoute> },
       // Needs - Organization Representative only
-      { path: '/needs/:id', element: <RoleRoute requiredRole={['organizationRepresentative']}><NeedDetails /></RoleRoute> },
-      { path: '/need-submit', element: <RoleRoute requiredRole={['organizationRepresentative']}><NeedWizard organizationId="" organizationName="" /></RoleRoute> },
-      // Submission Reviews - Receptionist+ only
-      { path: '/submission-reviews', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder']}><SubmissionReviewQueue /></RoleRoute> }
+      { path: '/needs/:id', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedDetails /></RoleRoute> },
+      { path: '/need-submit', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedWizard organizationId="" organizationName="" /></RoleRoute> },
+      // Submission Reviews - redirect to Guild OS (admin portal)
+      { path: '/submission-reviews', element: <Navigate to="/admin/submissions" replace /> },
+      // Organization Management - redirect to Guild OS (admin portal)
+      { path: '/org-management', element: <Navigate to="/admin/organizations" replace /> },
+      // Need Review Queue - redirect to Guild OS (admin portal)
+      { path: '/need-reviews', element: <Navigate to="/admin/needs" replace /> }
     ]
   }
 ]);
 
 function OrgDashboardOrGrowthDashboard() {
   const { profile } = useAuth();
-  if (profile?.preferredRole === 'Organization Representative') {
+  // PHASE 1 FIX: Use only actual role - no preferredRole
+  if (profile?.role === 'organizationRepresentative' || profile?.role === 'organization') {
     return <OrgDashboard />;
   }
   // Default is Member Growth Dashboard

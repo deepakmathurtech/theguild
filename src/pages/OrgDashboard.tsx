@@ -1,12 +1,16 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { fetchQuests, fetchOrganizationNeeds, fetchOrganizationActivities, RECEPTIONISTS } from '../lib/repository';
+import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { fetchQuests, fetchOrganizationNeeds, fetchOrganizationActivities, fetchBranches, RECEPTIONISTS, getOrganizationActionItems, type ActionItem } from '../lib/repository';
 import type { Organization, Quest, Need, OrganizationActivity } from '../types/guild';
 import { Link } from 'react-router-dom';
-import { Building, Award, ShieldCheck, Mail, Phone, ExternalLink, Calendar, HelpCircle, ArrowRight, Activity, Plus, FileText, CheckCircle, Clock, AlertCircle, Send } from 'lucide-react';
+import { Building, Award, ShieldCheck, Mail, Phone, ExternalLink, Calendar, HelpCircle, ArrowRight, Activity, Plus, FileText, CheckCircle, Clock, AlertCircle, Send, Check, Edit2, X, Globe, Users, TrendingUp, Target, DollarSign, Handshake, BarChart3 } from 'lucide-react';
 import EmptyState from '../components/EmptyState';
+import ActionCenter from '../components/ActionCenter';
+
+const CATEGORIES = ['Business', 'NGO', 'College', 'School', 'Community', 'Government Related', 'Individual Initiative'] as const;
+const VISIBILITY_OPTIONS = ['public', 'guildMembers', 'private', 'draft'] as const;
 
 export default function OrgDashboard() {
   const { profile } = useAuth();
@@ -14,13 +18,30 @@ export default function OrgDashboard() {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [needs, setNeeds] = useState<Need[]>([]);
   const [activities, setActivities] = useState<OrganizationActivity[]>([]);
+  const [branches, setBranches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Edit mode states
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    description: '',
+    website: '',
+    phone: '',
+    email: '',
+    address: '',
+    category: '',
+    visibility: 'public' as 'public' | 'guildMembers' | 'private' | 'draft'
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [saveSuccess, setSaveSuccess] = useState('');
 
   useEffect(() => {
     async function loadData() {
       if (!profile) return;
       try {
-        // Query Organization owned by user
+        // Query Organization owned by user - accept both null archiveStatus (legacy) and 'active'
         const orgQuery = query(collection(db, 'organizations'), where('ownerId', '==', profile.uid));
         const orgSnap = await getDocs(orgQuery);
         if (!orgSnap.empty) {
@@ -39,6 +60,10 @@ export default function OrgDashboard() {
           // Fetch activities
           const orgActivities = await fetchOrganizationActivities(orgData.id);
           setActivities(orgActivities);
+
+          // Fetch all branches for relationship center
+          const branchList = await fetchBranches();
+          setBranches(branchList);
         }
       } catch (err) {
         console.error(err);
@@ -48,6 +73,65 @@ export default function OrgDashboard() {
     }
     loadData();
   }, [profile]);
+
+  // Generate action items for organization
+  const actionItems = useMemo(() => {
+    if (!org) return [];
+    return getOrganizationActionItems(org, quests, needs);
+  }, [org, quests, needs]);
+
+  // Start editing
+  const startEdit = () => {
+    if (!org) return;
+    setEditForm({
+      name: org.name || '',
+      description: org.description || '',
+      website: org.website || '',
+      phone: org.phone || '',
+      email: org.email || '',
+      address: org.address || '',
+      category: org.category || 'Business',
+      visibility: (org.visibility as any) || 'public'
+    });
+    setIsEditing(true);
+    setSaveError('');
+    setSaveSuccess('');
+  };
+
+  // Save organization edits
+  const saveEdit = async () => {
+    if (!org || !profile) return;
+    setSavingEdit(true);
+    setSaveError('');
+    setSaveSuccess('');
+    try {
+      await updateDoc(doc(db, 'organizations', org.id), {
+        name: editForm.name,
+        description: editForm.description,
+        website: editForm.website,
+        phone: editForm.phone,
+        email: editForm.email,
+        address: editForm.address,
+        category: editForm.category as any,
+        visibility: editForm.visibility,
+        updatedAt: new Date().toISOString()
+      });
+      // Update local state
+      setOrg({ ...org, name: editForm.name, description: editForm.description, website: editForm.website, phone: editForm.phone, email: editForm.email, address: editForm.address, category: editForm.category as any, visibility: editForm.visibility as any, updatedAt: new Date().toISOString() } as Organization);
+      setSaveSuccess('Organization updated successfully');
+      setIsEditing(false);
+    } catch (err: any) {
+      setSaveError(err.message || 'Failed to save changes');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setSaveError('');
+    setSaveSuccess('');
+  };
 
   if (!profile) return null;
 
@@ -71,6 +155,138 @@ export default function OrgDashboard() {
     );
   }
 
+  // Edit mode overlay
+  if (isEditing) {
+    return (
+      <div className="max-w-2xl mx-auto py-8 px-4 animate-fade-up">
+        <div className="panel p-6 rounded-2xl space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold">Edit Organization</h2>
+            <button onClick={cancelEdit} className="p-2 hover:bg-[var(--card-subtle)] rounded-lg">
+              <X size={20} />
+            </button>
+          </div>
+
+          {saveSuccess && (
+            <div className="p-3 rounded-lg bg-emerald-500/10 text-emerald-400 text-sm">{saveSuccess}</div>
+          )}
+          {saveError && (
+            <div className="p-3 rounded-lg bg-red-500/10 text-red-400 text-sm">{saveError}</div>
+          )}
+
+          <div className="grid gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Organization Name</label>
+              <input
+                type="text"
+                value={editForm.name}
+                onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                className="text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Description</label>
+              <textarea
+                rows={3}
+                value={editForm.description}
+                onChange={e => setEditForm({ ...editForm, description: e.target.value })}
+                className="text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Website</label>
+              <input
+                type="text"
+                value={editForm.website}
+                onChange={e => setEditForm({ ...editForm, website: e.target.value })}
+                className="text-sm"
+                placeholder="https://"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Phone</label>
+                <input
+                  type="text"
+                  value={editForm.phone}
+                  onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
+                  className="text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Email</label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                  className="text-sm"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Address</label>
+              <input
+                type="text"
+                value={editForm.address}
+                onChange={e => setEditForm({ ...editForm, address: e.target.value })}
+                className="text-sm"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Category</label>
+                <select
+                  value={editForm.category}
+                  onChange={e => setEditForm({ ...editForm, category: e.target.value })}
+                  className="text-sm"
+                >
+                  {CATEGORIES.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Visibility</label>
+                <select
+                  value={editForm.visibility}
+                  onChange={e => setEditForm({ ...editForm, visibility: e.target.value as any })}
+                  className="text-sm"
+                >
+                  {VISIBILITY_OPTIONS.map(vis => (
+                    <option key={vis} value={vis}>{vis}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={saveEdit}
+              disabled={savingEdit}
+              className="primary px-4 py-2 rounded-lg text-sm font-semibold"
+            >
+              {savingEdit ? 'Saving...' : 'Save Changes'}
+            </button>
+            <button onClick={cancelEdit} className="ghost px-4 py-2 rounded-lg text-sm">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Journey stages for organization lifecycle
+  const JOURNEY_STAGES = [
+    { key: 'new', label: 'Registered', desc: 'Initial registration complete' },
+    { key: 'contacted', label: 'In Touch', desc: 'Connected with Relationship Manager' },
+    { key: 'active', label: 'Active', desc: 'Currently working with Guild' },
+    { key: 'trusted', label: 'Trusted', desc: 'Verifiedpartner organization' },
+    { key: 'partner', label: 'Partner', desc: 'Strategic Guild partner' }
+  ];
+  const currentStageIndex = JOURNEY_STAGES.findIndex(s => s.key === org.currentStatus) || 0;
+
   // Find coordinator
   const manager = RECEPTIONISTS.find(r => r.uid === org.assignedReceptionistId) || RECEPTIONISTS[0];
 
@@ -80,7 +296,12 @@ export default function OrgDashboard() {
       <div className="hero-panel bg-gradient-to-br from-[var(--card)] to-[var(--bg-alt)] p-8 rounded-2xl flex flex-col md:flex-row justify-between gap-6 items-start md:items-center">
         <div>
           <span className="eyebrow block">Organization Space</span>
-          <h1 className="text-3xl font-extrabold tracking-tight">{org.name}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-extrabold tracking-tight">{org.name}</h1>
+            <button onClick={startEdit} className="p-1.5 rounded-lg hover:bg-[var(--card-subtle)] text-[var(--text-muted)] hover:text-[var(--primary)] transition-colors" title="Edit Organization">
+              <Edit2 size={16} />
+            </button>
+          </div>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-xs text-[var(--text-muted)]">{org.category} Chapter</span>
             <span>•</span>
@@ -96,6 +317,62 @@ export default function OrgDashboard() {
           <div>
             <strong className="block text-[var(--text)] font-semibold mb-0.5">Verification status</strong>
             <span>Verified organization entries receive prioritize visibility in member feeds.</span>
+          </div>
+        </div>
+
+        {/* Organization Action Items */}
+        {actionItems.length > 0 && (
+          <div className="mt-4 md:mt-0">
+            <span className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] font-black block mb-2">Your Action Items</span>
+            <ActionCenter items={actionItems.slice(0, 3)} title="" maxItems={3} />
+          </div>
+        )}
+      </div>
+
+      {/* Organization Journey Progress */}
+      <div className="panel p-6">
+        <h3 className="text-sm font-bold uppercase tracking-wider mb-4">Your Guild Journey</h3>
+        <div className="flex items-center gap-1 overflow-x-auto pb-2">
+          {JOURNEY_STAGES.map((stage, idx) => (
+            <React.Fragment key={stage.key}>
+              <div className={`flex-shrink-0 flex flex-col items-center ${idx <= currentStageIndex ? 'text-[var(--primary)]' : 'text-[var(--text-muted)]'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${idx < currentStageIndex ? 'bg-[var(--primary)] text-black' : idx === currentStageIndex ? 'bg-[var(--primary)]/20 border border-[var(--primary)] text-[var(--primary)]' : 'bg-[var(--card-subtle)] border border-[var(--border)]'}`}>
+                  {idx < currentStageIndex ? <Check size={14} /> : idx + 1}
+                </div>
+                <span className="text-[9px] font-bold mt-1.5 whitespace-nowrap">{stage.label}</span>
+              </div>
+              {idx < JOURNEY_STAGES.length - 1 && (
+                <div className={`flex-shrink-0 h-0.5 flex-1 min-w-[20px] ${idx < currentStageIndex ? 'bg-[var(--primary)]' : 'bg-[var(--border)]'}`} />
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+        <p className="text-xs text-[var(--text-muted)] mt-3 text-center">
+          Current: <span className="text-[var(--primary)] font-bold">{JOURNEY_STAGES[currentStageIndex]?.desc}</span>
+        </p>
+      </div>
+
+      {/* PHASE 7: Organization Analytics */}
+      <div className="panel p-6">
+        <h3 className="text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
+          <BarChart3 size={16} /> Organization Analytics
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="p-4 bg-[var(--card-subtle)] rounded-xl border border-[var(--border)] text-center">
+            <div className="text-2xl font-black text-[var(--primary)]">{needs.length}</div>
+            <div className="text-[10px] font-bold uppercase text-[var(--text-muted)] mt-1">Needs Submitted</div>
+          </div>
+          <div className="p-4 bg-[var(--card-subtle)] rounded-xl border border-[var(--border)] text-center">
+            <div className="text-2xl font-black text-emerald-500">{quests.length}</div>
+            <div className="text-[10px] font-bold uppercase text-[var(--text-muted)] mt-1">Quests Posted</div>
+          </div>
+          <div className="p-4 bg-[var(--card-subtle)] rounded-xl border border-[var(--border)] text-center">
+            <div className="text-2xl font-black text-blue-500">{activities.length}</div>
+            <div className="text-[10px] font-bold uppercase text-[var(--text-muted)] mt-1">Activities</div>
+          </div>
+          <div className="p-4 bg-[var(--card-subtle)] rounded-xl border border-[var(--border)] text-center">
+            <div className="text-2xl font-black text-purple-500">{org.trustLevel || 'new'}</div>
+            <div className="text-[10px] font-bold uppercase text-[var(--text-muted)] mt-1">Trust Level</div>
           </div>
         </div>
       </div>
@@ -139,13 +416,14 @@ export default function OrgDashboard() {
           </div>
         </div>
 
-        {/* Relationship Manager presentation */}
+        {/* PHASE 5: Relationship Center - Manager + Branch */}
         <div className="panel space-y-4">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--primary)]">Relationship Manager</h3>
+          <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--primary)]">Relationship Center</h3>
           <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-            Your organization is directly supported by a dedicated Guild Officer. Contact them directly to coordinate quest launches.
+            Your organization is directly supported by dedicated Guild Officers.
           </p>
 
+          {/* Manager Card */}
           <div className="flex gap-3.5 items-center bg-[var(--card-subtle)] p-3.5 rounded-xl border border-[var(--border)]">
             <div className="w-12 h-12 rounded-xl overflow-hidden border border-[var(--border)] bg-black flex-shrink-0">
               <img src={manager.photoURL} alt={manager.fullName} className="w-full h-full object-cover" />
@@ -158,6 +436,22 @@ export default function OrgDashboard() {
               </span>
             </div>
           </div>
+
+          {/* Branch Info */}
+          {org.branchId && branches.find(b => b.id === org.branchId) && (
+            <div className="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--card-subtle)]">
+              <div className="text-[10px] font-bold uppercase text-[var(--text-muted)] mb-2">Assigned Branch</div>
+              {(() => {
+                const branch = branches.find(b => b.id === org.branchId);
+                return branch ? (
+                  <div>
+                    <div className="text-sm font-bold text-[var(--text)]">{branch.name}</div>
+                    <div className="text-xs text-[var(--text-muted)]">{branch.city}, {branch.state}</div>
+                  </div>
+                ) : null;
+              })()}
+            </div>
+          )}
         </div>
       </div>
 

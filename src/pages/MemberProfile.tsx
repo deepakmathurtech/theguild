@@ -1,22 +1,59 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { updateLedgerRecord, RECEPTIONISTS } from '../lib/repository';
+import { updateLedgerRecord, RECEPTIONISTS, fetchOrganizationNeeds } from '../lib/repository';
+import { db } from '../lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import {
   Award, ShieldCheck, Mail, Calendar, Phone, Plus, ExternalLink,
-  BookOpen, Star, Compass, UserCheck, Briefcase, FileText, CheckCircle
+  BookOpen, Star, Compass, UserCheck, Briefcase, FileText, CheckCircle,
+  MapPin, Building2, Target, TrendingUp, DollarSign
 } from 'lucide-react';
 import EmptyState from '../components/EmptyState';
 import { PAGE_SEO } from '../components/SEO';
+import type { Organization, Need } from '../types/guild';
+import { Link } from 'react-router-dom';
 
 export default function MemberProfile() {
   const { profile } = useAuth();
+  const isOrgRep = profile?.role === 'organizationRepresentative';
+
+  // Organization data for org reps
+  const [userOrg, setUserOrg] = useState<Organization | null>(null);
+  const [orgNeeds, setOrgNeeds] = useState<Need[]>([]);
+  const [loadingOrg, setLoadingOrg] = useState(false);
 
   // SEO: Set page title
   useEffect(() => {
-    document.title = PAGE_SEO.memberProfile.title;
-  }, []);
+    document.title = isOrgRep ? 'Organization Profile' : PAGE_SEO.memberProfile.title;
+  }, [isOrgRep]);
   const [activeTab, setActiveTab] = useState<'portfolio' | 'quests' | 'achievements'>('portfolio');
-  
+
+  // Fetch organization for org reps
+  useEffect(() => {
+    if (isOrgRep && profile?.uid) {
+      const userId = profile.uid;
+      async function loadOrgData() {
+        setLoadingOrg(true);
+        try {
+          const orgQuery = query(collection(db, 'organizations'), where('ownerId', '==', userId));
+          const orgSnap = await getDocs(orgQuery);
+          if (!orgSnap.empty) {
+            const orgData = { id: orgSnap.docs[0].id, ...orgSnap.docs[0].data() } as Organization;
+            setUserOrg(orgData);
+            // Fetch org needs
+            const needs = await fetchOrganizationNeeds(orgData.id);
+            setOrgNeeds(needs);
+          }
+        } catch (err) {
+          console.error('Error loading org:', err);
+        } finally {
+          setLoadingOrg(false);
+        }
+      }
+      loadOrgData();
+    }
+  }, [isOrgRep, profile]);
+
   // Proof creation inputs
   const [addingProof, setAddingProof] = useState(false);
   const [proofTitle, setProofTitle] = useState('');
@@ -25,6 +62,122 @@ export default function MemberProfile() {
   const [proofSkills, setProofSkills] = useState('');
 
   if (!profile) return null;
+
+  // Show organization profile for org reps
+  if (isOrgRep) {
+    if (loadingOrg) {
+      return <div className="p-12 text-center text-xs text-[var(--text-muted)]">Loading organization profile...</div>;
+    }
+
+    return (
+      <div className="space-y-8 py-4 text-left max-w-5xl mx-auto animate-fade-up">
+        {/* Organization Profile Header */}
+        <div className="panel bg-gradient-to-br from-[var(--primary)]/10 to-[var(--card)] border border-[var(--primary)]/20 relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row gap-6 items-start">
+            {/* Org Logo */}
+            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center border border-[var(--border-light)] shadow-lg overflow-hidden flex-shrink-0">
+              {userOrg?.logo ? (
+                <img src={userOrg.logo} alt={userOrg.name} className="w-full h-full object-cover" />
+              ) : (
+                <Building2 className="w-10 h-10 text-[var(--primary)]" />
+              )}
+            </div>
+
+            {/* Org Info */}
+            <div className="space-y-3 flex-1">
+              <div className="flex flex-wrap gap-2 items-center">
+                <h1 className="text-2xl font-black tracking-tight leading-none">{userOrg?.name || 'Your Organization'}</h1>
+                <span className="flex items-center gap-1 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                  <ShieldCheck size={12} />
+                  Organization Verified
+                </span>
+              </div>
+              <p className="text-xs text-[var(--text-muted)] max-w-xl leading-relaxed font-normal">
+                {userOrg?.description || 'Organization description not available.'}
+              </p>
+              <div className="flex flex-wrap gap-4 text-xs text-[var(--text-secondary)] font-medium">
+                <span className="flex items-center gap-1.5"><Mail size={13} className="text-[var(--primary)]" /> {userOrg?.email}</span>
+                {userOrg?.phone && <span className="flex items-center gap-1.5"><Phone size={13} className="text-[var(--primary)]" /> {userOrg.phone}</span>}
+                <span className="flex items-center gap-1.5"><Building2 size={13} className="text-[var(--primary)]" /> {userOrg?.category}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Organization Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="panel p-4 text-center">
+            <div className="text-2xl font-black text-[var(--primary)]">{orgNeeds.length}</div>
+            <div className="text-[10px] font-bold uppercase text-[var(--text-muted)] mt-1">Needs Posted</div>
+          </div>
+          <div className="panel p-4 text-center">
+            <div className="text-2xl font-black text-emerald-500">{userOrg?.trustLevel || 'new'}</div>
+            <div className="text-[10px] font-bold uppercase text-[var(--text-muted)] mt-1">Trust Level</div>
+          </div>
+          <div className="panel p-4 text-center">
+            <div className="text-2xl font-black text-blue-500">{userOrg?.assignedReceptionistId ? '1' : '0'}</div>
+            <div className="text-[10px] font-bold uppercase text-[var(--text-muted)] mt-1">Relationship Manager</div>
+          </div>
+          <div className="panel p-4 text-center">
+            <div className="text-2xl font-black text-purple-500">{userOrg?.currentStatus || 'new'}</div>
+            <div className="text-[10px] font-bold uppercase text-[var(--text-muted)] mt-1">Status</div>
+          </div>
+        </div>
+
+        {/* Recent Needs */}
+        <div className="panel">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider">Your Submitted Needs</h3>
+            <Link to="/need-submit" className="primary px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1">
+              <Plus size={12} /> Submit New Need
+            </Link>
+          </div>
+          {orgNeeds.length > 0 ? (
+            <div className="grid gap-2">
+              {orgNeeds.slice(0, 5).map(need => (
+                <Link key={need.id} to={`/needs/${need.id}`} className="p-3 bg-[var(--card-subtle)] border border-[var(--border)] rounded-lg text-xs hover:border-[var(--primary)]/30 transition-colors flex justify-between items-center">
+                  <span className="font-semibold text-[var(--text-secondary)] truncate flex-1">{need.title}</span>
+                  <span className={`px-2 py-0.5 rounded text-[9px] uppercase font-bold ${
+                    need.status === 'submitted' ? 'bg-slate-500/20 text-slate-400' :
+                    need.status === 'accepted' ? 'bg-emerald-500/20 text-emerald-400' :
+                    need.status === 'inProgress' ? 'bg-blue-500/20 text-blue-400' :
+                    'bg-slate-500/20 text-slate-400'
+                  }`}>
+                    {need.status}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <Target size={24} className="mx-auto text-[var(--text-muted)] mb-2 opacity-50" />
+              <p className="text-xs text-[var(--text-muted)]">No needs submitted yet.</p>
+              <p className="text-[10px] text-[var(--text-muted)] mt-1">Submit your first need to get started.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid sm:grid-cols-3 gap-4">
+          <Link to="/org-dashboard" className="panel p-4 text-center hover:border-[var(--primary)]/30 transition-colors cursor-pointer">
+            <Building2 className="w-6 h-6 mx-auto text-[var(--primary)] mb-2" />
+            <span className="text-xs font-bold block">Dashboard</span>
+            <span className="text-[10px] text-[var(--text-muted)]">Manage your org</span>
+          </Link>
+          <Link to="/need-submit" className="panel p-4 text-center hover:border-[var(--primary)]/30 transition-colors cursor-pointer">
+            <Target className="w-6 h-6 mx-auto text-[var(--primary)] mb-2" />
+            <span className="text-xs font-bold block">Post Need</span>
+            <span className="text-[10px] text-[var(--text-muted)]">Request help</span>
+          </Link>
+          <Link to="/org-outcomes" className="panel p-4 text-center hover:border-[var(--primary)]/30 transition-colors cursor-pointer">
+            <TrendingUp className="w-6 h-6 mx-auto text-[var(--primary)] mb-2" />
+            <span className="text-xs font-bold block">Outcomes</span>
+            <span className="text-[10px] text-[var(--text-muted)]">Track results</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const handleAddProofOfWork = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,6 +257,21 @@ export default function MemberProfile() {
             <span className="flex items-center gap-1.5"><Mail size={13} className="text-[var(--primary)]" /> {profile.email}</span>
             {profile.phone && <span className="flex items-center gap-1.5"><Phone size={13} className="text-[var(--primary)]" /> {profile.phone}</span>}
             <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[var(--primary)]" /> Joined {new Date(profile.createdAt).toLocaleDateString()}</span>
+          </div>
+
+          {/* Jurisdiction & Branch Info */}
+          <div className="flex flex-wrap gap-4 text-xs text-[var(--text-secondary)] font-medium mt-2">
+            {profile.jurisdiction && profile.jurisdiction.cityName && (
+              <span className="flex items-center gap-1.5">
+                <MapPin size={13} className="text-[var(--primary)]" />
+                {profile.jurisdiction.cityName}{profile.jurisdiction.stateName ? `, ${profile.jurisdiction.stateName}` : ''}
+              </span>
+            )}
+            {profile.branchName && (
+              <span className="flex items-center gap-1.5">
+                <Building2 size={13} className="text-[var(--primary)]" /> Branch: {profile.branchName}
+              </span>
+            )}
           </div>
         </div>
       </div>

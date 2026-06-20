@@ -34,8 +34,8 @@ export default function OrgLanding() {
                 <ArrowRight size={16} />
               </Link>
             ) : (
-              <Link to="/auth" className="primary px-6 py-3 rounded-xl font-bold flex items-center gap-2">
-                <span>Sign In to Register</span>
+              <Link to="/org-register" className="primary px-6 py-3 rounded-xl font-bold flex items-center gap-2">
+                <span>Register Your Organization</span>
                 <ArrowRight size={16} />
               </Link>
             )}

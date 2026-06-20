@@ -5,7 +5,9 @@ import { fetchQuests } from '../lib/repository';
 import type { Quest } from '../types/guild';
 import { Link } from 'react-router-dom';
 import EmptyState from '../components/EmptyState';
-import { Search, MapPin, Award, Compass, DollarSign } from 'lucide-react';
+import { Search, MapPin, Award, Compass, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const ITEMS_PER_PAGE = 12;
 
 const CATEGORIES = ['All', 'builder', 'creator', 'researcher', 'entrepreneur', 'operator', 'leader'];
 const DIFFICULTIES = ['All', 'easy', 'medium', 'hard', 'legendary'];
@@ -29,6 +31,7 @@ export default function QuestBoard() {
   const [category, setCategory] = useState('All');
   const [difficulty, setDifficulty] = useState('All');
   const [mode, setMode] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     async function loadData() {
@@ -44,9 +47,9 @@ export default function QuestBoard() {
     loadData();
   }, []);
 
-  // Filter logic
+  // Filter logic - show all available quests (not completed/closed/archived)
   useEffect(() => {
-    let result = quests.filter(q => q.status === 'open');
+    let result = quests.filter(q => !q.status || !['completed', 'closed', 'archived'].includes(q.status));
 
     if (search.trim()) {
       const searchLower = search.toLowerCase();
@@ -67,7 +70,15 @@ export default function QuestBoard() {
     }
 
     setFilteredQuests(result);
+    setCurrentPage(1);
   }, [search, category, difficulty, mode, quests]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredQuests.length / ITEMS_PER_PAGE);
+  const paginatedQuests = filteredQuests.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   return (
     <div className="space-y-8 py-4 text-left max-w-5xl mx-auto animate-fade-up">
@@ -147,7 +158,7 @@ export default function QuestBoard() {
         </div>
       ) : filteredQuests.length > 0 ? (
         <div className="grid md:grid-cols-2 gap-6">
-          {filteredQuests.map(q => {
+          {paginatedQuests.map(q => {
             const hasApplied = profile && q.applicants?.includes(profile.uid);
             return (
               <div key={q.id} className="panel flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
@@ -223,6 +234,42 @@ export default function QuestBoard() {
           }}
           icon={<Compass size={22} />}
         />
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-6 border-t border-[var(--border)]">
+          <div className="text-xs text-[var(--text-muted)]">
+            Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredQuests.length)} of {filteredQuests.length}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-2 rounded-lg border border-[var(--border)] bg-[var(--card)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--card-subtle)] transition-colors"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <div className="flex gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${currentPage === page ? 'bg-[var(--primary)] text-white' : 'border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--card-subtle)]'}`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-2 rounded-lg border border-[var(--border)] bg-[var(--card)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--card-subtle)] transition-colors"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
