@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Allow: /quests
+Allow: /organizations
+Allow: /branches
+Allow: /docs
+Disallow: /onboarding
+Disallow: /settings
+Disallow: /verification
+
+Sitemap: https://guild-v3.firebaseapp.com/sitemap.xml

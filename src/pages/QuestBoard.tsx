@@ -1,0 +1,229 @@
+import { useState, useEffect } from 'react';
+import { PAGE_SEO } from '../components/SEO';
+import { useAuth } from '../context/AuthContext';
+import { fetchQuests } from '../lib/repository';
+import type { Quest } from '../types/guild';
+import { Link } from 'react-router-dom';
+import EmptyState from '../components/EmptyState';
+import { Search, MapPin, Award, Compass, DollarSign } from 'lucide-react';
+
+const CATEGORIES = ['All', 'builder', 'creator', 'researcher', 'entrepreneur', 'operator', 'leader'];
+const DIFFICULTIES = ['All', 'easy', 'medium', 'hard', 'legendary'];
+const MODES = ['All', 'Remote', 'Physical', 'Hybrid'];
+
+export default function QuestBoard() {
+  const { profile } = useAuth();
+  const [quests, setQuests] = useState<Quest[]>([]);
+  const [filteredQuests, setFilteredQuests] = useState<Quest[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // SEO: Set page title
+  useEffect(() => {
+    document.title = PAGE_SEO.quests.title;
+    const descEl = document.querySelector('meta[name="description"]');
+    if (descEl) descEl.setAttribute('content', PAGE_SEO.quests.description);
+  }, []);
+
+  // Search & Filter State
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('All');
+  const [difficulty, setDifficulty] = useState('All');
+  const [mode, setMode] = useState('All');
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const list = await fetchQuests();
+        setQuests(list);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  // Filter logic
+  useEffect(() => {
+    let result = quests.filter(q => q.status === 'open');
+
+    if (search.trim()) {
+      const searchLower = search.toLowerCase();
+      result = result.filter(q => 
+        q.title.toLowerCase().includes(searchLower) || 
+        q.description.toLowerCase().includes(searchLower) ||
+        q.requiredSkills?.some(s => s.toLowerCase().includes(searchLower))
+      );
+    }
+    if (category !== 'All') {
+      result = result.filter(q => q.category?.toLowerCase() === category.toLowerCase());
+    }
+    if (difficulty !== 'All') {
+      result = result.filter(q => q.difficulty?.toLowerCase() === difficulty.toLowerCase());
+    }
+    if (mode !== 'All') {
+      result = result.filter(q => q.mode?.toLowerCase() === mode.toLowerCase());
+    }
+
+    setFilteredQuests(result);
+  }, [search, category, difficulty, mode, quests]);
+
+  return (
+    <div className="space-y-8 py-4 text-left max-w-5xl mx-auto animate-fade-up">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-black tracking-tight">Active Quest Board</h1>
+        <p className="text-xs text-[var(--text-muted)] mt-1">
+          Claim assignments, verify outcomes, earn reputation index points, and grow your ranking profile.
+        </p>
+      </div>
+
+      {/* Filter Toolbar */}
+      <div className="panel bg-[var(--card)] p-4 rounded-xl flex flex-col md:flex-row gap-4 items-center justify-between">
+        
+        {/* Search */}
+        <div className="relative w-full md:max-w-xs">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search quests, skills..."
+            className="pl-9 pr-4 py-2 border border-[var(--border)] rounded-xl bg-[var(--input-bg)] text-xs w-full focus:outline-none transition-all placeholder:text-[var(--text-muted)]"
+          />
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap gap-3 items-center w-full md:w-auto">
+          {/* Category Select */}
+          <div>
+            <select
+              value={category}
+              onChange={e => setCategory(e.target.value)}
+              className="px-3 py-2 text-xs border border-[var(--border)] rounded-xl bg-[var(--input-bg)] select-none cursor-pointer"
+            >
+              <option disabled>Category</option>
+              {CATEGORIES.map(c => (
+                <option key={c} value={c}>{c === 'All' ? 'All Paths' : c.toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Difficulty Select */}
+          <div>
+            <select
+              value={difficulty}
+              onChange={e => setDifficulty(e.target.value)}
+              className="px-3 py-2 text-xs border border-[var(--border)] rounded-xl bg-[var(--input-bg)] cursor-pointer"
+            >
+              <option disabled>Difficulty</option>
+              {DIFFICULTIES.map(d => (
+                <option key={d} value={d}>{d === 'All' ? 'All Difficulties' : d.toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Mode Select */}
+          <div>
+            <select
+              value={mode}
+              onChange={e => setMode(e.target.value)}
+              className="px-3 py-2 text-xs border border-[var(--border)] rounded-xl bg-[var(--input-bg)] cursor-pointer"
+            >
+              <option disabled>Location Mode</option>
+              {MODES.map(m => (
+                <option key={m} value={m}>{m === 'All' ? 'All Modes' : m}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Quest Grid */}
+      {loading ? (
+        <div className="p-12 text-center text-xs text-[var(--text-muted)] font-semibold">
+          Fetching quests from ledger database...
+        </div>
+      ) : filteredQuests.length > 0 ? (
+        <div className="grid md:grid-cols-2 gap-6">
+          {filteredQuests.map(q => {
+            const hasApplied = profile && q.applicants?.includes(profile.uid);
+            return (
+              <div key={q.id} className="panel flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex gap-1.5 items-center">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-[var(--primary)] bg-[var(--primary)]/10 px-2.5 py-0.5 rounded border border-[var(--primary)]/20">
+                        {q.difficulty}
+                      </span>
+                      <span className="text-[10px] font-bold text-[var(--text-muted)] bg-[var(--card-subtle)] px-2 py-0.5 rounded border border-[var(--border)]">
+                        {q.category}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-[var(--text-secondary)] font-semibold flex items-center gap-1">
+                      <MapPin size={10} className="text-[var(--primary)]" />
+                      {q.mode}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-base font-extrabold line-clamp-1">{q.title}</h3>
+                    <p className="text-xs text-[var(--text-muted)] leading-relaxed mt-1 line-clamp-3">{q.description}</p>
+                  </div>
+
+                  {/* Skills required */}
+                  {q.requiredSkills && q.requiredSkills.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {q.requiredSkills.map(skill => (
+                        <span key={skill} className="text-[9px] font-bold text-[var(--text-secondary)] bg-[var(--card-subtle)] px-2 py-0.5 rounded">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-[var(--border)] pt-4 flex justify-between items-center text-xs">
+                  <div className="flex items-center gap-4">
+                    <span className="font-bold flex items-center gap-1 text-[var(--primary)]">
+                      <Award size={13} />
+                      {q.reputationPoints} Rep
+                    </span>
+                    {q.isPaid && q.paymentAmount && (
+                      <span className="font-bold flex items-center gap-0.5 text-emerald-400">
+                        <DollarSign size={13} />
+                        ₹{q.paymentAmount}
+                      </span>
+                    )}
+                  </div>
+
+                  <Link
+                    to={`/quests/${q.id}`}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${hasApplied ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'primary'}`}
+                  >
+                    {hasApplied ? 'Review Application' : 'View details'}
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <EmptyState
+          title="No Quests Found"
+          description="We couldn't find any active quests matching your search query or filter selection."
+          whyItMatters="The Quest Board updates dynamically as local organizations post operations. If filters are too restrictive, opportunities will be hidden."
+          actionText="Reset Filter Config"
+          onAction={() => {
+            setSearch('');
+            setCategory('All');
+            setDifficulty('All');
+            setMode('All');
+          }}
+          icon={<Compass size={22} />}
+        />
+      )}
+    </div>
+  );
+}

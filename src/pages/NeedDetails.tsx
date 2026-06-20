@@ -1,0 +1,166 @@
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { db } from '../lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { useAuth } from '../context/AuthContext';
+import { RECEPTIONISTS } from '../lib/repository';
+import type { Need } from '../types/guild';
+import { ArrowLeft, Clock, FileText, ChevronRight, CheckCircle, AlertCircle, Loader } from 'lucide-react';
+
+const STATUS_LABELS: Record<string, { label: string; desc: string; color: string }> = {
+  submitted: { label: 'Submitted', desc: 'Your need has been received', color: 'text-slate-400' },
+  underReview: { label: 'Under Review', desc: 'Guild Representative is reviewing', color: 'text-amber-400' },
+  accepted: { label: 'Accepted', desc: 'Your need has been accepted', color: 'text-emerald-400' },
+  convertedToOpportunity: { label: 'Opportunity Created', desc: 'Converted to an opportunity', color: 'text-blue-400' },
+  questCreationInProgress: { label: 'Quest Creation', desc: 'Quest is being created', color: 'text-purple-400' },
+  inProgress: { label: 'In Progress', desc: 'Work is underway', color: 'text-cyan-400' },
+  completed: { label: 'Completed', desc: 'Delivered successfully', color: 'text-emerald-500' },
+  closed: { label: 'Closed', desc: 'This need is closed', color: 'text-slate-500' }
+};
+
+const PRIORITY_COLORS: Record<string, string> = {
+  low: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
+  medium: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  high: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  urgent: 'bg-red-500/20 text-red-400 border-red-500/30'
+};
+
+export default function NeedDetails() {
+  const { id } = useParams<{ id: string }>();
+  const { profile } = useAuth();
+  const [need, setNeed] = useState<Need | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadNeed() {
+      if (!id) return;
+      try {
+        const snap = await getDoc(doc(db, 'needs', id));
+        if (snap.exists()) {
+          setNeed({ id: snap.id, ...snap.data() } as Need);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadNeed();
+  }, [id]);
+
+  if (loading) {
+    return <div className="p-12 text-center text-xs text-[var(--text-muted)]"><Loader className="animate-spin inline mr-2" />Loading need details...</div>;
+  }
+
+  if (!need) {
+    return (
+      <div className="max-w-lg mx-auto py-12 px-4 text-center">
+        <AlertCircle size={48} className="mx-auto text-red-400 mb-4" />
+        <h2 className="text-xl font-bold">Need Not Found</h2>
+        <p className="text-sm text-[var(--text-muted)] mt-2">This need doesn't exist or has been removed.</p>
+        <Link to="/org-dashboard" className="primary inline-flex items-center gap-1 mt-4 px-4 py-2">
+          <ArrowLeft size={14} /> Back to Dashboard
+        </Link>
+      </div>
+    );
+  }
+
+  const status = STATUS_LABELS[need.status] || STATUS_LABELS.submitted;
+  const receptionist = RECEPTIONISTS.find(r => r.uid === need.assignedReceptionistId) || RECEPTIONISTS[0];
+
+  return (
+    <div className="max-w-3xl mx-auto py-8 px-4 text-left animate-fade-up">
+      {/* Header */}
+      <Link to="/org-dashboard" className="inline-flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--primary)] mb-4">
+        <ArrowLeft size={12} /> Back to Organization Dashboard
+      </Link>
+
+      <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 shadow-lg">
+        {/* Title & Status */}
+        <div className="flex justify-between items-start gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-extrabold">{need.title}</h1>
+            <p className="text-sm text-[var(--text-muted)] mt-1">submitted on {new Date(need.createdAt).toLocaleDateString()}</p>
+          </div>
+          <span className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase border ${PRIORITY_COLORS[need.priority]}`}>
+            {need.priority} Priority
+          </span>
+        </div>
+
+        {/* Status Tracker */}
+        <div className="mb-8">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">Current Status</h3>
+          <div className="flex items-center gap-2 p-4 rounded-xl bg-[var(--card-subtle)] border border-[var(--border)]">
+            <CheckCircle size={20} className={status.color} />
+            <div>
+              <div className={`text-sm font-bold ${status.color}`}>{status.label}</div>
+              <div className="text-xs text-[var(--text-muted)]">{status.desc}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Description */}
+        <div className="mb-6">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2 flex items-center gap-1">
+            <FileText size={12} /> Description
+          </h3>
+          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{need.description}</p>
+        </div>
+
+        {/* Desired Outcome */}
+        {need.desiredOutcome && (
+          <div className="mb-6">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2">Desired Outcome</h3>
+            <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{need.desiredOutcome}</p>
+          </div>
+        )}
+
+        {/* Meta Info */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="p-3 rounded-lg bg-[var(--card-subtle)] border border-[var(--border)]">
+            <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Category</div>
+            <div className="text-sm font-bold">{need.category}</div>
+          </div>
+          <div className="p-3 rounded-lg bg-[var(--card-subtle)] border border-[var(--border)]">
+            <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Timeline</div>
+            <div className="text-sm font-bold">{need.timeline || 'To be discussed'}</div>
+          </div>
+          {need.budgetRange && (
+            <div className="p-3 rounded-lg bg-[var(--card-subtle)] border border-[var(--border)]">
+              <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Budget</div>
+              <div className="text-sm font-bold">{need.budgetRange}</div>
+            </div>
+          )}
+          {need.deadline && (
+            <div className="p-3 rounded-lg bg-[var(--card-subtle)] border border-[var(--border)]">
+              <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Deadline</div>
+              <div className="text-sm font-bold">{new Date(need.deadline).toLocaleDateString()}</div>
+            </div>
+          )}
+        </div>
+
+        {/* Next Action */}
+        {need.nextAction && (
+          <div className="p-4 rounded-xl bg-[var(--primary)]/10 border border-[var(--primary)]/20">
+            <div className="text-[10px] text-[var(--primary)] uppercase tracking-wider font-bold mb-1">Next Action</div>
+            <div className="text-sm text-[var(--text-secondary)]">{need.nextAction}</div>
+          </div>
+        )}
+
+        {/* Relationship Manager */}
+        <div className="mt-6 pt-6 border-t border-[var(--border)]">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">Your Guild Representative</h3>
+          <div className="flex gap-3 items-center p-3 rounded-xl bg-[var(--card-subtle)] border border-[var(--border)]">
+            <div className="w-10 h-10 rounded-lg overflow-hidden bg-black">
+              <img src={receptionist.photoURL} alt={receptionist.fullName} className="w-full h-full object-cover" />
+            </div>
+            <div>
+              <div className="text-sm font-bold">{receptionist.fullName}</div>
+              <div className="text-xs text-[var(--text-muted)]">{receptionist.role}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
