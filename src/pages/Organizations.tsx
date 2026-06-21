@@ -108,8 +108,8 @@ export default function Organizations() {
           <Link to="/org-landing" className="secondary px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">
             <Globe size={14} /> Learn About Guild
           </Link>
-          <Link to="/org-onboarding" className="primary px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1">
-            <Plus size={14} /> Register Organization
+          <Link to="/org-register" className="primary px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1">
+            <Plus size={14} /> Partner With Us
           </Link>
         </div>
       </div>
@@ -249,8 +249,8 @@ export default function Organizations() {
                 Register your organization to access Guild services, post needs, and connect with vetted talent.
               </p>
             </div>
-            <Link to="/org-onboarding" className="primary px-6 py-3 rounded-xl font-bold flex items-center gap-2 whitespace-nowrap">
-              <Plus size={16} /> Register Organization
+            <Link to="/org-register" className="primary px-6 py-3 rounded-xl font-bold flex items-center gap-2 whitespace-nowrap">
+              <Plus size={16} /> Partner With Us
             </Link>
           </div>
         </div>
