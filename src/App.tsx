@@ -1,5 +1,5 @@
 import { useState, lazy, Suspense } from 'react';
-import { createBrowserRouter, RouterProvider, Navigate, useNavigate, NavLink } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Outlet, Navigate, useNavigate, NavLink } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { logout } from './lib/auth';
