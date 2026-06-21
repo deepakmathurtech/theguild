@@ -2,6 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Immediate scrollbar - no flash -->
+    <style>
+      nav::-webkit-scrollbar,div::-webkit-scrollbar{width:5px}
+      nav::-webkit-scrollbar-track,div::-webkit-scrollbar-track{background:transparent}
+      nav::-webkit-scrollbar-thumb,div::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:10px}
+      nav,div{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.08) transparent}
+    </style>
     <link rel="icon" type="image/png" href="/guild-logo.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/guild-logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

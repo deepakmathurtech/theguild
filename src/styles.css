@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Immediate scrollbar styles - loads before JS */
+nav::-webkit-scrollbar { width: 5px; }
+nav::-webkit-scrollbar-track { background: transparent; }
+nav::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+nav { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+
 @layer base {
   :root,
   [data-theme='dark'] {
@@ -326,6 +332,22 @@
   background: var(--bg);
   border-right: 1px solid var(--border);
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.mobile-menu::-webkit-scrollbar {
+  width: 5px;
+}
+.mobile-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+.mobile-menu::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+}
+.mobile-menu::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
 
 @media (max-width: 768px) {
@@ -638,20 +660,40 @@
 
   /* Custom Scrollbar - matches guild-auth design */
   .custom-scrollbar::-webkit-scrollbar {
-    width: 5px;
+    width: 5px !important;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
+    background: transparent !important;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 10px;
+    background: var(--border, rgba(255,255,255,0.08)) !important;
+    border-radius: 10px !important;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: var(--text-muted);
+    background: var(--text-muted, rgba(247,245,240,0.54)) !important;
   }
   .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
+    scrollbar-width: thin !important;
+    scrollbar-color: var(--border, rgba(255,255,255,0.08)) transparent !important;
+  }
+
+  /* Desktop sidebar nav explicit scrollbar styling - higher specificity */
+  aside.sidebar nav.custom-scrollbar::-webkit-scrollbar {
+    width: 5px !important;
+  }
+  aside.sidebar nav.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent !important;
+  }
+  aside.sidebar nav.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--border, rgba(255,255,255,0.08)) !important;
+    border-radius: 10px !important;
+    -webkit-border-radius: 10px !important;
+  }
+  aside.sidebar nav.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted, rgba(247,245,240,0.54)) !important;
+  }
+  aside.sidebar nav.custom-scrollbar {
+    scrollbar-width: thin !important;
+    scrollbar-color: var(--border, rgba(255,255,255,0.08)) transparent !important;
   }
 }
