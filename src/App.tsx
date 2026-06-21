@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { createBrowserRouter, RouterProvider, Outlet, Navigate, useNavigate, NavLink } from 'react-router-dom';
+import { useState, lazy, Suspense } from 'react';
+import { createBrowserRouter, RouterProvider, Navigate, useNavigate, NavLink } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { logout } from './lib/auth';
@@ -7,35 +7,48 @@ import { useTheme } from './context/ThemeContext';
 
 // Icons
 import {
-  TrendingUp, Compass, Building, Bell, User, Settings as SettingsIcon, Shield, LogOut,
-  Menu, X, Sun, Moon, Award, Network, FileText, Target, ChevronRight,
-  ShieldCheck, Home as HomeIcon, BarChart3, ArrowLeftRight, Handshake, Users
+  TrendingUp, Compass, Building, Bell, User, Settings as SettingsIcon, LogOut,
+  Menu, X, Sun, Moon, Award, Network, FileText, Target,
+  ShieldCheck, Home as HomeIcon, ArrowLeftRight, Handshake, Users
 } from 'lucide-react';
 
-// Pages
-import Home from './pages/Home';
-import Auth from './pages/Auth';
-import MemberOnboarding from './features/onboarding/MemberOnboarding';
-import OrgOnboarding from './features/onboarding/OrgOnboarding';
-import PublicOrgRegistration from './features/onboarding/PublicOrgRegistration';
-import OrgLanding from './pages/OrgLanding';
-import OrgDashboard from './pages/OrgDashboard';
-import OrgOutcomes from './pages/OrgOutcomes';
-import QuestBoard from './pages/QuestBoard';
-import QuestDetails from './pages/QuestDetails';
-import MyQuests from './pages/MyQuests';
-import QuestApplications from './pages/QuestApplications';
-import MemberProfile from './pages/MemberProfile';
-import BranchesPage from './pages/Branches';
-import Organizations from './pages/Organizations';
-import KnowledgeHub from './pages/KnowledgeHub';
-import VerificationCenter from './pages/VerificationCenter';
-import NotificationCenter from './pages/NotificationCenter';
-import Settings from './pages/Settings';
-import Impact from './pages/Impact';
-import NeedDetails from './pages/NeedDetails';
-import NeedWizard from './pages/NeedWizard';
-import GrowthDashboard from './pages/GrowthDashboard';
+// Pages - Lazy loaded for better bundle size
+const Home = lazy(() => import('./pages/Home'));
+const Auth = lazy(() => import('./pages/Auth'));
+const MemberOnboarding = lazy(() => import('./features/onboarding/MemberOnboarding'));
+const OrgOnboarding = lazy(() => import('./features/onboarding/OrgOnboarding'));
+const PublicOrgRegistration = lazy(() => import('./features/onboarding/PublicOrgRegistration'));
+const OrgLanding = lazy(() => import('./pages/OrgLanding'));
+const OrgDashboard = lazy(() => import('./pages/OrgDashboard'));
+const OrgOutcomes = lazy(() => import('./pages/OrgOutcomes'));
+const QuestBoard = lazy(() => import('./pages/QuestBoard'));
+const QuestDetails = lazy(() => import('./pages/QuestDetails'));
+const MyQuests = lazy(() => import('./pages/MyQuests'));
+const QuestApplications = lazy(() => import('./pages/QuestApplications'));
+const MemberProfile = lazy(() => import('./pages/MemberProfile'));
+const BranchesPage = lazy(() => import('./pages/Branches'));
+const Organizations = lazy(() => import('./pages/Organizations'));
+const KnowledgeHub = lazy(() => import('./pages/KnowledgeHub'));
+const VerificationCenter = lazy(() => import('./pages/VerificationCenter'));
+const NotificationCenter = lazy(() => import('./pages/NotificationCenter'));
+const Settings = lazy(() => import('./pages/Settings'));
+const Impact = lazy(() => import('./pages/Impact'));
+const NeedDetails = lazy(() => import('./pages/NeedDetails'));
+const NeedWizard = lazy(() => import('./pages/NeedWizard'));
+const GrowthDashboard = lazy(() => import('./pages/GrowthDashboard'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+
+// Loading skeleton component
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="animate-pulse flex flex-col items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-[var(--card-subtle)]" />
+        <span className="text-xs text-[var(--text-muted)]">Loading...</span>
+      </div>
+    </div>
+  );
+}
 
 import './styles.css';
 
@@ -523,88 +536,62 @@ function DynamicHomeRoute() {
     return <Navigate to="/onboarding" replace />;
   }
 
-  return <Outlet />;
+  // Render the appropriate dashboard based on role
+  if (profile?.role === 'organizationRepresentative' || profile?.role === 'organization') {
+    return <OrgDashboard />;
+  }
+  return <GrowthDashboard />;
 }
 
-// Router configuration defined below - kept as reference for routing structure
+// Router configuration with optimized structure
 const routerConfig = createBrowserRouter([
   {
     element: <AppShell />,
     children: [
-      {
-        path: '/',
-        element: <DynamicHomeRoute />,
-        children: [
-          { index: true, element: <OrgDashboardOrGrowthDashboard /> }
-        ]
-      },
+      { path: '/', element: <DynamicHomeRoute /> },
       { path: '/auth', element: <Auth /> },
       { path: '/onboarding', element: <PrivateRoute><MemberOnboarding /></PrivateRoute> },
-      // Public quests (visible to all users - guests can browse, members can apply)
       { path: '/quests', element: <QuestBoard /> },
       { path: '/quests/:id', element: <QuestDetails /> },
-      // User quest management (requires login)
       { path: '/my-quests', element: <PrivateRoute><MyQuests /></PrivateRoute> },
-      // Receptionist quest management
       { path: '/quest-applications', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><QuestApplications /></RoleRoute> },
-      // Organizations - Public directory (visible to everyone without login)
       { path: '/organizations', element: <Organizations /> },
-      { path: '/org/:id', element: <Organizations /> },  // Public org profile
+      { path: '/org/:id', element: <Organizations /> },
       { path: '/org-landing', element: <OrgLanding /> },
       { path: '/org-register', element: <PublicOrgRegistration /> },
-      // Organization Representative only
       { path: '/org-onboarding', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgOnboarding /></RoleRoute> },
       { path: '/org-dashboard', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgDashboard /></RoleRoute> },
       { path: '/org-outcomes', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgOutcomes /></RoleRoute> },
-      // Organization workspace routes
       { path: '/my-needs', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedWizard organizationId="" organizationName="" /></RoleRoute> },
       { path: '/org-team', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgDashboard /></RoleRoute> },
       { path: '/org-messages', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NotificationCenter /></RoleRoute> },
-      // Network/Branches visible to all
       { path: '/branches', element: <PrivateRoute><BranchesPage /></PrivateRoute> },
-      // Legacy route for backward compatibility
       { path: '/network', element: <Navigate to="/branches" replace /> },
-      // Knowledge Hub
       { path: '/docs', element: <PrivateRoute><KnowledgeHub /></PrivateRoute> },
-      // Impact (visible to all)
       { path: '/impact', element: <Impact /> },
-      // Profile (private, all members)
       { path: '/profile', element: <PrivateRoute><MemberProfile /></PrivateRoute> },
-      // Verification Center - redirect to Guild OS (admin portal)
       { path: '/verification', element: <Navigate to="/admin" replace /> },
-      // Notifications
       { path: '/notifications', element: <PrivateRoute><NotificationCenter /></PrivateRoute> },
-      // Settings
       { path: '/settings', element: <PrivateRoute><Settings /></PrivateRoute> },
-      // Needs - Organization Representative only
       { path: '/needs/:id', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedDetails /></RoleRoute> },
       { path: '/need-submit', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedWizard organizationId="" organizationName="" /></RoleRoute> },
-      // Submission Reviews - redirect to Guild OS (admin portal)
       { path: '/submission-reviews', element: <Navigate to="/admin/submissions" replace /> },
-      // Organization Management - redirect to Guild OS (admin portal)
       { path: '/org-management', element: <Navigate to="/admin/organizations" replace /> },
-      // Need Review Queue - redirect to Guild OS (admin portal)
-      { path: '/need-reviews', element: <Navigate to="/admin/needs" replace /> }
+      { path: '/need-reviews', element: <Navigate to="/admin/needs" replace /> },
+      { path: '*', element: <NotFound /> }
     ]
   }
 ]);
 
-function OrgDashboardOrGrowthDashboard() {
-  const { profile } = useAuth();
-  // PHASE 1 FIX: Use only actual role - no preferredRole
-  if (profile?.role === 'organizationRepresentative' || profile?.role === 'organization') {
-    return <OrgDashboard />;
-  }
-  // Default is Member Growth Dashboard
-  return <GrowthDashboard />;
-}
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <RouterProvider router={routerConfig} />
-      </AuthProvider>
-    </ThemeProvider>
+    <Suspense fallback={<PageLoader />}>
+      <ThemeProvider>
+        <AuthProvider>
+          <RouterProvider router={routerConfig} />
+        </AuthProvider>
+      </ThemeProvider>
+    </Suspense>
   );
 }
