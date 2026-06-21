@@ -157,8 +157,14 @@ export default function SubmissionReviewQueue() {
                   <h3 className="text-base font-bold text-[var(--text)]">{submission.questTitle}</h3>
                   <div className="flex items-center gap-3 mt-1 text-xs text-[var(--text-muted)]">
                     <span className="flex items-center gap-1">
-                      <User size={12} /> Member: {submission.memberId}
+                      <User size={12} /> {submission.memberName || submission.memberId}
                     </span>
+                    {submission.questType === 'openSource' && (
+                      <span className="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 text-[10px]">Open Source</span>
+                    )}
+                    {submission.roleTitle && (
+                      <span className="text-purple-400">{submission.roleTitle}</span>
+                    )}
                     <span className="flex items-center gap-1">
                       <Calendar size={12} /> {new Date(submission.createdAt).toLocaleDateString()}
                     </span>
@@ -169,11 +175,49 @@ export default function SubmissionReviewQueue() {
                 </span>
               </div>
 
-              {/* Report */}
+              {/* Summary - Quick overview */}
+              {submission.summary && (
+                <div className="mb-4 p-3 rounded-lg bg-[var(--primary)]/5 border border-[var(--primary)]/20">
+                  <h4 className="text-[10px] font-bold text-[var(--primary)] uppercase tracking-wider mb-1">Executive Summary</h4>
+                  <p className="text-sm text-[var(--text-secondary)]">{submission.summary}</p>
+                </div>
+              )}
+
+              {/* Main Report */}
               <div className="mb-4">
                 <h4 className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">Submission Report</h4>
                 <p className="text-sm text-[var(--text-secondary)] whitespace-pre-wrap">{submission.report}</p>
               </div>
+
+              {/* Achievements */}
+              {submission.achievements && submission.achievements.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-2">Key Achievements</h4>
+                  <ul className="space-y-1">
+                    {submission.achievements.map((achievement, idx) => (
+                      <li key={idx} className="text-sm text-[var(--text-secondary)] flex items-start gap-2">
+                        <span className="text-amber-400 mt-1">★</span>
+                        {achievement}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Outcomes Produced */}
+              {submission.outcomesProduced && submission.outcomesProduced.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-2">Outcomes Produced</h4>
+                  <ul className="space-y-1">
+                    {submission.outcomesProduced.map((outcome, idx) => (
+                      <li key={idx} className="text-sm text-[var(--text-secondary)] flex items-start gap-2">
+                        <span className="text-emerald-400 mt-1">✓</span>
+                        {outcome}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* Evidence Links */}
               {submission.evidenceUrls && submission.evidenceUrls.length > 0 && (

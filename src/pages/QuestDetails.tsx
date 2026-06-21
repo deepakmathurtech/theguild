@@ -1,57 +1,140 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { applyForQuest, submitQuestCompletion, nowIso, RECEPTIONISTS, getVerificationRequirement, meetsVerificationRequirement } from '../lib/repository';
-import type { Quest } from '../types/guild';
-import { ArrowLeft, Compass, Award, Calendar, Clock, MapPin, Check, Send, ShieldAlert, Sparkles } from 'lucide-react';
+import { doc, getDoc, updateDoc, collection, query, getDocs } from 'firebase/firestore';
+import { applyForQuest, submitQuestCompletion, nowIso, RECEPTIONISTS, getVerificationRequirement, meetsVerificationRequirement, getQuestApplications } from '../lib/repository';
+import type { Quest, QuestApplication } from '../types/guild';
+import { ArrowLeft, Compass, Award, Calendar, Clock, MapPin, Check, Send, ShieldAlert, Sparkles, Users, ExternalLink, Wallet, Book, User, FileCheck, XCircle, Pause, Play, Send as SendIcon } from 'lucide-react';
 import { PAGE_SEO } from '../components/SEO';
+
+type ApplicantTab = 'applicants' | 'accepted' | 'reports' | 'completed' | 'rejected';
 
 export default function QuestDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { profile } = useAuth();
 
+  // All hooks must be defined at the top - consistently executed on every render
   const [quest, setQuest] = useState<Quest | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // SEO: Set page title
+  // Admin state - always defined but only populated for admins
+  const [applicantTab, setApplicantTab] = useState<ApplicantTab>('applicants');
+  const [applicantApps, setApplicantApps] = useState<QuestApplication[]>([]);
+  const [loadingApps, setLoadingApps] = useState(false);
+
+  // Submission Form States - ALL defined at top level
+  const [report, setReport] = useState('');
+  const [summary, setSummary] = useState('');
+  const [linkInput, setLinkInput] = useState('');
+  const [evidenceUrl, setEvidenceUrl] = useState('');
+  const [achievementInput, setAchievementInput] = useState('');
+  const [outputInput, setOutputInput] = useState('');
+  const [achievements, setAchievements] = useState<string[]>([]);
+  const [outcomesProduced, setOutcomesProduced] = useState<string[]>([]);
+
+  // Refs to track loaded state - avoids conditional useEffect execution
+  const questLoadedRef = useRef(false);
+  const questIdRef = useRef<string | undefined>(undefined);
+
+  // Admin check - direct boolean expression, not a hook
+  const isAdmin = profile?.role === 'receptionist' || profile?.role === 'cityGuildMaster' ||
+                 profile?.role === 'stateGuildMaster' || profile?.role === 'founder' || profile?.role === 'guildFounder';
+
+  // ALL useEffects must be defined consecutively at top level
+  // Useffect 1: SEO title (runs once on mount)
   useEffect(() => {
     document.title = PAGE_SEO.questDetails.title;
     const descEl = document.querySelector('meta[name="description"]');
     if (descEl) descEl.setAttribute('content', PAGE_SEO.questDetails.description);
   }, []);
 
-  // Submission Form States
-  const [report, setReport] = useState('');
-  const [linkInput, setLinkInput] = useState('');
-  const [evidenceUrl, setEvidenceUrl] = useState('');
-
+  // Useffect 2: Load quest and applications (runs when id or success changes)
   useEffect(() => {
+    if (!id) return;
+
+    let cancelled = false;
+    const questId: string = id;
+
     async function loadQuest() {
-      if (!id) return;
       try {
-        const docRef = doc(db, 'quests', id);
+        const docRef = doc(db, 'quests', questId);
         const snap = await getDoc(docRef);
+        if (cancelled) return;
+
         if (snap.exists()) {
           const loadedQuest = { id: snap.id, ...snap.data() } as Quest;
           setQuest(loadedQuest);
+          questLoadedRef.current = true;
+          questIdRef.current = questId;
         } else {
           setError('Quest details not found in ledger.');
         }
       } catch (err) {
-        console.error(err);
-        setError('Failed to fetch quest record.');
+        if (!cancelled) {
+          console.error(err);
+          setError('Failed to fetch quest record.');
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
-    loadQuest();
-  }, [id, success]);
+
+    async function loadApplications() {
+      if (!isAdmin) return;
+      // Wait for quest to be set first
+      await new Promise(resolve => {
+        const check = () => {
+          if (questLoadedRef.current && questIdRef.current === questId) {
+            resolve(true);
+            return true;
+          }
+          return false;
+        };
+        if (!check()) {
+          const interval = setInterval(() => {
+            if (check()) {
+              clearInterval(interval);
+              resolve(true);
+            }
+          }, 50);
+        }
+      });
+
+      if (cancelled || !questLoadedRef.current) return;
+
+      try {
+        const apps = await getQuestApplications(questId);
+        if (!cancelled) {
+          setApplicantApps(apps);
+        }
+      } catch (err) {
+        console.error('Failed to load applications:', err);
+      } finally {
+        if (!cancelled) {
+          setLoadingApps(false);
+        }
+      }
+    }
+
+    loadQuest().then(() => {
+      // Load applications for all users (not just admins) so they can see their acceptance status
+      if (!cancelled && profile) {
+        setLoadingApps(true);
+        loadApplications();
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, success, isAdmin]);
 
   if (loading) {
     return <div className="p-12 text-center text-xs text-[var(--text-muted)]">Loading Quest from ledger...</div>;
@@ -70,8 +153,12 @@ export default function QuestDetails() {
     );
   }
 
-  const hasApplied = profile && quest.applicants?.includes(profile.uid);
-  const hasBeenAccepted = profile && quest.acceptedMembers?.includes(profile.uid);
+  const hasApplied = profile && (quest.applicants?.includes(profile.uid) || applicantApps.some(a => a.applicantId === profile.uid));
+  // Check both acceptedMembers array AND accepted applications
+  const hasBeenAccepted = profile && (
+    quest.acceptedMembers?.includes(profile.uid) ||
+    applicantApps.some(a => a.applicantId === profile.uid && a.status === 'accepted')
+  );
   const hasCompleted = profile && (quest.completedMembers?.includes(profile.uid) || quest.status === 'completed');
 
   const handleApply = async () => {
@@ -113,13 +200,21 @@ export default function QuestDetails() {
     try {
       await submitQuestCompletion(quest.id, profile, {
         report,
+        summary,
+        achievements: achievements.length > 0 ? achievements : undefined,
+        outcomesProduced: outcomesProduced.length > 0 ? outcomesProduced : undefined,
         links: linkInput ? [linkInput] : [],
-        evidenceUrls: evidenceUrl ? [evidenceUrl] : []
+        evidenceUrls: evidenceUrl ? [evidenceUrl] : [],
+        questType: quest.questType as 'standard' | 'openSource' | undefined,
+        memberName: profile.fullName
       });
       setSuccess('Proof of completion submitted for review.');
       setReport('');
+      setSummary('');
       setLinkInput('');
       setEvidenceUrl('');
+      setAchievements([]);
+      setOutcomesProduced([]);
     } catch (err: any) {
       setError(err.message || 'Submission failed.');
     } finally {
@@ -127,8 +222,78 @@ export default function QuestDetails() {
     }
   };
 
+  // Helper functions to add achievements/outcomes
+  const addAchievement = () => {
+    if (achievementInput.trim() && !achievements.includes(achievementInput.trim())) {
+      setAchievements([...achievements, achievementInput.trim()]);
+      setAchievementInput('');
+    }
+  };
+
+  const removeAchievement = (achievement: string) => {
+    setAchievements(achievements.filter(a => a !== achievement));
+  };
+
+  const addOutcome = () => {
+    if (outputInput.trim() && !outcomesProduced.includes(outputInput.trim())) {
+      setOutcomesProduced([...outcomesProduced, outputInput.trim()]);
+      setOutputInput('');
+    }
+  };
+
+  const removeOutcome = (outcome: string) => {
+    setOutcomesProduced(outcomesProduced.filter(o => o !== outcome));
+  };
+
   // Find coordinator receptionist
   const coordinator = RECEPTIONISTS.find(r => r.uid === quest.assignedReceptionistId) || RECEPTIONISTS[0];
+
+  // Filter applications by tab
+  const getFilteredByTab = () => {
+    switch (applicantTab) {
+      case 'applicants':
+        return applicantApps.filter(a => a.status === 'submitted' || a.status === 'underReview' || a.status === 'draft');
+      case 'accepted':
+        return applicantApps.filter(a => a.status === 'accepted');
+      case 'reports':
+        return applicantApps.filter(a => a.status === 'accepted'); // Could add quest submissions later
+      case 'completed':
+        return applicantApps.filter(a => a.status === 'completed');
+      case 'rejected':
+        return applicantApps.filter(a => a.status === 'rejected' || a.status === 'withdrawn');
+      default:
+        return applicantApps;
+    }
+  };
+
+  // Get status display config
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case 'submitted': return { label: 'Submitted', color: 'bg-amber-500/20 text-amber-400' };
+      case 'underReview': return { label: 'Under Review', color: 'bg-blue-500/20 text-blue-400' };
+      case 'accepted': return { label: 'Active', color: 'bg-emerald-500/20 text-emerald-400' };
+      case 'rejected': return { label: 'Rejected', color: 'bg-red-500/20 text-red-400' };
+      case 'withdrawn': return { label: 'Withdrawn', color: 'bg-slate-500/20 text-slate-400' };
+      case 'completed': return { label: 'Completed', color: 'bg-purple-500/20 text-purple-400' };
+      default: return { label: status, color: 'bg-slate-500/20 text-slate-400' };
+    }
+  };
+
+  const applicantTabCounts = {
+    applicants: applicantApps.filter(a => a.status === 'submitted' || a.status === 'underReview' || a.status === 'draft').length,
+    accepted: applicantApps.filter(a => a.status === 'accepted').length,
+    reports: applicantApps.filter(a => a.status === 'accepted').length, // Placeholder
+    completed: applicantApps.filter(a => a.status === 'completed').length,
+    rejected: applicantApps.filter(a => a.status === 'rejected' || a.status === 'withdrawn').length
+  };
+
+  const adminTabs: { id: ApplicantTab; label: string; icon: React.ElementType; count: number }[] = [
+    { id: 'applicants', label: 'Applicants', icon: User, count: applicantTabCounts.applicants },
+    { id: 'accepted', label: 'Active', icon: Play, count: applicantTabCounts.accepted },
+    { id: 'reports', label: 'Reports', icon: SendIcon, count: applicantTabCounts.reports },
+    { id: 'completed', label: 'Completed', icon: FileCheck, count: applicantTabCounts.completed },
+    { id: 'rejected', label: 'Rejected', icon: XCircle, count: applicantTabCounts.rejected }
+  ];
 
   return (
     <div className="max-w-4xl mx-auto py-4 space-y-6 text-left animate-fade-up">
@@ -185,7 +350,7 @@ export default function QuestDetails() {
           </div>
 
           {/* Submission panel for accepted members */}
-          {hasBeenAccepted && !hasCompleted && quest.status === 'inProgress' && (
+          {hasBeenAccepted && !hasCompleted && (quest.status === 'inProgress' || quest.status === 'assigned') && (
             <div className="panel space-y-4 border border-[var(--primary)]/20 bg-[var(--primary)]/5">
               <div className="flex gap-2 items-center">
                 <Sparkles size={16} className="text-[var(--primary)]" />
@@ -196,6 +361,19 @@ export default function QuestDetails() {
               </p>
 
               <form onSubmit={handleSubmission} className="space-y-4">
+                {/* Summary - brief overview */}
+                <div>
+                  <label className="block text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-1">Executive Summary</label>
+                  <textarea
+                    rows={2}
+                    value={summary}
+                    onChange={e => setSummary(e.target.value)}
+                    placeholder="Brief summary of what was accomplished (visible in reports)..."
+                    className="text-xs"
+                  />
+                </div>
+
+                {/* Main Report */}
                 <div>
                   <label className="block text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-1 required">Contribution Report</label>
                   <textarea
@@ -208,6 +386,71 @@ export default function QuestDetails() {
                   />
                 </div>
 
+                {/* Achievements */}
+                <div>
+                  <label className="block text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-1">Key Achievements</label>
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={achievementInput}
+                      onChange={e => setAchievementInput(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addAchievement())}
+                      placeholder="Add an achievement..."
+                      className="text-xs flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={addAchievement}
+                      className="btn btn-xs"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {achievements.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {achievements.map((a, i) => (
+                        <span key={i} className="badge badge-amber flex items-center gap-1">
+                          {a}
+                          <button type="button" onClick={() => removeAchievement(a)} className="hover:text-red-400">×</button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Outcomes Produced */}
+                <div>
+                  <label className="block text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-1">Outcomes Produced</label>
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={outputInput}
+                      onChange={e => setOutputInput(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addOutcome())}
+                      placeholder="Add an outcome/deliverable..."
+                      className="text-xs flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={addOutcome}
+                      className="btn btn-xs"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {outcomesProduced.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {outcomesProduced.map((o, i) => (
+                        <span key={i} className="badge badge-emerald flex items-center gap-1">
+                          {o}
+                          <button type="button" onClick={() => removeOutcome(o)} className="hover:text-red-400">×</button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Links */}
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-1">Evidence URL (e.g. GitHub, Figma link)</label>
@@ -254,6 +497,48 @@ export default function QuestDetails() {
 
         {/* Right Column: Actions & Meta Info */}
         <div className="space-y-6">
+          {/* Open Source Quest Workspace Access - for accepted members */}
+          {quest.questType === 'openSource' && hasBeenAccepted && quest.openSourceConfig?.teamWorkspace && (
+            <div className="panel p-4 border border-purple-500/30 bg-purple-500/5 space-y-3">
+              <div className="flex items-center gap-2 text-purple-400">
+                <Users size={16} />
+                <h3 className="text-sm font-bold uppercase tracking-wider">Team Workspace</h3>
+              </div>
+              <p className="text-xs text-[var(--text-muted)]">
+                Access team resources, milestones, and announcements.
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {quest.openSourceConfig.teamWorkspace.announcements && (
+                  <div className="p-2 bg-[var(--bg-subtle)] rounded">
+                    <div className="font-bold">{quest.openSourceConfig.teamWorkspace.announcements.length}</div>
+                    <div className="text-[var(--text-muted)]">Announcements</div>
+                  </div>
+                )}
+                {quest.openSourceConfig.teamWorkspace.milestones && (
+                  <div className="p-2 bg-[var(--bg-subtle)] rounded">
+                    <div className="font-bold">
+                      {quest.openSourceConfig.teamWorkspace.milestones.filter(m => m.status === 'completed').length}/
+                      {quest.openSourceConfig.teamWorkspace.milestones.length}
+                    </div>
+                    <div className="text-[var(--text-muted)]">Milestones</div>
+                  </div>
+                )}
+                {quest.openSourceConfig.teamWorkspace.resources && (
+                  <div className="p-2 bg-[var(--bg-subtle)] rounded">
+                    <div className="font-bold">{quest.openSourceConfig.teamWorkspace.resources.length}</div>
+                    <div className="text-[var(--text-muted)]">Resources</div>
+                  </div>
+                )}
+              </div>
+              <Link
+                to={`/quests/${quest.id}/workspace`}
+                className="btn btn-sm bg-purple-500 hover:bg-purple-600 text-white w-full flex items-center justify-center gap-1"
+              >
+                <ExternalLink size={12} /> Open Workspace
+              </Link>
+            </div>
+          )}
+
           {/* Actions card */}
           <div className="panel space-y-4">
             <div className="space-y-1">
@@ -280,6 +565,50 @@ export default function QuestDetails() {
                 <span className="font-semibold text-[var(--text-secondary)]">Rank {quest.requiredRank || 'Applicant'}</span>
               </div>
             </div>
+
+            {/* Knowledge Base Link - For quests with knowledge records */}
+            {quest.knowledgeRequired && (
+              <div className="border-t border-[var(--border)] pt-4 mt-4">
+                <div className="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                  <Book size={12} /> Knowledge Required
+                </div>
+                <p className="text-xs text-[var(--text-muted)]">
+                  This quest requires a knowledge submission upon completion.
+                </p>
+              </div>
+            )}
+
+            {/* Fundraising Progress - For Open Source quests with fundraising */}
+            {quest.questType === 'openSource' && quest.openSourceConfig?.fundraisingGoal && (
+              <div className="border-t border-[var(--border)] pt-4 mt-4">
+                <div className="text-[10px] font-bold text-green-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                  <Wallet size={12} /> Fundraising Goal
+                </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="flex-1 bg-[var(--bg-subtle)] h-3 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-green-500 rounded-full transition-all"
+                      style={{
+                        width: `${Math.min(100, ((quest.openSourceConfig.fundsRaised || 0) / quest.openSourceConfig.fundraisingGoal) * 100)}%`
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-green-400 font-bold">
+                    {quest.openSourceConfig.fundraisingCurrency || '$'}{(quest.openSourceConfig.fundsRaised || 0).toLocaleString()}
+                  </span>
+                  <span className="text-[var(--text-muted)]">
+                    / {quest.openSourceConfig.fundraisingGoal.toLocaleString()}
+                  </span>
+                </div>
+                {quest.openSourceConfig.contributions && quest.openSourceConfig.contributions.length > 0 && (
+                  <div className="mt-2 text-xs text-[var(--text-muted)]">
+                    {quest.openSourceConfig.contributions.length} contribution(s)
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Application action trigger */}
             {!hasBeenAccepted && !hasCompleted && quest.status === 'open' && (
@@ -317,6 +646,77 @@ export default function QuestDetails() {
           </div>
         </div>
       </div>
+
+      {/* ADMIN: Applicant Lifecycle Tabs */}
+      {isAdmin && (
+        <div className="panel space-y-4 animate-fade-up">
+          <div className="flex items-center gap-2 pb-2 border-b border-[var(--border)]">
+            <Users size={16} className="text-[var(--primary)]" />
+            <h2 className="text-sm font-bold">Quest Participants</h2>
+            <span className="text-xs text-[var(--text-muted)]">({applicantApps.length} total)</span>
+          </div>
+
+          {/* Tab Navigation */}
+          <div className="flex gap-1 overflow-x-auto pb-px">
+            {adminTabs.map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setApplicantTab(tab.id)}
+                  className={`px-3 py-2 text-xs font-bold whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                    applicantTab === tab.id
+                      ? 'text-[var(--primary)] border-b-2 border-[var(--primary)]'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+                  }`}
+                >
+                  <Icon size={12} />
+                  {tab.label}
+                  <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[9px] ${
+                    applicantTab === tab.id ? 'bg-[var(--primary)] text-white' : 'bg-[var(--card-subtle)]'
+                  }`}>
+                    {tab.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Applicants List */}
+          {loadingApps ? (
+            <div className="p-8 text-center text-xs text-[var(--text-muted)]">Loading applicants...</div>
+          ) : getFilteredByTab().length === 0 ? (
+            <div className="p-8 text-center text-xs text-[var(--text-muted)]">
+              No applicants in this category.
+            </div>
+          ) : (
+            <div className="grid gap-2">
+              {getFilteredByTab().map(app => {
+                const statusInfo = getStatusConfig(app.status);
+                return (
+                  <div key={app.id} className="p-3 rounded-lg bg-[var(--bg-subtle)] flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-[var(--primary)]/20 flex items-center justify-center">
+                        <User size={14} className="text-[var(--primary)]" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold">{app.applicantName || `User: ${app.applicantId.slice(0, 8)}`}</div>
+                        <div className="text-[10px] text-[var(--text-muted)]">
+                          Applied {app.createdAt ? new Date(app.createdAt).toLocaleDateString() : 'recently'}
+                          {app.roleTitle && <span className="ml-2 text-purple-400">Role: {app.roleTitle}</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <span className={`px-2 py-1 rounded-lg text-[9px] font-bold uppercase ${statusInfo.color}`}>
+                      {statusInfo.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

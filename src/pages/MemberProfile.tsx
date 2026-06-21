@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { updateLedgerRecord, RECEPTIONISTS, fetchOrganizationNeeds } from '../lib/repository';
+import { updateLedgerRecord, RECEPTIONISTS, fetchOrganizationNeeds, getUserQuestStats, type UserQuestStats } from '../lib/repository';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import {
   Award, ShieldCheck, Mail, Calendar, Phone, Plus, ExternalLink,
   BookOpen, Star, Compass, UserCheck, Briefcase, FileText, CheckCircle,
-  MapPin, Building2, Target, TrendingUp, DollarSign
+  MapPin, Building2, Target, TrendingUp, DollarSign, Play, Clock, Archive
 } from 'lucide-react';
 import EmptyState from '../components/EmptyState';
 import { PAGE_SEO } from '../components/SEO';
@@ -27,6 +27,26 @@ export default function MemberProfile() {
     document.title = isOrgRep ? 'Organization Profile' : PAGE_SEO.memberProfile.title;
   }, [isOrgRep]);
   const [activeTab, setActiveTab] = useState<'portfolio' | 'quests' | 'achievements'>('portfolio');
+  const [questStats, setQuestStats] = useState<UserQuestStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+
+  // Load quest stats
+  useEffect(() => {
+    if (!profile?.uid) return;
+    const userId = profile.uid;
+    async function loadQuestStats() {
+      setLoadingStats(true);
+      try {
+        const stats = await getUserQuestStats(userId);
+        setQuestStats(stats);
+      } catch (err) {
+        console.error('Failed to load quest stats:', err);
+      } finally {
+        setLoadingStats(false);
+      }
+    }
+    loadQuestStats();
+  }, [profile]);
 
   // Fetch organization for org reps
   useEffect(() => {
@@ -487,10 +507,63 @@ export default function MemberProfile() {
                 <CheckCircle size={15} className="text-emerald-500" />
                 Completed Campaign Logs
               </h3>
-              
-              <div className="panel p-6 text-center text-xs text-[var(--text-muted)] border border-dashed border-[var(--border)]">
-                No verified campaign outcomes logged on the Firestore ledger. Join active quests to accumulate completed operations.
-              </div>
+
+              {loadingStats ? (
+                <div className="panel p-6 text-center text-xs text-[var(--text-muted)]">
+                  Loading quest statistics...
+                </div>
+              ) : questStats ? (
+                <>
+                  {/* Quest Stats Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                    <div className="panel p-4 text-center">
+                      <div className="text-2xl font-black text-[var(--primary)]">{questStats.totalApplications}</div>
+                      <div className="text-[10px] font-bold uppercase text-[var(--text-muted)]">Applications</div>
+                    </div>
+                    <div className="panel p-4 text-center">
+                      <div className="text-2xl font-black text-amber-400">{questStats.pending}</div>
+                      <div className="text-[10px] font-bold uppercase text-[var(--text-muted)]">Pending</div>
+                    </div>
+                    <div className="panel p-4 text-center">
+                      <div className="text-2xl font-black text-emerald-400">{questStats.accepted}</div>
+                      <div className="text-[10px] font-bold uppercase text-[var(--text-muted)]">Active</div>
+                    </div>
+                    <div className="panel p-4 text-center">
+                      <div className="text-2xl font-black text-purple-400">{questStats.completed}</div>
+                      <div className="text-[10px] font-bold uppercase text-[var(--text-muted)]">Completed</div>
+                    </div>
+                  </div>
+
+                  {/* Type breakdown */}
+                  {(questStats.standardQuests > 0 || questStats.openSourceQuests > 0) && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="panel p-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Target size={14} className="text-blue-400" />
+                          <span className="text-xs font-bold">Standard Quests</span>
+                        </div>
+                        <span className="text-sm font-black text-blue-400">{questStats.standardQuests}</span>
+                      </div>
+                      <div className="panel p-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp size={14} className="text-purple-400" />
+                          <span className="text-xs font-bold">Open Source</span>
+                        </div>
+                        <span className="text-sm font-black text-purple-400">{questStats.openSourceQuests}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* History link */}
+                  <Link to="/quest-center" className="primary px-4 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2">
+                    <Compass size={14} /> View Quest Center
+                  </Link>
+                </>
+              ) : (
+                <div className="panel p-6 text-center text-xs text-[var(--text-muted)] border border-dashed border-[var(--border)]">
+                  No quest activity recorded. Join quests to start your campaign history.
+                </div>
+              )}
             </div>
           )}
 

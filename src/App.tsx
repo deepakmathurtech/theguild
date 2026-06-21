@@ -24,7 +24,10 @@ const OrgOutcomes = lazy(() => import('./pages/OrgOutcomes'));
 const QuestBoard = lazy(() => import('./pages/QuestBoard'));
 const QuestDetails = lazy(() => import('./pages/QuestDetails'));
 const MyQuests = lazy(() => import('./pages/MyQuests'));
+const MyQuestWorkspace = lazy(() => import('./pages/MyQuestWorkspace'));
+const UserQuestCenter = lazy(() => import('./pages/UserQuestCenter'));
 const QuestApplications = lazy(() => import('./pages/QuestApplications'));
+const SubmissionReviews = lazy(() => import('./pages/SubmissionReviews'));
 const MemberProfile = lazy(() => import('./pages/MemberProfile'));
 const BranchesPage = lazy(() => import('./pages/Branches'));
 const Organizations = lazy(() => import('./pages/Organizations'));
@@ -554,6 +557,8 @@ const routerConfig = createBrowserRouter([
       { path: '/quests', element: <QuestBoard /> },
       { path: '/quests/:id', element: <QuestDetails /> },
       { path: '/my-quests', element: <PrivateRoute><MyQuests /></PrivateRoute> },
+      { path: '/my-quests/:questId', element: <PrivateRoute><MyQuestWorkspace /></PrivateRoute> },
+      { path: '/quest-center', element: <PrivateRoute><UserQuestCenter /></PrivateRoute> },
       { path: '/quest-applications', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><QuestApplications /></RoleRoute> },
       { path: '/organizations', element: <Organizations /> },
       { path: '/org/:id', element: <Organizations /> },
@@ -575,7 +580,7 @@ const routerConfig = createBrowserRouter([
       { path: '/settings', element: <PrivateRoute><Settings /></PrivateRoute> },
       { path: '/needs/:id', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedDetails /></RoleRoute> },
       { path: '/need-submit', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedWizard organizationId="" organizationName="" /></RoleRoute> },
-      { path: '/submission-reviews', element: <Navigate to="/admin/submissions" replace /> },
+      { path: '/submission-reviews', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><SubmissionReviews /></RoleRoute> },
       { path: '/org-management', element: <Navigate to="/admin/organizations" replace /> },
       { path: '/need-reviews', element: <Navigate to="/admin/needs" replace /> },
       { path: '*', element: <NotFound /> }

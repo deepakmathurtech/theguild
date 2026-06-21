@@ -33,7 +33,11 @@ import type {
   OrganizationActivity,
   Outcome,
   Quest,
+  QuestApplication,
+  QuestParticipation,
   QuestSubmission,
+  QuestType,
+  ParticipationStatus,
   VerificationRecord,
   Receptionist,
   PaymentRecord,
@@ -48,6 +52,37 @@ import type {
 
 export function nowIso() {
   return new Date().toISOString();
+}
+
+// Send notification to user (used for acceptance, completion, etc.)
+export async function notifyUser(
+  userId: string,
+  type: 'quest_accepted' | 'quest_rejected' | 'submission_approved' | 'submission_rejected' | 'quest_completed' | 'application_submitted',
+  title: string,
+  body: string,
+  actionUrl?: string,
+  priority: 'low' | 'medium' | 'high' | 'critical' = 'medium'
+): Promise<void> {
+  const notificationsRef = collection(db, 'notifications');
+  const notificationId = `notif_${Date.now()}_${userId.slice(0, 8)}`;
+
+  await setDoc(doc(db, 'notifications', notificationId), {
+    id: notificationId,
+    userId,
+    type,
+    title,
+    body,
+    priority,
+    status: 'unread',
+    read: false,
+    channel: 'inApp',
+    actionUrl: actionUrl || undefined,
+    createdAt: nowIso(),
+    createdBy: 'system',
+    archiveStatus: 'active',
+    jurisdiction: { cityName: '', stateName: '', countryName: '' },
+    updatedAt: nowIso()
+  });
 }
 
 export function auditFields(actor: GuildUser, responsibleReceptionist?: string): AuditFields {
@@ -1848,20 +1883,449 @@ export async function fetchQuests(filters?: {
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Quest));
 }
 
-// Apply for a Quest
+// Check if user has existing application for a quest
+export async function checkExistingApplication(questId: string, userId: string): Promise<QuestApplication | null> {
+  const q = query(
+    collection(db, 'questApplications'),
+    where('questId', '==', questId),
+    where('applicantId', '==', userId)
+  );
+  const snapshot = await getDocs(q);
+  if (snapshot.empty) return null;
+  return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as QuestApplication;
+}
+
+// Get all applications for a user
+export async function getUserQuestApplications(userId: string): Promise<QuestApplication[]> {
+  const q = query(
+    collection(db, 'questApplications'),
+    where('applicantId', '==', userId)
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as QuestApplication));
+}
+
+// Get all applications for a quest
+export async function getQuestApplications(questId: string): Promise<QuestApplication[]> {
+  const q = query(
+    collection(db, 'questApplications'),
+    where('questId', '==', questId)
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as QuestApplication));
+}
+
+// Get single quest by ID
+export async function getQuest(questId: string): Promise<Quest | null> {
+  const snap = await getDoc(doc(db, 'quests', questId));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() } as Quest;
+}
+
+// ========== QUEST PARTICIPATION (Source of Truth for Accepted Quests) ==========
+
+// Create participation record when user is accepted into a quest
+export async function createParticipation(
+  application: QuestApplication,
+  quest: Quest,
+  reviewerId: string
+): Promise<string> {
+  const participationId = `part_${Date.now()}_${application.applicantId.slice(0, 8)}`;
+  const now = nowIso();
+
+  const participationData: QuestParticipation = {
+    id: participationId,
+    questId: application.questId,
+    questTitle: quest.title,
+    applicationId: application.id,
+    questType: quest.questType || 'standard',
+    userId: application.applicantId,
+    userName: application.applicantName,
+    applicantId: application.applicantId,
+    applicantName: application.applicantName,
+    roleId: application.roleId,
+    roleTitle: application.roleTitle,
+    motivation: application.motivation,
+    // Initial status
+    status: 'accepted',
+    completionStatus: 'notStarted',
+    reportStatus: 'notStarted',
+    // Dates
+    acceptedAt: now,
+    // Audit fields
+    archiveStatus: 'active',
+    jurisdiction: quest.jurisdiction || { cityName: '', stateName: '', countryName: '' },
+    createdAt: now,
+    createdBy: reviewerId,
+    updatedAt: now,
+    updatedBy: reviewerId
+  };
+
+  await setDoc(doc(db, 'questParticipations', participationId), participationData);
+  return participationId;
+}
+
+// Get participation record by ID
+export async function getParticipation(participationId: string): Promise<QuestParticipation | null> {
+  const snap = await getDoc(doc(db, 'questParticipations', participationId));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() } as QuestParticipation;
+}
+
+// Get user's participation for a specific quest
+export async function getUserQuestParticipation(userId: string, questId: string): Promise<QuestParticipation | null> {
+  const q = query(
+    collection(db, 'questParticipations'),
+    where('userId', '==', userId),
+    where('questId', '==', questId)
+  );
+  const snapshot = await getDocs(q);
+  if (snapshot.empty) return null;
+  return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as QuestParticipation;
+}
+
+// Get all participations for a user
+export async function getUserParticipations(userId: string): Promise<QuestParticipation[]> {
+  const q = query(
+    collection(db, 'questParticipations'),
+    where('userId', '==', userId)
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as QuestParticipation));
+}
+
+// Get user's active participations (pending, accepted, active, inProgress)
+export async function getUserActiveParticipations(userId: string): Promise<QuestParticipation[]> {
+  const participations = await getUserParticipations(userId);
+  return participations.filter(p =>
+    ['pending', 'accepted', 'active', 'inProgress', 'awaitingCompletionReview'].includes(p.status)
+  );
+}
+
+// Get user's completed participations
+export async function getUserCompletedParticipations(userId: string): Promise<QuestParticipation[]> {
+  const participations = await getUserParticipations(userId);
+  return participations.filter(p => p.status === 'completed');
+}
+
+// Get all participations awaiting completion review (for admin review)
+export async function getQuestsAwaitingCompletion(): Promise<QuestParticipation[]> {
+  const q = query(
+    collection(db, 'questParticipations'),
+    where('status', '==', 'awaitingCompletionReview')
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as QuestParticipation));
+}
+
+// Get all participations for a quest
+export async function getQuestParticipations(questId: string): Promise<QuestParticipation[]> {
+  const q = query(
+    collection(db, 'questParticipations'),
+    where('questId', '==', questId)
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as QuestParticipation));
+}
+
+// Update participation status
+export async function updateParticipationStatus(
+  participationId: string,
+  status: ParticipationStatus,
+  reviewerId?: string
+): Promise<void> {
+  const updateData: Record<string, unknown> = {
+    status,
+    updatedAt: nowIso()
+  };
+  if (reviewerId) {
+    updateData.updatedBy = reviewerId;
+  }
+
+  // Handle specific status transitions
+  if (status === 'active' || status === 'inProgress') {
+    updateData.startedAt = nowIso();
+  } else if (status === 'awaitingCompletionReview') {
+    updateData.submittedAt = nowIso();
+  } else if (status === 'completed') {
+    updateData.completedAt = nowIso();
+  }
+
+  await updateDoc(doc(db, 'questParticipations', participationId), updateData);
+}
+
+// Submit completion report
+export async function submitParticipationCompletion(
+  participationId: string,
+  data: {
+    report?: string;
+    summary?: string;
+    achievements?: string[];
+    evidenceUrls?: string[];
+  },
+  userId: string
+): Promise<void> {
+  // Get participation to find the quest for notification
+  const partDoc = await getDoc(doc(db, 'questParticipations', participationId));
+  if (!partDoc.exists()) throw new Error('Participation not found');
+  const participation = partDoc.data() as QuestParticipation;
+
+  const updateData = {
+    ...data,
+    status: 'awaitingCompletionReview' as ParticipationStatus,
+    reportStatus: 'submitted',
+    submittedAt: nowIso(),
+    updatedAt: nowIso(),
+    updatedBy: userId
+  };
+
+  await updateDoc(doc(db, 'questParticipations', participationId), updateData);
+
+  // Notify quest creator/coordinator about the submission
+  if (participation.createdBy) {
+    await notifyUser(
+      participation.createdBy,
+      'application_submitted',
+      'Completion Report Submitted',
+      `${participation.userName || participation.userId} has submitted a completion report for "${participation.questTitle}". Please review it.`,
+      '/submission-reviews',
+      'medium'
+    );
+  }
+}
+
+// Approve/complete participation
+export async function completeParticipation(
+  participationId: string,
+  reviewerId: string,
+  reviewerNotes?: string
+): Promise<void> {
+  // Get participation to find the user
+  const partDoc = await getDoc(doc(db, 'questParticipations', participationId));
+  if (!partDoc.exists()) throw new Error('Participation not found');
+  const participation = partDoc.data() as QuestParticipation;
+
+  const updateData = {
+    status: 'completed' as ParticipationStatus,
+    completionStatus: 'approved',
+    reportStatus: 'approved',
+    completedAt: nowIso(),
+    reviewerId,
+    reviewerNotes,
+    reviewedAt: nowIso(),
+    updatedAt: nowIso(),
+    updatedBy: reviewerId
+  };
+
+  await updateDoc(doc(db, 'questParticipations', participationId), updateData);
+
+  // Also update the quest's member lists - remove from accepted, add to completed
+  const questRef = doc(db, 'quests', participation.questId);
+  const questDoc = await getDoc(questRef);
+  if (questDoc.exists()) {
+    const quest = questDoc.data() as Quest;
+    const accepted = quest.acceptedMembers || [];
+    const completed = quest.completedMembers || [];
+
+    await updateDoc(doc(db, 'quests', participation.questId), {
+      acceptedMembers: accepted.filter(id => id !== participation.userId),
+      completedMembers: [...completed, participation.userId],
+      updatedAt: nowIso()
+    });
+  }
+
+  // Notify the user their completion was approved
+  await notifyUser(
+    participation.userId,
+    'quest_completed',
+    'Quest Completed!',
+    `Your completion report for "${participation.questTitle}" has been approved! You now have earned reputation points.`,
+    `/my-quests/${participation.questId}`,
+    'high'
+  );
+}
+
+// Reject participation completion
+export async function rejectParticipationCompletion(
+  participationId: string,
+  reviewerId: string,
+  reviewerNotes: string
+): Promise<void> {
+  // Get participation to find the user
+  const partDoc = await getDoc(doc(db, 'questParticipations', participationId));
+  if (!partDoc.exists()) throw new Error('Participation not found');
+  const participation = partDoc.data() as QuestParticipation;
+
+  const updateData = {
+    status: 'inProgress' as ParticipationStatus,
+    completionStatus: 'rejected',
+    reportStatus: 'needsRevision',
+    reviewerId,
+    reviewerNotes,
+    reviewedAt: nowIso(),
+    updatedAt: nowIso(),
+    updatedBy: reviewerId
+  };
+
+  await updateDoc(doc(db, 'questParticipations', participationId), updateData);
+
+  // Notify the user their completion was rejected
+  await notifyUser(
+    participation.userId,
+    'submission_rejected',
+    'Completion Report Needs Revision',
+    `Your completion report for "${participation.questTitle}" needs revisions: ${reviewerNotes}`,
+    `/my-quests/${participation.questId}`,
+    'medium'
+  );
+}
+
+// Withdraw from participation
+export async function withdrawParticipation(
+  participationId: string,
+  userId: string
+): Promise<void> {
+  const updateData = {
+    status: 'withdrawn' as ParticipationStatus,
+    updatedAt: nowIso(),
+    updatedBy: userId
+  };
+
+  await updateDoc(doc(db, 'questParticipations', participationId), updateData);
+}
+
+// Withdraw an application
+export async function withdrawApplication(applicationId: string, userId: string): Promise<void> {
+  const appRef = doc(db, 'questApplications', applicationId);
+  const snap = await getDoc(appRef);
+  if (!snap.exists()) throw new Error('Application not found');
+
+  const appData = snap.data() as QuestApplication;
+  if (appData.applicantId !== userId) throw new Error('Unauthorized');
+
+  if (appData.status !== 'submitted' && appData.status !== 'underReview') {
+    throw new Error('Cannot withdraw this application');
+  }
+
+  await updateDoc(appRef, {
+    status: 'withdrawn',
+    updatedAt: nowIso()
+  });
+
+  // Also update quest's applicants array for backward compatibility
+  const questRef = doc(db, 'quests', appData.questId);
+  const questSnap = await getDoc(questRef);
+  if (questSnap.exists()) {
+    const quest = questSnap.data() as Quest;
+    const applicants = (quest.applicants || []).filter((id: string) => id !== userId);
+    await updateDoc(questRef, {
+      applicants,
+      updatedAt: nowIso()
+    });
+  }
+}
+
+// Get user's quest statistics
+export interface UserQuestStats {
+  totalApplications: number;
+  pending: number;
+  accepted: number;
+  completed: number;
+  rejected: number;
+  withdrawn: number;
+  standardQuests: number;
+  openSourceQuests: number;
+  reportsSubmitted: number;
+  fundsRaised: number;
+}
+
+export async function getUserQuestStats(userId: string): Promise<UserQuestStats> {
+  const applications = await getUserQuestApplications(userId);
+
+  const stats: UserQuestStats = {
+    totalApplications: applications.length,
+    pending: applications.filter(a => a.status === 'submitted' || a.status === 'underReview').length,
+    accepted: applications.filter(a => a.status === 'accepted').length,
+    completed: applications.filter(a => a.status === 'completed').length,
+    rejected: applications.filter(a => a.status === 'rejected').length,
+    withdrawn: applications.filter(a => a.status === 'withdrawn').length,
+    standardQuests: applications.filter(a => a.questType !== 'openSource').length,
+    openSourceQuests: applications.filter(a => a.questType === 'openSource').length,
+    reportsSubmitted: 0,
+    fundsRaised: 0
+  };
+
+  // Get submissions count
+  const submissionsQ = query(collection(db, 'questSubmissions'), where('memberId', '==', userId));
+  const submissionsSnap = await getDocs(submissionsQ);
+  stats.reportsSubmitted = submissionsSnap.size;
+
+  // Get funds raised (for open source quests where user was accepted)
+  const acceptedApps = applications.filter(a => a.status === 'accepted' && a.questType === 'openSource');
+  let fundsRaised = 0;
+  for (const app of acceptedApps) {
+    const questRef = doc(db, 'quests', app.questId);
+    const questDoc = await getDoc(questRef);
+    if (questDoc.exists()) {
+      const quest = questDoc.data() as Quest;
+      if (quest.openSourceConfig?.fundsRaised) {
+        fundsRaised += quest.openSourceConfig.fundsRaised;
+      }
+    }
+  }
+  stats.fundsRaised = fundsRaised;
+
+  return stats;
+}
+
+// Apply for a Quest - Enhanced with application record
 export async function applyForQuest(questId: string, user: GuildUser): Promise<void> {
   const questRef = doc(db, 'quests', questId);
   const snap = await getDoc(questRef);
   if (!snap.exists()) throw new Error('Quest not found');
   const quest = snap.data() as Quest;
-  
-  const applicants = quest.applicants || [];
-  if (applicants.includes(user.uid)) return;
 
-  await updateDoc(questRef, {
-    applicants: [...applicants, user.uid],
-    updatedAt: nowIso()
-  });
+  // === CHECK FOR EXISTING APPLICATION (ONE PER QUEST RULE) ===
+  const existingApp = await checkExistingApplication(questId, user.uid);
+  if (existingApp) {
+    throw new Error(`You already have an application for this quest. Status: ${existingApp.status}`);
+  }
+  // ==============================================
+
+  // === SLOT ENFORCEMENT ===
+  const questType = quest.questType || 'standard';
+  await validateQuestSlot(user.uid, questType);
+  // ====================
+
+  // Create application record
+  const applicationId = `app_${Date.now()}_${user.uid.slice(0, 8)}`;
+  const applicationData = {
+    id: applicationId,
+    questId,
+    questTitle: quest.title,
+    questType: quest.questType || 'standard',
+    applicantId: user.uid,
+    applicantName: user.fullName,
+    motivation: '',
+    experience: '',
+    status: 'submitted' as const,
+    createdAt: nowIso(),
+    createdBy: user.uid,
+    archiveStatus: 'active',
+    updatedAt: nowIso(),
+    jurisdiction: user.jurisdiction
+  };
+
+  await setDoc(doc(db, 'questApplications', applicationId), applicationData);
+
+  // Also add to quest's applicants array (backward compatibility)
+  const applicants = quest.applicants || [];
+  if (!applicants.includes(user.uid)) {
+    await updateDoc(questRef, {
+      applicants: [...applicants, user.uid],
+      updatedAt: nowIso()
+    });
+  }
 
   await logActivity({
     userId: user.uid,
@@ -1872,11 +2336,24 @@ export async function applyForQuest(questId: string, user: GuildUser): Promise<v
   });
 }
 
-// Submit Quest Submission (evidence of completion)
+// Submit Quest Submission (evidence of completion) - Enhanced with summary, achievements, outcomes
 export async function submitQuestCompletion(
-  questId: string, 
-  user: GuildUser, 
-  evidence: { report: string; links: string[]; evidenceUrls: string[] }
+  questId: string,
+  user: GuildUser,
+  evidence: {
+    report: string;
+    links: string[];
+    evidenceUrls: string[];
+    // Enhanced fields for completion reports
+    summary?: string;
+    achievements?: string[];
+    outcomesProduced?: string[];
+    attachments?: { name: string; url: string; type: string }[];
+    questType?: 'standard' | 'openSource';
+    memberName?: string;
+    roleId?: string;
+    roleTitle?: string;
+  }
 ): Promise<QuestSubmission> {
   const questRef = doc(db, 'quests', questId);
   const snap = await getDoc(questRef);
@@ -1887,10 +2364,18 @@ export async function submitQuestCompletion(
   const submissionData: Omit<QuestSubmission, 'id' | keyof AuditFields> = {
     questId,
     questTitle: quest.title,
+    questType: evidence.questType || quest.questType,
     memberId: user.uid,
+    memberName: evidence.memberName || user.fullName,
+    roleId: evidence.roleId,
+    roleTitle: evidence.roleTitle,
     report: evidence.report,
+    summary: evidence.summary,
+    achievements: evidence.achievements,
+    outcomesProduced: evidence.outcomesProduced,
     evidenceUrls: evidence.evidenceUrls,
     links: evidence.links,
+    attachments: evidence.attachments,
     status: 'pending'
   };
 
@@ -1908,6 +2393,91 @@ export async function submitQuestCompletion(
   });
 
   return submission;
+}
+
+// ========== QUEST SLOT ENFORCEMENT (Phase 2: Max 1 Open Source + 2 Standard = 3 Total) ==========
+
+const MAX_OPEN_SOURCE_QUESTS = 1;
+const MAX_STANDARD_QUESTS = 2;
+const MAX_TOTAL_QUESTS = 3;
+
+export interface QuestSlots {
+  openSource: number;
+  standard: number;
+  total: number;
+}
+
+/**
+ * Get user's current active quest slot counts
+ */
+export async function getUserActiveQuestSlots(userId: string): Promise<QuestSlots> {
+  // Get quests where user is in acceptedMembers (active participant)
+  const q = query(
+    collection(db, 'quests'),
+    where('acceptedMembers', 'array-contains', userId),
+    where('status', 'in', ['assigned', 'inProgress', 'open'])
+  );
+  const snapshot = await getDocs(q);
+
+  let openSource = 0;
+  let standard = 0;
+
+  snapshot.forEach(doc => {
+    const quest = doc.data() as Quest;
+    if (quest.questType === 'openSource') {
+      openSource++;
+    } else {
+      standard++;
+    }
+  });
+
+  return { openSource, standard, total: openSource + standard };
+}
+
+/**
+ * Check if user can join a quest of given type - returns object with ability info
+ */
+export async function canJoinQuest(userId: string, questType: QuestType = 'standard'): Promise<{ canJoin: boolean; reason?: string; slots?: QuestSlots }> {
+  const slots = await getUserActiveQuestSlots(userId);
+
+  if (questType === 'openSource') {
+    if (slots.openSource >= MAX_OPEN_SOURCE_QUESTS) {
+      return {
+        canJoin: false,
+        reason: `You already have ${slots.openSource} Open Source quest(s). Maximum ${MAX_OPEN_SOURCE_QUESTS} allowed.`,
+        slots
+      };
+    }
+  } else {
+    if (slots.standard >= MAX_STANDARD_QUESTS) {
+      return {
+        canJoin: false,
+        reason: `You already have ${slots.standard} Standard quest(s). Maximum ${MAX_STANDARD_QUESTS} allowed.`,
+        slots
+      };
+    }
+  }
+
+  if (slots.total >= MAX_TOTAL_QUESTS) {
+    return {
+      canJoin: false,
+      reason: `You have ${slots.total} active quest(s). Maximum ${MAX_TOTAL_QUESTS} total allowed.`,
+      slots
+    };
+  }
+
+  return { canJoin: true, slots };
+}
+
+/**
+ * Validate user can join quest - throws error if cannot join
+ */
+export async function validateQuestSlot(userId: string, questType: QuestType = 'standard'): Promise<QuestSlots> {
+  const result = await canJoinQuest(userId, questType);
+  if (!result.canJoin) {
+    throw new Error(result.reason);
+  }
+  return result.slots!;
 }
 
 // Fetch user dashboard statistics

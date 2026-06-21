@@ -12,6 +12,7 @@ const ITEMS_PER_PAGE = 12;
 const CATEGORIES = ['All', 'builder', 'creator', 'researcher', 'entrepreneur', 'operator', 'leader'];
 const DIFFICULTIES = ['All', 'easy', 'medium', 'hard', 'legendary'];
 const MODES = ['All', 'Remote', 'Physical', 'Hybrid'];
+const QUEST_TYPES = ['All', 'standard', 'openSource'];
 
 export default function QuestBoard() {
   const { profile } = useAuth();
@@ -31,6 +32,7 @@ export default function QuestBoard() {
   const [category, setCategory] = useState('All');
   const [difficulty, setDifficulty] = useState('All');
   const [mode, setMode] = useState('All');
+  const [questType, setQuestType] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -68,10 +70,14 @@ export default function QuestBoard() {
     if (mode !== 'All') {
       result = result.filter(q => q.mode?.toLowerCase() === mode.toLowerCase());
     }
+    // Filter by quest type (Phase 2 Open Source: standard vs openSource)
+    if (questType !== 'All') {
+      result = result.filter(q => (q.questType || 'standard') === questType);
+    }
 
     setFilteredQuests(result);
     setCurrentPage(1);
-  }, [search, category, difficulty, mode, quests]);
+  }, [search, category, difficulty, mode, questType, quests]);
 
   // Pagination
   const totalPages = Math.ceil(filteredQuests.length / ITEMS_PER_PAGE);
@@ -142,9 +148,25 @@ export default function QuestBoard() {
               onChange={e => setMode(e.target.value)}
               className="px-3 py-2 text-xs border border-[var(--border)] rounded-xl bg-[var(--input-bg)] cursor-pointer"
             >
-              <option disabled>Location Mode</option>
+              <option disabled>Mode</option>
               {MODES.map(m => (
                 <option key={m} value={m}>{m === 'All' ? 'All Modes' : m}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Quest Type Select (Phase 2: Open Source) */}
+          <div>
+            <select
+              value={questType}
+              onChange={e => setQuestType(e.target.value)}
+              className="px-3 py-2 text-xs border border-[var(--border)] rounded-xl bg-[var(--input-bg)] cursor-pointer"
+            >
+              <option disabled>Quest Type</option>
+              {QUEST_TYPES.map(t => (
+                <option key={t} value={t}>
+                  {t === 'All' ? 'All Types' : t === 'openSource' ? 'Open Source' : 'Standard'}
+                </option>
               ))}
             </select>
           </div>
