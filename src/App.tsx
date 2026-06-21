@@ -39,6 +39,8 @@ const Impact = lazy(() => import('./pages/Impact'));
 const NeedDetails = lazy(() => import('./pages/NeedDetails'));
 const NeedWizard = lazy(() => import('./pages/NeedWizard'));
 const GrowthDashboard = lazy(() => import('./pages/GrowthDashboard'));
+const NeedReviewQueue = lazy(() => import('./pages/NeedReviewQueue'));
+const SubmissionReviewQueue = lazy(() => import('./pages/SubmissionReviewQueue'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 // Loading skeleton component
@@ -83,13 +85,6 @@ const organizationItems = [
   { to: '/submission-reviews', label: 'Reviews', icon: ShieldCheck },
   { to: '/org-team', label: 'Team', icon: Users },
   { to: '/org-messages', label: 'Messages', icon: Bell },
-  { to: '/settings', label: 'Settings', icon: SettingsIcon },
-];
-
-// Add a link to switch to Guild OS (admin portal) - visible to receptionist+ roles
-const adminSwitchItems = [
-  { to: '/quest-applications', label: 'Quest Reviews', icon: Compass },
-  { to: '/submission-reviews', label: 'Submission Reviews', icon: ShieldCheck },
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
 
@@ -428,7 +423,7 @@ function AppShell() {
         </header>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
           <div className="animate-fade-up">
             <Outlet />
           </div>
@@ -575,14 +570,14 @@ const routerConfig = createBrowserRouter([
       { path: '/docs', element: <PrivateRoute><KnowledgeHub /></PrivateRoute> },
       { path: '/impact', element: <Impact /> },
       { path: '/profile', element: <PrivateRoute><MemberProfile /></PrivateRoute> },
-      { path: '/verification', element: <Navigate to="/admin" replace /> },
+      { path: '/verification', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><NeedReviewQueue /></RoleRoute> },
       { path: '/notifications', element: <PrivateRoute><NotificationCenter /></PrivateRoute> },
       { path: '/settings', element: <PrivateRoute><Settings /></PrivateRoute> },
       { path: '/needs/:id', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedDetails /></RoleRoute> },
       { path: '/need-submit', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedWizard organizationId="" organizationName="" /></RoleRoute> },
       { path: '/submission-reviews', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><SubmissionReviews /></RoleRoute> },
-      { path: '/org-management', element: <Navigate to="/admin/organizations" replace /> },
-      { path: '/need-reviews', element: <Navigate to="/admin/needs" replace /> },
+      { path: '/need-reviews', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><NeedReviewQueue /></RoleRoute> },
+      { path: '/org-management', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><SubmissionReviewQueue /></RoleRoute> },
       { path: '*', element: <NotFound /> }
     ]
   }
