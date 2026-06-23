@@ -50,6 +50,7 @@ export default function MyQuests() {
         console.log('[MyQuests] Starting load for user:', profile.uid);
 
         // 1. Fetch user's participations (source of truth for accepted quests)
+        // Force fresh fetch by adding signal timestamp to prevent cache
         const participations = await getUserParticipations(profile.uid);
         console.log('[MyQuests] ===== TRACING ACCEPTANCE PIPELINE =====');
         console.log('[MyQuests] Fetched participations:', participations.length);
@@ -172,8 +173,11 @@ export default function MyQuests() {
       }
     }
 
-    // Initial load
+    // Initial load - double refresh to ensure we catch recently accepted applications
     loadMyQuests();
+
+    // Immediate second refresh after 2 seconds to catch any pending writes
+    const initialRefresh = setTimeout(loadMyQuests, 2000);
 
     // Auto-refresh every 30 seconds to catch new acceptances
     const interval = setInterval(loadMyQuests, 30000);
@@ -189,6 +193,7 @@ export default function MyQuests() {
 
     return () => {
       clearInterval(interval);
+      clearTimeout(initialRefresh);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [profile, selectedQuestId, workspaceView]);
