@@ -3,12 +3,12 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
 import { doc, getDoc, updateDoc, collection, query, getDocs } from 'firebase/firestore';
-import { applyForQuest, submitQuestCompletion, nowIso, RECEPTIONISTS, getVerificationRequirement, meetsVerificationRequirement, getQuestApplications } from '../lib/repository';
+import { applyForQuest, submitQuestCompletion, nowIso, RECEPTIONISTS, getVerificationRequirement, meetsVerificationRequirement, getQuestApplications, getUserQuestParticipation, updateParticipationStatus, notifyUser } from '../lib/repository';
 import type { Quest, QuestApplication } from '../types/guild';
-import { ArrowLeft, Compass, Award, Calendar, Clock, MapPin, Check, Send, ShieldAlert, Sparkles, Users, ExternalLink, Wallet, Book, User, FileCheck, XCircle, Pause, Play, Send as SendIcon } from 'lucide-react';
+import { ArrowLeft, Compass, Award, Calendar, Clock, MapPin, Check, Send, ShieldAlert, Sparkles, Users, ExternalLink, Wallet, Book, User, FileCheck, XCircle, Pause, Play, Send as SendIcon, Trash2, Loader } from 'lucide-react';
 import { PAGE_SEO } from '../components/SEO';
 
-type ApplicantTab = 'applicants' | 'accepted' | 'reports' | 'completed' | 'rejected';
+type ApplicantTab = 'applicants' | 'accepted' | 'reports' | 'completed' | 'rejected' | 'removed';
 
 export default function QuestDetails() {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +26,11 @@ export default function QuestDetails() {
   const [applicantTab, setApplicantTab] = useState<ApplicantTab>('applicants');
   const [applicantApps, setApplicantApps] = useState<QuestApplication[]>([]);
   const [loadingApps, setLoadingApps] = useState(false);
+  const [memberProfiles, setMemberProfiles] = useState<Record<string, { displayName: string; photoURL: string }>>({});
+  const [removingMember, setRemovingMember] = useState<string | null>(null);
+  const [showRemovalModal, setShowRemovalModal] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<{ userId: string; name: string } | null>(null);
+  const [removalReason, setRemovalReason] = useState('');
 
   // Submission Form States - ALL defined at top level
   const [report, setReport] = useState('');
@@ -123,11 +128,39 @@ export default function QuestDetails() {
       }
     }
 
-    loadQuest().then(() => {
+    loadQuest().then(async () => {
       // Load applications for all users (not just admins) so they can see their acceptance status
       if (!cancelled && profile) {
         setLoadingApps(true);
         loadApplications();
+      }
+      // Load member profiles for accepted members
+      if (!cancelled && questLoadedRef.current) {
+        const questSnap = await getDoc(doc(db, 'quests', questId));
+        if (questSnap.exists() && !cancelled) {
+          const questData = questSnap.data() as Quest;
+          const memberIds = [...(questData.acceptedMembers || []), ...(questData.completedMembers || [])];
+          const profiles: Record<string, { displayName: string; photoURL: string }> = {};
+          for (const memberId of memberIds) {
+            try {
+              const memberDoc = await getDoc(doc(db, 'members', memberId));
+              if (memberDoc.exists()) {
+                const memberData = memberDoc.data();
+                profiles[memberId] = {
+                  displayName: memberData.displayName || memberData.fullName || 'Unknown Member',
+                  photoURL: memberData.photoURL || ''
+                };
+              } else {
+                profiles[memberId] = { displayName: 'Unknown Member', photoURL: '' };
+              }
+            } catch {
+              profiles[memberId] = { displayName: 'Unknown Member', photoURL: '' };
+            }
+          }
+          if (!cancelled) {
+            setMemberProfiles(profiles);
+          }
+        }
       }
     });
 
@@ -181,6 +214,63 @@ export default function QuestDetails() {
       setError(err.message || 'Application failed.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Handle removing a member from the quest (admin only) - called from modal
+  const handleRemoveMember = async (memberUserId: string, reason: string) => {
+    if (!quest || !profile || !isAdmin || !reason.trim()) return;
+
+    const memberName = memberProfiles[memberUserId]?.displayName || memberUserId.slice(0, 8);
+    setRemovingMember(memberUserId);
+    try {
+      // Update participation record if exists
+      const participation = await getUserQuestParticipation(memberUserId, quest.id);
+      if (participation) {
+        await updateParticipationStatus(participation.id, 'withdrawn', profile.uid);
+      }
+
+      // Remove from quest acceptedMembers, add to removedMembers
+      const accepted = quest.acceptedMembers || [];
+      const removed = quest.removedMembers || [];
+      const newRemovalEntry = { memberId: memberUserId, reason: reason.trim(), removedAt: nowIso(), removedBy: profile.uid, memberName };
+      const removalHistory = [...(quest.removalHistory || []), newRemovalEntry];
+
+      await updateDoc(doc(db, 'quests', quest.id), {
+        acceptedMembers: accepted.filter(id => id !== memberUserId),
+        removedMembers: [...removed, memberUserId],
+        removalHistory,
+        updatedAt: nowIso()
+      });
+
+      // Update local state
+      setQuest({
+        ...quest,
+        acceptedMembers: accepted.filter(id => id !== memberUserId),
+        removedMembers: [...removed, memberUserId],
+        removalHistory
+      });
+
+      // Notify the removed member
+      await notifyUser(
+        memberUserId,
+        'quest_withdrawn',
+        'Removed from Quest',
+        `You have been removed from "${quest.title}". Reason: ${reason}. Please contact the guild for more information.`,
+        '/quests',
+        'medium'
+      );
+
+      // Clear modal state
+      setShowRemovalModal(false);
+      setMemberToRemove(null);
+      setRemovalReason('');
+      alert(`Member ${memberName} has been removed from the quest.`);
+    } catch (err) {
+      console.error('Failed to remove member:', err);
+      alert('Failed to remove member. Please try again.');
+    } finally {
+      setRemovingMember(null);
     }
   };
 
@@ -261,6 +351,9 @@ export default function QuestDetails() {
         return applicantApps.filter(a => a.status === 'completed');
       case 'rejected':
         return applicantApps.filter(a => a.status === 'rejected' || a.status === 'withdrawn');
+      case 'removed':
+        // Show removed members from removalHistory
+        return [];
       default:
         return applicantApps;
     }
@@ -284,7 +377,8 @@ export default function QuestDetails() {
     accepted: applicantApps.filter(a => a.status === 'accepted').length,
     reports: applicantApps.filter(a => a.status === 'accepted').length, // Placeholder
     completed: applicantApps.filter(a => a.status === 'completed').length,
-    rejected: applicantApps.filter(a => a.status === 'rejected' || a.status === 'withdrawn').length
+    rejected: applicantApps.filter(a => a.status === 'rejected' || a.status === 'withdrawn').length,
+    removed: (quest.removedMembers || []).length
   };
 
   const adminTabs: { id: ApplicantTab; label: string; icon: React.ElementType; count: number }[] = [
@@ -292,7 +386,8 @@ export default function QuestDetails() {
     { id: 'accepted', label: 'Active', icon: Play, count: applicantTabCounts.accepted },
     { id: 'reports', label: 'Reports', icon: SendIcon, count: applicantTabCounts.reports },
     { id: 'completed', label: 'Completed', icon: FileCheck, count: applicantTabCounts.completed },
-    { id: 'rejected', label: 'Rejected', icon: XCircle, count: applicantTabCounts.rejected }
+    { id: 'rejected', label: 'Rejected', icon: XCircle, count: applicantTabCounts.rejected },
+    { id: 'removed', label: 'Removed', icon: Trash2, count: applicantTabCounts.removed }
   ];
 
   return (
@@ -683,11 +778,42 @@ export default function QuestDetails() {
           </div>
 
           {/* Applicants List */}
-          {loadingApps ? (
-            <div className="p-8 text-center text-xs text-[var(--text-muted)]">Loading applicants...</div>
-          ) : getFilteredByTab().length === 0 ? (
-            <div className="p-8 text-center text-xs text-[var(--text-muted)]">
-              No applicants in this category.
+          {applicantTab === 'removed' ? (
+            // Special rendering for removed members - show removal history
+            <div className="space-y-3">
+              {(quest.removalHistory || []).length === 0 ? (
+                <div className="p-8 text-center text-xs text-[var(--text-muted)]">
+                  No members have been removed from this quest.
+                </div>
+              ) : (
+                quest.removalHistory!.map((entry, i) => (
+                  <div key={i} className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                          <User size={14} className="text-red-400" />
+                        </div>
+                        <div>
+                          <Link to={`/member/${entry.memberId}`} className="text-xs font-bold hover:text-red-400 transition-colors">
+                            {entry.memberName || entry.memberId.slice(0, 8)}
+                          </Link>
+                          <div className="text-[10px] text-[var(--text-muted)]">
+                            Removed {entry.removedAt ? new Date(entry.removedAt).toLocaleDateString() : 'recently'}
+                          </div>
+                        </div>
+                      </div>
+                      <span className="px-2 py-1 rounded-lg text-[9px] font-bold uppercase bg-red-500/20 text-red-400">
+                        Removed
+                      </span>
+                    </div>
+                    {entry.reason && (
+                      <div className="mt-2 text-xs text-[var(--text-muted)] p-2 bg-[var(--bg-subtle)] rounded">
+                        <span className="font-bold text-red-400">Reason:</span> {entry.reason}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           ) : (
             <div className="grid gap-2">
@@ -696,25 +822,96 @@ export default function QuestDetails() {
                 return (
                   <div key={app.id} className="p-3 rounded-lg bg-[var(--bg-subtle)] flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[var(--primary)]/20 flex items-center justify-center">
+                      <Link to={`/member/${app.applicantId}`} className="w-10 h-10 rounded-full bg-[var(--primary)]/20 flex items-center justify-center hover:bg-[var(--primary)]/30 transition-colors">
                         <User size={14} className="text-[var(--primary)]" />
-                      </div>
+                      </Link>
                       <div>
-                        <div className="text-xs font-bold">{app.applicantName || `User: ${app.applicantId.slice(0, 8)}`}</div>
+                        <Link to={`/member/${app.applicantId}`} className="text-xs font-bold hover:text-[var(--primary)] transition-colors">
+                          {app.applicantName || `User: ${app.applicantId.slice(0, 8)}`}
+                        </Link>
                         <div className="text-[10px] text-[var(--text-muted)]">
                           Applied {app.createdAt ? new Date(app.createdAt).toLocaleDateString() : 'recently'}
                           {app.roleTitle && <span className="ml-2 text-purple-400">Role: {app.roleTitle}</span>}
                         </div>
                       </div>
                     </div>
-                    <span className={`px-2 py-1 rounded-lg text-[9px] font-bold uppercase ${statusInfo.color}`}>
-                      {statusInfo.label}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {/* Remove button for accepted members (admin only) */}
+                      {isAdmin && app.status === 'accepted' && (
+                        <button
+                          onClick={() => { setMemberToRemove({ userId: app.applicantId, name: app.applicantName || app.applicantId.slice(0, 8) }); setShowRemovalModal(true); }}
+                          disabled={removingMember === app.applicantId}
+                          className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors"
+                          title="Remove member from quest"
+                        >
+                          {removingMember === app.applicantId ? (
+                            <Loader size={12} className="animate-spin" />
+                          ) : (
+                            <Trash2 size={12} />
+                          )}
+                        </button>
+                      )}
+                      <span className={`px-2 py-1 rounded-lg text-[9px] font-bold uppercase ${statusInfo.color}`}>
+                        {statusInfo.label}
+                      </span>
+                    </div>
                   </div>
                 );
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Removal Reason Modal */}
+      {showRemovalModal && memberToRemove && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="panel max-w-md w-full p-6 animate-fade-up space-y-4">
+            <div className="flex items-center gap-2 text-red-400">
+              <Trash2 size={18} />
+              <h3 className="text-lg font-bold">Remove Member</h3>
+            </div>
+            <p className="text-sm text-[var(--text-muted)]">
+              You are about to remove <span className="font-bold text-[var(--text)]">{memberToRemove.name}</span> from this quest. This action cannot be undone.
+            </p>
+            <div>
+              <label className="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2 required">
+                Removal Reason
+              </label>
+              <textarea
+                value={removalReason}
+                onChange={(e) => setRemovalReason(e.target.value)}
+                placeholder="Enter the reason for removal (e.g., 'Inactive for 2 weeks', 'Unable to complete assigned tasks', etc.)..."
+                className="w-full h-24 p-3 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border)] text-sm resize-none"
+                autoFocus
+              />
+              <p className="text-[10px] text-red-400 mt-1">This reason will be visible to the removed member.</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowRemovalModal(false); setMemberToRemove(null); setRemovalReason(''); }}
+                className="btn btn-sm btn-outline flex-1"
+                disabled={removingMember !== null}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleRemoveMember(memberToRemove.userId, removalReason)}
+                disabled={!removalReason.trim() || removingMember !== null}
+                className="btn btn-sm bg-red-500 hover:bg-red-600 text-white flex-1 flex items-center justify-center gap-1"
+              >
+                {removingMember ? (
+                  <>
+                    <Loader size={14} className="animate-spin" /> Removing...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={14} /> Remove Member
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

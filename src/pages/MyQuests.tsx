@@ -51,16 +51,25 @@ export default function MyQuests() {
 
         // 1. Fetch user's participations (source of truth for accepted quests)
         const participations = await getUserParticipations(profile.uid);
+        console.log('[MyQuests] ===== TRACING ACCEPTANCE PIPELINE =====');
         console.log('[MyQuests] Fetched participations:', participations.length);
-        console.log('[MyQuests] Participation statuses:', participations.map(p => ({ id: p.id, status: p.status, questTitle: p.questTitle })));
+        console.log('[MyQuests] ALL Participation records:', participations.map(p => ({
+          id: p.id,
+          questId: p.questId,
+          status: p.status,
+          questTitle: p.questTitle,
+          userId: p.userId
+        })));
 
-        // 2. Filter active vs completed
+        // 2. Filter active vs completed (CRITICAL: include 'accepted' status for newly accepted quests)
+        // NOTE: 'accepted' is the initial status set by createParticipation!
         const activeParts = participations.filter(p =>
-          ['pending', 'accepted', 'active', 'inProgress', 'awaitingCompletionReview'].includes(p.status)
+          p.status && ['pending', 'accepted', 'active', 'inProgress', 'awaitingCompletionReview'].includes(p.status)
         );
         const completedParts = participations.filter(p => p.status === 'completed');
 
-        console.log('[MyQuests] Active participations:', activeParts.length);
+        console.log('[MyQuests] Active participations (after filter):', activeParts.length);
+        console.log('[MyQuests] Active quest IDs:', activeParts.map(p => p.questId));
 
         // 3. Fetch quest details for each participation
         const activeQuestsData = await Promise.all(
@@ -80,41 +89,79 @@ export default function MyQuests() {
         const appSnapshot = await getDocs(appQ);
         const userApplications = appSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as QuestApplication));
         const activeQuestIds = new Set(activeParts.map(p => p.questId));
+        console.log('[MyQuests] Active quest IDs from participations:', Array.from(activeQuestIds));
 
         // Also check for old accepted applications without participation records
+        // This is a fallback in case createParticipation failed
         const acceptedApps = userApplications.filter(a =>
           a.status === 'accepted' && !activeQuestIds.has(a.questId)
         );
 
+        console.log('[MyQuests] ALL user applications:', userApplications.map(a => ({
+          id: a.id,
+          questId: a.questId,
+          status: a.status,
+          questTitle: a.questTitle
+        })));
+        console.log('[MyQuests] Accepted applications without participation record:', acceptedApps.length);
+        console.log('[MyQuests] Accepted apps questIds:', acceptedApps.map(a => a.questId));
+
         // Fetch quest details for old accepted apps
         if (acceptedApps.length > 0) {
+          console.log('[MyQuests] Accepted apps found (showing as fallback):', acceptedApps.map(a => ({ id: a.id, questId: a.questId, title: a.questTitle })));
           const oldQuests = await Promise.all(
             acceptedApps.map(async (app): Promise<QuestWithParticipation | null> => {
               const quest = await getQuest(app.questId);
-              return quest ? {
+              if (!quest) {
+                console.warn('[MyQuests] Quest not found for accepted app:', app.questId);
+                return null;
+              }
+              return {
                 ...quest,
                 participation: undefined,
                 participationStatus: 'accepted' as const,
-              } : null;
+              };
             })
           );
           const validOldQuests = oldQuests.filter((q): q is QuestWithParticipation => q !== null);
-          validActiveQuests.push(...validOldQuests);
+          if (validOldQuests.length > 0) {
+            console.log('[MyQuests] Adding accepted applications as fallback quests:', validOldQuests.map(q => q.title));
+            validActiveQuests.push(...validOldQuests);
+          }
         }
 
         setActiveQuests(validActiveQuests);
         setCompletedQuests(completedParts);
 
-        // If already has participation -> shows in Active Quests (quest details from participation)
-        // If not, check application status
-        // Only show in pending if truly awaiting review (submitted/underReview)
-        const pending = userApplications.filter(a =>
-          (a.status === 'submitted' || a.status === 'underReview') &&
-          !activeQuestIds.has(a.questId)
-        );
+        // CRITICAL FIX: Correct the pending logic
+        // Pending = applications where user is STILL WAITING for a decision
+        // NOT 'accepted' (we have a decision!)
+        // Also exclude applications that already have participation (handled in activeQuests)
+        const pending = userApplications.filter(a => {
+          const hasParticipation = activeQuestIds.has(a.questId);
+          const isAccepted = a.status === 'accepted';
 
-        console.log('[MyQuests] All applications:', userApplications.map(a => ({ id: a.id, status: a.status, questTitle: a.questTitle })));
-        console.log('[MyQuests] Pending applications:', pending.map(a => ({ id: a.id, status: a.status })));
+          // DEBUG: Log each application decision
+          console.log(`[MyQuests] Filtering app ${a.questTitle}:`, {
+            status: a.status,
+            hasParticipation,
+            includeInPending: !isAccepted && !hasParticipation && !['completed', 'withdrawn', 'rejected'].includes(a.status)
+          });
+
+          // Exclude accepted applications WITH participation - those show in Active Assignments
+          if (a.status === 'accepted' && activeQuestIds.has(a.questId)) return false;
+          // Exclude applications that are accepted but missing participation (fallback shows as Active)
+          if (a.status === 'accepted' && !activeQuestIds.has(a.questId)) return false;
+          // Exclude completed/withdrawn/rejected applications
+          if (a.status === 'completed' || a.status === 'withdrawn' || a.status === 'rejected') return false;
+          // Include only truly pending applications (submitted/underReview/draft)
+          return (a.status === 'submitted' || a.status === 'underReview' || a.status === 'draft');
+        });
+
+        console.log('[MyQuests] ===== DISPLAY STATE =====');
+        console.log('[MyQuests] Active Assignments (from participation):', validActiveQuests.map(q => ({ id: q.id, title: q.title, status: q.participationStatus })));
+        console.log('[MyQuests] Pending Applications (still waiting):', pending.map(a => ({ id: a.id, title: a.questTitle, status: a.status })));
+        console.log('[MyQuests] ===== END PIPELINE TRACE =====');
 
         setPendingApplications(pending);
 
@@ -131,15 +178,20 @@ export default function MyQuests() {
     // Auto-refresh every 30 seconds to catch new acceptances
     const interval = setInterval(loadMyQuests, 30000);
 
-    // Refresh when page gains focus (user clicks notification and navigates)
-    const handleFocus = () => loadMyQuests();
-    window.addEventListener('focus', handleFocus);
+    // Refresh when page becomes visible again (user returns from notification or switches tabs)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('[MyQuests] Page became visible - refreshing data');
+        loadMyQuests();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       clearInterval(interval);
-      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [profile]);
+  }, [profile, selectedQuestId, workspaceView]);
 
   if (loading) {
     return (

@@ -53,7 +53,7 @@ export default function PublicOrgRegistration() {
   const [orgName, setOrgName] = useState('');
   const [orgDescription, setOrgDescription] = useState('');
   const [phone, setPhone] = useState('');
-  const [selectedBranch, setSelectedBranch] = useState('ludhiana');
+  const [selectedBranch, setSelectedBranch] = useState<string>('ludhiana');
 
   // Get matched receptionist
   const matchedReceptionist = RECEPTIONISTS[Math.floor(Math.random() * RECEPTIONISTS.length)];
