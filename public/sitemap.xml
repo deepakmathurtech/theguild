@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://guild-v3.firebaseapp.com/</loc>
+    <loc>https://www.thecentralguild.quest/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://guild-v3.firebaseapp.com/quests</loc>
+    <loc>https://www.thecentralguild.quest/quests</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://guild-v3.firebaseapp.com/organizations</loc>
+    <loc>https://www.thecentralguild.quest/organizations</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://guild-v3.firebaseapp.com/branches</loc>
+    <loc>https://www.thecentralguild.quest/branches</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://guild-v3.firebaseapp.com/docs</loc>
+    <loc>https://www.thecentralguild.quest/docs</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
