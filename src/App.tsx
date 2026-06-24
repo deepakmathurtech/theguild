@@ -1,5 +1,5 @@
 import { useState, lazy, Suspense } from 'react';
-import { createBrowserRouter, RouterProvider, Outlet, Navigate, useNavigate, NavLink } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Outlet, Navigate, useNavigate, NavLink, isRouteErrorResponse, useRouteError } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { logout } from './lib/auth';
@@ -47,6 +47,26 @@ const GrowthDashboard = lazy(() => import('./pages/GrowthDashboard'));
 const NeedReviewQueue = lazy(() => import('./pages/NeedReviewQueue'));
 const SubmissionReviewQueue = lazy(() => import('./pages/SubmissionReviewQueue'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+
+// Error fallback for failed dynamic imports
+function ErrorFallback({ error, resetError }: { error: Error; resetError: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center">
+      <div className="panel p-8 rounded-2xl border border-red-500/30 bg-red-500/5 max-w-md">
+        <h2 className="text-xl font-bold text-red-400 mb-2">Unable to load page</h2>
+        <p className="text-sm text-[var(--text-secondary)] mb-4">
+          There was a problem loading this content. Please try again.
+        </p>
+        <button
+          onClick={resetError}
+          className="primary px-4 py-2 rounded-lg font-medium text-sm"
+        >
+          Try Again
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // Loading skeleton component
 function PageLoader() {
@@ -545,10 +565,33 @@ function DynamicHomeRoute() {
   return <GrowthDashboard />;
 }
 
+// Router error handler for lazy loading failures
+function RouterErrorBoundary() {
+  const error = useRouteError();
+  const isError = isRouteErrorResponse(error);
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center">
+      <div className="panel p-8 rounded-2xl border border-red-500/30 bg-red-500/5 max-w-md">
+        <h2 className="text-xl font-bold text-red-400 mb-2">
+          {isError ? 'Page not found' : 'Unable to load'}
+        </h2>
+        <p className="text-sm text-[var(--text-secondary)] mb-4">
+          {isError ? 'The page you requested could not be found.' : 'There was a problem loading this content.'}
+        </p>
+        <a href="/" className="primary px-4 py-2 rounded-lg font-medium text-sm inline-block">
+          Go Home
+        </a>
+      </div>
+    </div>
+  );
+}
+
 // Router configuration with optimized structure
 const routerConfig = createBrowserRouter([
   {
     element: <AppShell />,
+    errorElement: <RouterErrorBoundary />,
     children: [
       { path: '/', element: <DynamicHomeRoute /> },
       { path: '/auth', element: <Auth /> },

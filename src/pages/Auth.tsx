@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { loginWithEmail, loginWithGoogle, registerWithEmail, sendVerificationEmail, resendVerificationEmail, sendPasswordReset, checkEmailVerified } from '../lib/auth';
 import { useAuth } from '../context/AuthContext';
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Mail, Lock, Shield, Sparkles, Globe, ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
 import SEO, { PAGE_SEO } from '../components/SEO';
 
@@ -288,6 +288,16 @@ export default function Auth() {
             )}
           </button>
         </form>
+
+        {/* Legal disclaimer for register */}
+        {mode === 'register' && (
+          <p className="text-xs text-[var(--text-muted)] text-center mt-4">
+            By registering, you agree to our{' '}
+            <Link to="/terms" className="text-[var(--primary)] hover:underline font-medium">Terms of Service</Link>
+            {' '}and{' '}
+            <Link to="/privacy" className="text-[var(--primary)] hover:underline font-medium">Privacy Policy</Link>
+          </p>
+        )}
 
         {/* OAuth Section */}
         {(mode === 'login' || mode === 'register') && (
