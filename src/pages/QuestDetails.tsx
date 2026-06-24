@@ -218,6 +218,13 @@ export default function QuestDetails() {
       return;
     }
 
+    // Block if onboarding not completed
+    if (!profile.onboardingCompleted) {
+      setError('Please complete onboarding before applying for quests.');
+      navigate('/onboarding');
+      return;
+    }
+
     // Prevent duplicate applications - check all states before applying
     const myApp = applicantApps.find(a => a.applicantId === profile.uid);
     const appStatus = myApp?.status;

@@ -322,10 +322,13 @@ export default function OrgDashboard() {
 
         {/* Verification Status */}
         <div className="panel bg-[var(--card)] p-4 rounded-xl border border-[var(--border)] text-xs text-[var(--text-secondary)] leading-relaxed max-w-xs flex items-start gap-2.5 shadow-sm">
-          <ShieldCheck size={16} className="text-emerald-500 flex-shrink-0 mt-0.5" />
+          <ShieldCheck size={16} className={`flex-shrink-0 mt-0.5 ${org.verificationStatus === 'verified' ? 'text-emerald-500' : 'text-amber-500'}`} />
           <div>
-            <strong className="block text-[var(--text)] font-semibold mb-0.5">Verification status</strong>
-            <span>Verified organization entries receive prioritize visibility in member feeds.</span>
+            <strong className="block text-[var(--text)] font-semibold mb-0.5">Verification: {org.verificationStatus || 'pending'}</strong>
+            {org.verificationStatus === 'verified'
+              ? <span>Verified organizations receive priority visibility.</span>
+              : <span>Verification pending. Complete your profile for review.</span>
+            }
           </div>
         </div>
 
