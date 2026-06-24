@@ -78,6 +78,11 @@ export default function NeedWizard() {
           console.error('Failed to load user org:', e);
         }
       }
+
+      // If URL didn't include ?id, we still need to proceed with the inferred orgId.
+      // organizationId is derived from the URL param above, so once we infer orgId we can use `orgId`
+      // for subsequent checks/loading/submit.
+      const effectiveOrganizationId = organizationId || orgId;
       if (!orgId) {
         setLoading(false);
         return;
@@ -103,7 +108,7 @@ export default function NeedWizard() {
   if (loading) return <div className="flex items-center justify-center p-12"><Loader2 className="w-8 h-8 animate-spin" /></div>;
 
   // Error if no organization
-  if (!organizationId || !org) {
+  if (!org || !org.id) {
     return (
       <div className="panel p-8 text-center">
         <h3>No Organization Selected</h3>
