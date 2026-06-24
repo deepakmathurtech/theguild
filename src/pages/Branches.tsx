@@ -157,8 +157,8 @@ export default function Branches() {
 
       {/* Join CTA */}
       <section className="text-center py-8">
-        <Link to="/org-onboarding" className="primary px-6 py-3 rounded-xl font-bold inline-flex items-center gap-2">
-          Register with a Branch <ArrowRight size={16} />
+        <Link to="/org-register" className="primary px-6 py-3 rounded-xl font-bold inline-flex items-center gap-2">
+          Register Your Organization <ArrowRight size={16} />
         </Link>
       </section>
     </div></>

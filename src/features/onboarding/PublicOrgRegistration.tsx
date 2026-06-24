@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
 import { createLedgerRecord } from '../../lib/repository';
 import type { Organization, GuildUser, Jurisdiction } from '../../types/guild';
@@ -27,14 +27,45 @@ const RECEPTIONISTS = [
   { uid: 'recAnita', fullName: 'Anita Verma', role: 'Relationship Manager', email: 'anita.verma@theguild.org', phone: '+91 98765-43213', photoURL: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=faces' }
 ];
 
-// Branch jurisdictions map
-const BRANCHES: Record<string, { jurisdiction: Jurisdiction; name: string }> = {
-  'ludhiana': { jurisdiction: { cityId: 'ludhiana', cityName: 'Ludhiana', stateId: 'punjab', stateName: 'Punjab', countryId: 'india', countryName: 'India' }, name: 'The Guild - Ludhiana' },
-  'chandigarh': { jurisdiction: { cityId: 'chandigarh', cityName: 'Chandigarh', stateId: 'punjab', stateName: 'Punjab', countryId: 'india', countryName: 'India' }, name: 'The Guild - Chandigarh' },
-  'delhi': { jurisdiction: { cityId: 'delhi', cityName: 'Delhi', stateId: 'delhi', stateName: 'Delhi', countryId: 'india', countryName: 'India' }, name: 'The Guild - Delhi NCR' }
+// State and City hierarchy with branch/receptionist mapping
+const LOCATIONS = {
+  'punjab': {
+    name: 'Punjab',
+    cities: {
+      'ludhiana': { name: 'Ludhiana', branchId: 'ludhiana', branchName: 'The Guild - Ludhiana', receptionistId: 'rec_amit', receptionistName: 'Amit Sharma' },
+      'chandigarh': { name: 'Chandigarh', branchId: 'chandigarh', branchName: 'The Guild - Chandigarh', receptionistId: 'rec_priya', receptionistName: 'Priya Kaur' },
+      'jalandhar': { name: 'Jalandhar', branchId: 'chandigarh', branchName: 'The Guild - Chandigarh', receptionistId: 'rec_priya', receptionistName: 'Priya Kaur' },
+      'patiala': { name: 'Patiala', branchId: 'chandigarh', branchName: 'The Guild - Chandigarh', receptionistId: 'rec_priya', receptionistName: 'Priya Kaur' }
+    }
+  },
+  'delhi': {
+    name: 'Delhi',
+    cities: {
+      'delhi': { name: 'Delhi NCR', branchId: 'delhi', branchName: 'The Guild - Delhi NCR', receptionistId: 'rec_rahul', receptionistName: 'Rahul Verma' },
+      'gurgaon': { name: 'Gurgaon', branchId: 'delhi', branchName: 'The Guild - Delhi NCR', receptionistId: 'rec_rahul', receptionistName: 'Rahul Verma' },
+      'noida': { name: 'Noida', branchId: 'delhi', branchName: 'The Guild - Delhi NCR', receptionistId: 'rec_rahul', receptionistName: 'Rahul Verma' }
+    }
+  },
+  'haryana': {
+    name: 'Haryana',
+    cities: {
+      'faridabad': { name: 'Faridabad', branchId: 'delhi', branchName: 'The Guild - Delhi NCR', receptionistId: 'rec_rahul', receptionistName: 'Rahul Verma' },
+      'panipat': { name: 'Panipat', branchId: 'ludhiana', branchName: 'The Guild - Ludhiana', receptionistId: 'rec_amit', receptionistName: 'Amit Sharma' }
+    }
+  },
+  'maharashtra': {
+    name: 'Maharashtra',
+    cities: {
+      'mumbai': { name: 'Mumbai', branchId: 'mumbai', branchName: 'The Guild - Mumbai', receptionistId: 'rec_anita', receptionistName: 'Anita Verma' },
+      'pune': { name: 'Pune', branchId: 'mumbai', branchName: 'The Guild - Mumbai', receptionistId: 'rec_anita', receptionistName: 'Anita Verma' }
+    }
+  }
 };
 
-const DEFAULT_BRANCH = BRANCHES['ludhiana'];
+// State list for dropdown
+const STATES = Object.entries(LOCATIONS).map(([id, data]) => ({ id, name: data.name }));
+// Default location
+const DEFAULT_LOCATION = LOCATIONS['punjab'].cities['ludhiana'];
 
 export default function PublicOrgRegistration() {
   const navigate = useNavigate();
@@ -53,13 +84,108 @@ export default function PublicOrgRegistration() {
   const [orgName, setOrgName] = useState('');
   const [orgDescription, setOrgDescription] = useState('');
   const [phone, setPhone] = useState('');
-  const [selectedBranch, setSelectedBranch] = useState<string>('ludhiana');
 
-  // Get matched receptionist
-  const matchedReceptionist = RECEPTIONISTS[Math.floor(Math.random() * RECEPTIONISTS.length)];
+  // User enters city and state as plain text
+  const [userCity, setUserCity] = useState('');
+  const [userState, setUserState] = useState('');
 
-  // Get branch info
-  const branchInfo = BRANCHES[selectedBranch] || DEFAULT_BRANCH;
+  // Real data from Firestore (loaded silently in background)
+  const [branches, setBranches] = useState<{ id: string; name: string; city: string; state: string }[]>([]);
+  const [receptionists, setReceptionists] = useState<{ uid: string; fullName: string; email: string; phone: string; photoURL: string; branchId: string }[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
+
+  // Determine final state/city for assignment
+  const [selectedState, setSelectedState] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
+
+  // Load branches and receptionists from Firestore
+  useEffect(() => {
+    async function loadRealData() {
+      try {
+        // Load branches from guildBranches collection
+        const branchesQuery = query(collection(db, 'guildBranches'), orderBy('name', 'asc'));
+        const branchesSnap = await getDocs(branchesQuery);
+        const branchList: { id: string; name: string; city: string; state: string }[] = [];
+        branchesSnap.forEach(d => {
+          const data = d.data();
+          if (data?.status === 'active' || data?.status === 'operational') {
+            branchList.push({
+              id: d.id,
+              name: String(data.name || ''),
+              city: String(data.city || '').toLowerCase(),
+              state: String(data.state || '').toLowerCase()
+            });
+          }
+        });
+        setBranches(branchList);
+
+        // Load receptionists from users collection
+        const recepQuery = query(collection(db, 'users'), where('role', '==', 'receptionist'), where('status', '==', 'active'));
+        const recepSnap = await getDocs(recepQuery);
+        const recepList: { uid: string; fullName: string; email: string; phone: string; photoURL: string; branchId: string }[] = [];
+        recepSnap.forEach(d => {
+          const data = d.data();
+          recepList.push({
+            uid: d.id,
+            fullName: String(data.fullName || ''),
+            email: String(data.email || ''),
+            phone: String(data.phone || ''),
+            photoURL: String(data.photoURL || ''),
+            branchId: String(data.branchId || '')
+          });
+        });
+        setReceptionists(recepList);
+      } catch (err) {
+        console.error('Failed to load branches/receptionists:', err);
+      } finally {
+        setLoadingData(false);
+      }
+    }
+    loadRealData();
+  }, []);
+
+  // Smart branch assignment: try exact city, then state, then partial, then fallback to Delhi
+  function findBestBranch(city: string, state: string) {
+    const searchCity = city.toLowerCase().trim();
+    const searchState = state.toLowerCase().trim();
+
+    // 1. Try exact city match
+    let match = branches.find(b => b.city === searchCity);
+    if (match) return match;
+
+    // 2. Try exact state match
+    match = branches.find(b => b.state === searchState);
+    if (match) return match;
+
+    // 3. Try partial city match (search term in branch city OR branch city in search term)
+    match = branches.find(b => b.city.includes(searchCity) || (searchCity && b.city.includes(searchCity)));
+    if (match) return match;
+
+    // 4. Try partial state match
+    match = branches.find(b => b.state.includes(searchState) || (searchState && b.state.includes(searchState)));
+    if (match) return match;
+
+    // 5. Fallback: Delhi branch or first available
+    return branches.find(b => b.city.toLowerCase().includes('delhi')) || branches[0];
+  }
+
+  // Update selected state/city when user types
+  useEffect(() => {
+    if (!userCity && !userState) return;
+    const bestBranch = findBestBranch(userCity, userState);
+    setSelectedCity(bestBranch?.city || 'Delhi');
+    setSelectedState(bestBranch?.state || 'Delhi');
+  }, [userCity, userState, branches]);
+
+  // Get assigned branch info
+  const assignedBranch = findBestBranch(userCity, userState);
+  const assignedBranchId = assignedBranch?.id || '';
+  const assignedBranchName = assignedBranch?.name || 'The Guild - Delhi NCR';
+  // Find receptionist assigned to this branch (by branchId match), fallback to first receptionist
+  const assignedReceptionist = receptionists.find(r => r.branchId === assignedBranchId) || receptionists[0] || { uid: '', fullName: 'Unassigned', email: '', phone: '', photoURL: '', branchId: '' };
+  const assignedReceptionistId = assignedReceptionist.uid;
+  const assignedReceptionistName = assignedReceptionist.fullName;
+
   const selectedTypeObj = ORG_TYPES.find(o => o.id === orgType);
 
   function validateStep1() {
@@ -138,7 +264,7 @@ export default function PublicOrgRegistration() {
         photoURL: '',
         role: 'organizationRepresentative', // Single role for org representative
         status: 'active',
-        city: branchInfo.jurisdiction.cityName,
+        city: selectedCity,
         contactInformation: phone,
         skills: [],
         interests: [],
@@ -156,7 +282,14 @@ export default function PublicOrgRegistration() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         archiveStatus: 'active',
-        jurisdiction: branchInfo.jurisdiction,
+        jurisdiction: {
+          stateId: selectedState,
+          stateName: selectedState,
+          cityId: selectedCity,
+          cityName: selectedCity
+        } as any,
+        branchId: assignedBranchId,
+        branchName: assignedBranchName,
         onboardingStep: 7,
         onboardingCompleted: true,
         proofs: [],
@@ -174,7 +307,7 @@ export default function PublicOrgRegistration() {
         contactPerson: fullName,
         email,
         phone,
-        city: branchInfo.jurisdiction.cityName,
+        city: selectedCity,
         description: orgDescription,
         needs: selectedTypeObj?.services || [],
         opportunities: [],
@@ -182,10 +315,10 @@ export default function PublicOrgRegistration() {
         ownerId: user.uid,
         ownerEmail: email,
         trustLevel: 'new',
-        relationshipNotes: `Assigned automatically during public registration. Matched with Relationship Manager: ${matchedReceptionist.fullName}`,
-        assignedReceptionistId: matchedReceptionist.uid,
-        branchId: selectedBranch,
-        branchName: branchInfo.name
+        relationshipNotes: `Assigned automatically during public registration. City: ${selectedCity}, Branch: ${assignedBranchName}`,
+        assignedReceptionistId: assignedReceptionistId,
+        branchId: assignedBranchId,
+        branchName: assignedBranchName
       };
 
       await createLedgerRecord('organizations', orgData as any, userProfile, `Organization Created via Public Registration by ${fullName}`);
@@ -348,23 +481,41 @@ export default function PublicOrgRegistration() {
               Tell us about your organization so we can match you with the right resources.
             </p>
 
-            {/* Branch Selection */}
+            {/* State Selection */}
+            {loadingData ? (
+              <div className="text-sm text-[var(--text-muted)]">Loading branches...</div>
+            ) : (
+            <>
+            {/* State Input (plain text, finds best branch in background) */}
             <div className="mb-4">
-              <label className="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2 required">Guild Branch Location</label>
-              <div className="grid sm:grid-cols-3 gap-3">
-                {Object.entries(BRANCHES).map(([key, branch]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setSelectedBranch(key)}
-                    className={`p-3 rounded-lg border text-center transition-all ${selectedBranch === key ? 'border-[var(--primary)] bg-[var(--primary)]/10 ring-1 ring-[var(--primary)]' : 'border-[var(--border)] hover:border-[var(--border-light)]'}`}
-                  >
-                    <span className={`text-xs font-bold block ${selectedBranch === key ? 'text-[var(--primary)]' : 'text-[var(--text-secondary)]'}`}>
-                      {branch.jurisdiction.cityName}
-                    </span>
-                    <span className="text-[10px] text-[var(--text-muted)]">{branch.jurisdiction.stateName}</span>
-                  </button>
-                ))}
+              <label className="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2 required">State</label>
+              <input
+                type="text"
+                value={userState}
+                onChange={e => setUserState(e.target.value)}
+                placeholder="e.g. Punjab, Haryana, Maharashtra"
+                className="text-sm"
+              />
+            </div>
+
+            {/* City Input (plain text, finds best branch in background) */}
+            <div className="mb-4">
+              <label className="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2 required">City</label>
+              <input
+                type="text"
+                value={userCity}
+                onChange={e => setUserCity(e.target.value)}
+                placeholder="e.g. Ludhiana, Gurgaon, Mumbai"
+                className="text-sm"
+              />
+            </div>
+
+            {/* Auto-assigned Branch & Receptionist Display */}
+            <div className="mb-4 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <div className="text-xs font-bold text-emerald-400 mb-2">Auto-Assigned Resources</div>
+              <div className="text-xs text-[var(--text-secondary)]">
+                <div>Branch: <span className="font-semibold text-emerald-400">{assignedBranchName}</span></div>
+                <div>Relationship Manager: <span className="font-semibold text-emerald-400">{assignedReceptionistName}</span></div>
               </div>
             </div>
 
@@ -420,6 +571,8 @@ export default function PublicOrgRegistration() {
                 className="min-h-[80px] text-sm"
               />
             </div>
+            </>
+            )}
           </div>
         )}
 
@@ -455,19 +608,22 @@ export default function PublicOrgRegistration() {
               <div className="space-y-1 text-sm">
                 <div><span className="text-[var(--text-muted)]">Name:</span> <strong>{orgName}</strong></div>
                 <div><span className="text-[var(--text-muted)]">Type:</span> {selectedTypeObj?.title}</div>
-                <div><span className="text-[var(--text-muted)]">Branch:</span> {branchInfo.name}</div>
+                <div><span className="text-[var(--text-muted)]">Branch:</span> {assignedBranchName}</div>
+              <div><span className="text-[var(--text-muted)]">Relationship Manager:</span> {assignedReceptionistName}</div>
               </div>
             </div>
 
             {/* Receptionist Assignment */}
             <div className="p-4 rounded-xl border border-[var(--primary)]/20 bg-[var(--primary)]/5 flex gap-4 items-center">
               <div className="w-12 h-12 rounded-lg overflow-hidden border border-[var(--primary)]/30 bg-black flex-shrink-0">
-                <img src={matchedReceptionist.photoURL} alt={matchedReceptionist.fullName} className="w-full h-full object-cover" />
+                {assignedReceptionist.photoURL && (
+                  <img src={assignedReceptionist.photoURL} alt={assignedReceptionist.fullName} className="w-full h-full object-cover" />
+                )}
               </div>
               <div>
                 <span className="text-[9px] uppercase font-bold text-[var(--primary)] tracking-widest block mb-0.5">Assigned Relationship Manager</span>
-                <strong className="text-sm font-bold text-[var(--text)] block">{matchedReceptionist.fullName}</strong>
-                <span className="text-xs text-[var(--text-muted)]">{matchedReceptionist.role}</span>
+                <strong className="text-sm font-bold text-[var(--text)] block">{assignedReceptionist.fullName}</strong>
+                <span className="text-xs text-[var(--text-muted)]">Relationship Manager</span>
               </div>
             </div>
 

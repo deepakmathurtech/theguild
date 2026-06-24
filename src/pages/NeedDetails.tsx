@@ -4,6 +4,7 @@ import { db } from '../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import { RECEPTIONISTS } from '../lib/repository';
+import GuildContactCard from '../components/GuildContactCard';
 import type { Need, Quest, Opportunity } from '../types/guild';
 import { ArrowLeft, Clock, FileText, ChevronRight, CheckCircle, AlertCircle, Loader, ArrowDown, Briefcase, Target, Award, Circle } from 'lucide-react';
 
@@ -255,18 +256,20 @@ export default function NeedDetails() {
           </div>
         )}
 
-        {/* Relationship Manager */}
+        {/* Guild Contact Card - replaces simple display */}
         <div className="mt-6 pt-6 border-t border-[var(--border)]">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">Your Guild Representative</h3>
-          <div className="flex gap-3 items-center p-3 rounded-xl bg-[var(--card-subtle)] border border-[var(--border)]">
-            <div className="w-10 h-10 rounded-lg overflow-hidden bg-black">
-              <img src={receptionist.photoURL} alt={receptionist.fullName} className="w-full h-full object-cover" />
-            </div>
-            <div>
-              <div className="text-sm font-bold">{receptionist.fullName}</div>
-              <div className="text-xs text-[var(--text-muted)]">{receptionist.role}</div>
-            </div>
-          </div>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">Your Guild Contact</h3>
+          <GuildContactCard
+            contact={{
+              uid: receptionist.uid,
+              fullName: receptionist.fullName,
+              photoURL: receptionist.photoURL,
+              phone: receptionist.phone,
+              email: receptionist.email,
+              role: receptionist.role
+            }}
+            roleLabel="Guild Representative"
+          />
         </div>
       </div>
     </div>

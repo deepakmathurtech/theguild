@@ -49,9 +49,28 @@ export default function QuestBoard() {
     loadData();
   }, []);
 
+  // Helper: Check if user can view "assigned" status quests (participants + staff)
+  const canViewAssignedQuest = (quest: Quest) => {
+    if (!profile) return false;
+    // User is assigned member - can view their own quests
+    if (quest.acceptedMembers?.includes(profile.uid)) return true;
+    // Staff roles can view
+    const staffRoles = ['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'nationalGuildMaster', 'guildFounder', 'founder'];
+    if (staffRoles.includes(profile.role)) return true;
+    return false;
+  };
+
   // Filter logic - show only open quests (not in progress/completed/closed/archived)
+  // Hide "assigned" quests from public - only show to participants and staff
   useEffect(() => {
-    let result = quests.filter(q => q.status && ['open', 'assigned', 'underReview'].includes(q.status));
+    let result = quests.filter(q => {
+      if (!q.status) return false;
+      // Show open and underReview to everyone
+      if (['open', 'underReview'].includes(q.status)) return true;
+      // Show assigned only to participants and staff
+      if (q.status === 'assigned') return canViewAssignedQuest(q);
+      return false;
+    });
 
     if (search.trim()) {
       const searchLower = search.toLowerCase();

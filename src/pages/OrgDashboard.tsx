@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
-import { fetchQuests, fetchOrganizationNeeds, fetchOrganizationActivities, fetchBranches, RECEPTIONISTS, getOrganizationActionItems, type ActionItem } from '../lib/repository';
+import { fetchQuests, fetchOrganizationNeeds, fetchOrganizationActivities, fetchBranches, fetchReceptionists, fetchReceptionistById, getRandomReceptionist, getOrganizationActionItems, type ActionItem } from '../lib/repository';
+import type { Receptionist } from '../types/guild';
 import type { Organization, Quest, Need, OrganizationActivity } from '../types/guild';
 import { Link } from 'react-router-dom';
 import { Building, Award, ShieldCheck, Mail, Phone, ExternalLink, Calendar, HelpCircle, ArrowRight, Activity, Plus, FileText, CheckCircle, Clock, AlertCircle, Send, Check, Edit2, X, Globe, Users, TrendingUp, Target, DollarSign, Handshake, BarChart3 } from 'lucide-react';
@@ -19,6 +20,8 @@ export default function OrgDashboard() {
   const [needs, setNeeds] = useState<Need[]>([]);
   const [activities, setActivities] = useState<OrganizationActivity[]>([]);
   const [branches, setBranches] = useState<any[]>([]);
+  const [receptionists, setReceptionists] = useState<Receptionist[]>([]);
+  const [manager, setManager] = useState<Receptionist | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Edit mode states
@@ -64,6 +67,15 @@ export default function OrgDashboard() {
           // Fetch all branches for relationship center
           const branchList = await fetchBranches();
           setBranches(branchList);
+
+          // Fetch receptionist for this organization
+          if (orgData.assignedReceptionistId) {
+            const rec = await fetchReceptionistById(orgData.assignedReceptionistId);
+            setManager(rec);
+          } else {
+            // Fallback to random receptionist
+            setManager(getRandomReceptionist());
+          }
         }
       } catch (err) {
         console.error(err);
@@ -287,9 +299,6 @@ export default function OrgDashboard() {
   ];
   const currentStageIndex = JOURNEY_STAGES.findIndex(s => s.key === org.currentStatus) || 0;
 
-  // Find coordinator
-  const manager = RECEPTIONISTS.find(r => r.uid === org.assignedReceptionistId) || RECEPTIONISTS[0];
-
   return (
     <div className="space-y-8 py-4 text-left max-w-5xl mx-auto animate-fade-up">
       {/* Header Panel */}
@@ -423,33 +432,51 @@ export default function OrgDashboard() {
             Your organization is directly supported by dedicated Guild Officers.
           </p>
 
-          {/* Manager Card */}
-          <div className="flex gap-3.5 items-center bg-[var(--card-subtle)] p-3.5 rounded-xl border border-[var(--border)]">
-            <div className="w-12 h-12 rounded-xl overflow-hidden border border-[var(--border)] bg-black flex-shrink-0">
-              <img src={manager.photoURL} alt={manager.fullName} className="w-full h-full object-cover" />
+          {/* Branch Info - Show branch if assigned */}
+          {org.branchId ? (
+            <div className="p-3.5 rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/5">
+              <div className="text-[10px] font-bold uppercase text-[var(--primary)] mb-2">Your Branch</div>
+              <div className="flex items-center gap-2">
+                <Building size={18} className="text-[var(--primary)]" />
+                <div>
+                  <div className="text-sm font-bold text-[var(--text)]">{org.branchName || org.branchId}</div>
+                  {org.city && (
+                    <div className="text-xs text-[var(--text-muted)]">{org.city}{org.state ? `, ${org.state}` : ''}</div>
+                  )}
+                </div>
+              </div>
             </div>
-            <div>
-              <strong className="text-sm font-bold text-[var(--text)] block leading-tight">{manager.fullName}</strong>
-              <span className="text-[10px] text-[var(--text-muted)] block mt-0.5">{manager.role}</span>
-              <span className="text-[10px] text-[var(--primary)] font-bold block mt-1.5 flex items-center gap-1">
-                <Calendar size={11} /> Next Contact: Tomorrow 11 AM
-              </span>
-            </div>
-          </div>
-
-          {/* Branch Info */}
-          {org.branchId && branches.find(b => b.id === org.branchId) && (
+          ) : (
             <div className="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--card-subtle)]">
-              <div className="text-[10px] font-bold uppercase text-[var(--text-muted)] mb-2">Assigned Branch</div>
-              {(() => {
-                const branch = branches.find(b => b.id === org.branchId);
-                return branch ? (
-                  <div>
-                    <div className="text-sm font-bold text-[var(--text)]">{branch.name}</div>
-                    <div className="text-xs text-[var(--text-muted)]">{branch.city}, {branch.state}</div>
+              <div className="text-[10px] font-bold uppercase text-[var(--text-muted)] mb-2">Branch</div>
+              <p className="text-xs text-[var(--text-muted)]">Branch assignment pending</p>
+            </div>
+          )}
+
+          {/* Manager Card - Show if assigned */}
+          {org.assignedReceptionistId && manager ? (
+            <div className="flex gap-3.5 items-center bg-[var(--card-subtle)] p-3.5 rounded-xl border border-[var(--border)]">
+              <div className="w-12 h-12 rounded-xl overflow-hidden border border-[var(--border)] bg-black flex-shrink-0">
+                {manager.photoURL ? (
+                  <img src={manager.photoURL} alt={manager.fullName} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-[var(--primary)] font-bold">
+                    {manager.fullName?.charAt(0) || 'R'}
                   </div>
-                ) : null;
-              })()}
+                )}
+              </div>
+              <div>
+                <strong className="text-sm font-bold text-[var(--text)] block leading-tight">{manager.fullName}</strong>
+                <span className="text-[10px] text-[var(--text-muted)] block mt-0.5">{manager.role}</span>
+                <span className="text-[10px] text-[var(--primary)] font-bold block mt-1.5 flex items-center gap-1">
+                  <Calendar size={11} /> Your Guild Representative
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--card-subtle)]">
+              <div className="text-[10px] font-bold uppercase text-[var(--text-muted)] mb-2">Guild Representative</div>
+              <p className="text-xs text-[var(--text-muted)]">Representative assignment pending</p>
             </div>
           )}
         </div>
@@ -491,7 +518,7 @@ export default function OrgDashboard() {
             description="You haven't posted any quests for Guild members to claim yet."
             whyItMatters="Quests are how organizations scale work. Your assigned coordinator will assist you in mapping your business needs to Quest parameters."
             actionText="Consult Relationship Manager"
-            onAction={() => alert(`Email sent to ${manager.email}`)}
+            onAction={() => manager && alert(`Email sent to ${manager.email}`)}
             icon={<Award size={22} />}
           />
         )}

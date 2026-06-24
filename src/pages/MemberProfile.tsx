@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useParams } from 'react-router-dom';
-import { updateLedgerRecord, RECEPTIONISTS, fetchOrganizationNeeds, getUserQuestStats, type UserQuestStats } from '../lib/repository';
+import { updateLedgerRecord, RECEPTIONISTS, fetchOrganizationNeeds, getUserQuestStats, fetchQuestsByNeedId, type UserQuestStats } from '../lib/repository';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import {
@@ -30,6 +30,7 @@ export default function MemberProfile() {
     reputationPoints: number;
     joinedAt: string;
   } | null>(null);
+  const [loadingViewedMember, setLoadingViewedMember] = useState(false);
 
   const isOrgRep = profile?.role === 'organizationRepresentative';
 
@@ -42,9 +43,14 @@ export default function MemberProfile() {
   useEffect(() => {
     document.title = isOrgRep ? 'Organization Profile' : PAGE_SEO.memberProfile.title;
   }, [isOrgRep]);
-  const [activeTab, setActiveTab] = useState<'portfolio' | 'quests' | 'achievements'>('portfolio');
+  const [activeTab, setActiveTab] = useState<'portfolio' | 'quests' | 'achievements' | 'needs'>('portfolio');
   const [questStats, setQuestStats] = useState<UserQuestStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
+
+  // Quest link expansion state
+  const [selectedNeedQuests, setSelectedNeedQuests] = useState<{ needId: string; quests: any[] } | null>(null);
+  const [expandedNeedId, setExpandedNeedId] = useState<string | null>(null);
+  const [loadingNeedQuests, setLoadingNeedQuests] = useState<string | null>(null);
 
   // Load quest stats
   useEffect(() => {
@@ -64,6 +70,25 @@ export default function MemberProfile() {
     loadQuestStats();
   }, [profile]);
 
+  // Load quests for a specific need when expanded
+  async function toggleNeedQuests(needId: string) {
+    if (expandedNeedId === needId) {
+      setExpandedNeedId(null);
+      setSelectedNeedQuests(null);
+    } else {
+      setExpandedNeedId(needId);
+      setLoadingNeedQuests(needId);
+      try {
+        const quests = await fetchQuestsByNeedId(needId);
+        setSelectedNeedQuests({ needId, quests });
+      } catch (err) {
+        console.error('Failed to load need quests:', err);
+      } finally {
+        setLoadingNeedQuests(null);
+      }
+    }
+  }
+
   // Fetch organization for org reps
   useEffect(() => {
     if (isOrgRep && profile?.uid) {
@@ -71,6 +96,11 @@ export default function MemberProfile() {
       async function loadOrgData() {
         setLoadingOrg(true);
         try {
+          // Debug: fetch ALL needs first
+          const allNeedsQuery = query(collection(db, 'needs'), where('archiveStatus', '==', 'active'));
+          const allNeedsSnap = await getDocs(allNeedsQuery);
+          console.log('[MemberProfile] ALL needs count:', allNeedsSnap.size);
+
           const orgQuery = query(collection(db, 'organizations'), where('ownerId', '==', userId));
           const orgSnap = await getDocs(orgQuery);
           if (!orgSnap.empty) {
@@ -78,6 +108,10 @@ export default function MemberProfile() {
             setUserOrg(orgData);
             // Fetch org needs
             const needs = await fetchOrganizationNeeds(orgData.id);
+            console.log('[MemberProfile] orgId:', orgData.id, '| needs found:', needs.length);
+            if (needs.length > 0) {
+              console.log('[MemberProfile] sample need:', needs[0]);
+            }
             setOrgNeeds(needs);
           }
         } catch (err) {
@@ -95,8 +129,9 @@ export default function MemberProfile() {
     if (!isViewingOther || !viewMemberId) return;
 
     async function loadViewedMember() {
+      setLoadingViewedMember(true);
       try {
-        const memberDoc = await getDoc(doc(db, 'members', viewMemberId!));
+        const memberDoc = await getDoc(doc(db, 'users', viewMemberId!));
         if (memberDoc.exists()) {
           const data = memberDoc.data();
           setViewedMember({
@@ -108,9 +143,14 @@ export default function MemberProfile() {
             reputationPoints: data.reputationPoints || 0,
             joinedAt: data.createdAt || data.joinedAt || ''
           });
+        } else {
+          setViewedMember(null);
         }
       } catch (err) {
         console.error('Failed to load member:', err);
+        setViewedMember(null);
+      } finally {
+        setLoadingViewedMember(false);
       }
     }
     loadViewedMember();
@@ -173,9 +213,14 @@ export default function MemberProfile() {
     );
   }
 
-  // Show another member's profile - loading
-  if (isViewingOther && !viewedMember) {
-    return <div className="p-12 text-center text-xs text-[var(--text-muted)]">Loading member profile...</div>;
+  // Show another member's profile - loading or not found
+  if (isViewingOther) {
+    if (loadingViewedMember) {
+      return <div className="p-12 text-center text-xs text-[var(--text-muted)]">Loading member profile...</div>;
+    }
+    if (!viewedMember) {
+      return <div className="p-12 text-center text-xs text-[var(--text-muted)]">Member not found</div>;
+    }
   }
 
   // Show organization profile for org reps
@@ -374,17 +419,12 @@ export default function MemberProfile() {
             <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[var(--primary)]" /> Joined {new Date(profile.createdAt).toLocaleDateString()}</span>
           </div>
 
-          {/* Jurisdiction & Branch Info */}
+          {/* Jurisdiction (hidden from member view - only shown in admin dashboard) */}
           <div className="flex flex-wrap gap-4 text-xs text-[var(--text-secondary)] font-medium mt-2">
             {profile.jurisdiction && profile.jurisdiction.cityName && (
               <span className="flex items-center gap-1.5">
                 <MapPin size={13} className="text-[var(--primary)]" />
                 {profile.jurisdiction.cityName}{profile.jurisdiction.stateName ? `, ${profile.jurisdiction.stateName}` : ''}
-              </span>
-            )}
-            {profile.branchName && (
-              <span className="flex items-center gap-1.5">
-                <Building2 size={13} className="text-[var(--primary)]" /> Branch: {profile.branchName}
               </span>
             )}
           </div>
@@ -466,6 +506,14 @@ export default function MemberProfile() {
             >
               Certificates & Unlocks
             </button>
+            {isOrgRep && userOrg && (
+              <button
+                onClick={() => setActiveTab('needs')}
+                className={`pb-3 px-4 font-bold text-xs border-b-2 cursor-pointer transition-all ${activeTab === 'needs' ? 'border-[var(--primary)] text-[var(--text)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text)]'}`}
+              >
+                Organization Needs ({orgNeeds.length})
+              </button>
+            )}
           </div>
 
           {/* TAB 1: Proof of Work Portfolio */}
@@ -681,6 +729,86 @@ export default function MemberProfile() {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* TAB 4: Organization Needs */}
+          {activeTab === 'needs' && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <Target size={15} className="text-[var(--primary)]" />
+                Organization Needs
+              </h3>
+
+              {loadingOrg ? (
+                <div className="panel p-6 text-center text-xs text-[var(--text-muted)]">
+                  Loading organization needs...
+                </div>
+              ) : orgNeeds.length > 0 ? (
+                <div className="grid gap-3">
+                  {orgNeeds.map(need => (
+                    <div key={need.id} className="panel p-4 bg-[var(--card)] border border-[var(--border)] rounded-lg space-y-2">
+                      <div className="flex justify-between items-start">
+                        <Link to={`/needs/${need.id}`} className="text-sm font-bold text-[var(--text)] hover:text-[var(--primary)] transition-colors">
+                          {need.title}
+                        </Link>
+                        <span className={`px-2 py-0.5 rounded text-[9px] uppercase font-bold ${
+                          need.status === 'submitted' ? 'bg-slate-500/20 text-slate-400' :
+                          need.status === 'accepted' ? 'bg-emerald-500/20 text-emerald-400' :
+                          need.status === 'inProgress' ? 'bg-blue-500/20 text-blue-400' :
+                          'bg-slate-500/20 text-slate-400'
+                        }`}>
+                          {need.status}
+                        </span>
+                      </div>
+                      {need.description && (
+                        <p className="text-xs text-[var(--text-muted)] line-clamp-2">{need.description}</p>
+                      )}
+                      <div className="flex justify-between items-center pt-2 border-t border-[var(--border)]">
+                        <span className="text-[10px] text-[var(--text-muted)]">
+                          Posted {need.createdAt ? new Date(need.createdAt).toLocaleDateString() : 'N/A'}
+                        </span>
+                        <button
+                          onClick={() => toggleNeedQuests(need.id!)}
+                          className="text-[10px] text-[var(--primary)] font-bold hover:underline"
+                        >
+                          {loadingNeedQuests === need.id ? 'Loading...' : expandedNeedId === need.id ? 'Hide Quests' : 'View Quests'}
+                        </button>
+                      </div>
+                      {/* Linked Quests (expanded view) */}
+                      {expandedNeedId === need.id && selectedNeedQuests?.needId === need.id && (
+                        <div className="mt-3 pt-3 border-t border-[var(--border)] space-y-2">
+                          <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase">Quests from this Need</span>
+                          {loadingNeedQuests === need.id ? (
+                            <p className="text-xs text-[var(--text-muted)]">Loading quests...</p>
+                          ) : selectedNeedQuests.quests.length > 0 ? (
+                            <div className="grid gap-2">
+                              {selectedNeedQuests.quests.map(quest => (
+                                <Link key={quest.id} to={`/quests/${quest.id}`} className="p-2 bg-[var(--card-subtle)] border border-[var(--border)] rounded text-xs flex justify-between items-center hover:border-[var(--primary)]/30 transition-colors">
+                                  <span className="font-medium text-[var(--text)] truncate flex-1">{quest.title}</span>
+                                  <span className={`ml-2 px-2 py-0.5 rounded text-[9px] uppercase font-bold ${
+                                    quest.status === 'open' ? 'bg-emerald-500/20 text-emerald-400' :
+                                    quest.status === 'inProgress' ? 'bg-blue-500/20 text-blue-400' :
+                                    'bg-slate-500/20 text-slate-400'
+                                  }`}>
+                                    {quest.status}
+                                  </span>
+                                </Link>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-[var(--text-muted)]">No quests have been created from this need yet.</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="panel p-6 text-center text-xs text-[var(--text-muted)] border border-dashed border-[var(--border)]">
+                  No needs submitted yet. Submit your first need to get help from the guild network.
+                </div>
+              )}
             </div>
           )}
         </div>

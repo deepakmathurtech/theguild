@@ -21,6 +21,7 @@ const PublicOrgRegistration = lazy(() => import('./features/onboarding/PublicOrg
 const OrgLanding = lazy(() => import('./pages/OrgLanding'));
 const OrgDashboard = lazy(() => import('./pages/OrgDashboard'));
 const OrgOutcomes = lazy(() => import('./pages/OrgOutcomes'));
+const OrgNeedsPage = lazy(() => import('./pages/OrgNeedsPage'));
 const QuestBoard = lazy(() => import('./pages/QuestBoard'));
 const QuestDetails = lazy(() => import('./pages/QuestDetails'));
 const MyQuests = lazy(() => import('./pages/MyQuests'));
@@ -36,6 +37,10 @@ const VerificationCenter = lazy(() => import('./pages/VerificationCenter'));
 const NotificationCenter = lazy(() => import('./pages/NotificationCenter'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Impact = lazy(() => import('./pages/Impact'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
+const CommunityGuidelines = lazy(() => import('./pages/CommunityGuidelines'));
+const Footer = lazy(() => import('./components/layout/Footer'));
 const NeedDetails = lazy(() => import('./pages/NeedDetails'));
 const NeedWizard = lazy(() => import('./pages/NeedWizard'));
 const GrowthDashboard = lazy(() => import('./pages/GrowthDashboard'));
@@ -561,20 +566,22 @@ const routerConfig = createBrowserRouter([
       { path: '/org-onboarding', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgOnboarding /></RoleRoute> },
       { path: '/org-dashboard', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgDashboard /></RoleRoute> },
       { path: '/org-outcomes', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgOutcomes /></RoleRoute> },
-      { path: '/my-needs', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedWizard organizationId="" organizationName="" /></RoleRoute> },
-      { path: '/org-team', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgDashboard /></RoleRoute> },
-      { path: '/org-messages', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NotificationCenter /></RoleRoute> },
+      { path: '/my-needs', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgNeedsPage /></RoleRoute> },
+            { path: '/org-messages', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NotificationCenter /></RoleRoute> },
       { path: '/branches', element: <PrivateRoute><BranchesPage /></PrivateRoute> },
-      { path: '/network', element: <Navigate to="/branches" replace /> },
+      { path: '/network', element: <Navigate to="/impact" replace /> },
       { path: '/docs', element: <PrivateRoute><KnowledgeHub /></PrivateRoute> },
       { path: '/impact', element: <Impact /> },
+      { path: '/privacy', element: <PrivacyPolicy /> },
+      { path: '/terms', element: <TermsOfService /> },
+      { path: '/community', element: <CommunityGuidelines /> },
       { path: '/profile', element: <PrivateRoute><MemberProfile /></PrivateRoute> },
       { path: '/member/:id', element: <PrivateRoute><MemberProfile /></PrivateRoute> },
       { path: '/verification', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><NeedReviewQueue /></RoleRoute> },
       { path: '/notifications', element: <PrivateRoute><NotificationCenter /></PrivateRoute> },
       { path: '/settings', element: <PrivateRoute><Settings /></PrivateRoute> },
       { path: '/needs/:id', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedDetails /></RoleRoute> },
-      { path: '/need-submit', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedWizard organizationId="" organizationName="" /></RoleRoute> },
+      { path: '/need-submit', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedWizard /></RoleRoute> },
             { path: '/need-reviews', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><NeedReviewQueue /></RoleRoute> },
       { path: '/org-management', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><SubmissionReviewQueue /></RoleRoute> },
       { path: '*', element: <NotFound /> }

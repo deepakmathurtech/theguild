@@ -144,6 +144,7 @@ export interface Organization extends AuditFields {
   email?: string;
   address?: string;
   city?: string;
+  state?: string;
   description?: string;
   needs: string[];
   opportunities: string[];
@@ -156,6 +157,7 @@ export interface Organization extends AuditFields {
   
   // Receptionist matching
   assignedReceptionistId?: string;
+  assignedReceptionistName?: string;
 
   // Branch assignment
   branchId?: string;
@@ -220,6 +222,7 @@ export interface Need extends AuditFields {
   opportunityId?: string;
   questId?: string;
   assignedReceptionistId?: string;
+  assignedReceptionistName?: string;
   lastUpdatedAt?: string;
   nextAction?: string;
   // Review fields for queue
@@ -247,10 +250,12 @@ export interface Opportunity extends AuditFields {
   status: OpportunityStatus;
 }
 
-export type QuestStatus = 'draft' | 'open' | 'assigned' | 'inProgress' | 'underReview' | 'completed' | 'closed' | 'cancelled' | 'archived';
+// Quest status - matches guild-auth workflowService
+export type QuestStatus = 'draft' | 'open' | 'assigned' | 'inProgress' | 'underReview' | 'paymentPending' | 'completed' | 'closed' | 'cancelled' | 'archived';
 
 // QUEST TYPES - Phase 2 Open Source Quest expansion
 export type QuestType = 'standard' | 'openSource';
+// Application status - 'completed' means member finished work on this quest (different from quest status)
 export type QuestApplicationStatus = 'draft' | 'submitted' | 'underReview' | 'accepted' | 'rejected' | 'withdrawn' | 'completed';
 
 // Open Source Quest specific types
@@ -448,6 +453,12 @@ export interface Quest extends AuditFields {
   paymentAmount?: number;
   paymentCurrency?: string;
   paymentType?: string;
+  guildCommission?: number;
+  guildRevenue?: number;
+  memberPayout?: number;
+  paymentStatus?: string;
+  verifiedBy?: string;
+  verifiedAt?: string;
   reputationPoints: number;
   experienceReward?: number;
   rewards: string;

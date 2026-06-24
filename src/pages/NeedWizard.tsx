@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { createNeed, logOrganizationActivity } from '../lib/repository';
-import { ChevronRight, ChevronLeft, FileText, Target, Tag, Clock, Check, Upload, AlertCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import type { NeedCategory, BudgetRange } from '../types/guild';
+import { createNeed, logOrganizationActivity, fetchOrganizationById, fetchUserOrganization } from '../lib/repository';
+import { ChevronRight, ChevronLeft, FileText, Target, Tag, Clock, Check, Upload, AlertCircle, Loader2 } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import type { NeedCategory, BudgetRange, Organization } from '../types/guild';
 
 const CATEGORIES: { id: NeedCategory; title: string; desc: string }[] = [
   { id: 'Technology', title: 'Technology', desc: 'Software, apps, websites, automation' },
@@ -41,18 +41,16 @@ const TIMELINES = [
   'Flexible / To be discussed'
 ];
 
-interface NeedWizardProps {
-  organizationId: string;
-  organizationName: string;
-}
-
-export default function NeedWizard({ organizationId, organizationName }: NeedWizardProps) {
+export default function NeedWizard() {
+  // ALL hooks must be at top - before any returns!
   const { profile } = useAuth();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [org, setOrg] = useState<Organization | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Form states
+  const [step, setStep] = useState(1);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [desiredOutcome, setDesiredOutcome] = useState('');
@@ -62,6 +60,60 @@ export default function NeedWizard({ organizationId, organizationName }: NeedWiz
   const [timeline, setTimeline] = useState('');
   const [deadline, setDeadline] = useState('');
   const [documents, setDocuments] = useState<string[]>([]);
+
+  // Get organization from URL param OR profile's ownerId
+  const organizationId = searchParams.get('id') || '';
+  const organizationName = org?.name || '';
+
+  useEffect(() => {
+    async function loadOrg() {
+      let orgId = organizationId;
+      // If no URL param, try to get org from user's ownerId
+      if (!orgId && profile?.uid) {
+        try {
+          const userOrg = await fetchUserOrganization(profile.uid);
+          orgId = userOrg?.id || '';
+          if (userOrg) setOrg(userOrg);
+        } catch (e) {
+          console.error('Failed to load user org:', e);
+        }
+      }
+      if (!orgId) {
+        setLoading(false);
+        return;
+      }
+      if (org && org.id === orgId) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const orgData = await fetchOrganizationById(orgId);
+        setOrg(orgData);
+      } catch (e) {
+        console.error('Failed to load organization:', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadOrg();
+  }, [organizationId, profile?.uid]);
+
+  // NOW returns are allowed
+  if (!profile) return null;
+  if (loading) return <div className="flex items-center justify-center p-12"><Loader2 className="w-8 h-8 animate-spin" /></div>;
+
+  // Error if no organization
+  if (!organizationId || !org) {
+    return (
+      <div className="panel p-8 text-center">
+        <h3>No Organization Selected</h3>
+        <p className="text-[var(--text-secondary)] mt-2">
+          Please navigate to your organization dashboard and click "Post Need" from there.
+        </p>
+        <a href="/org-dashboard" className="primary inline-block mt-4">Go to Dashboard</a>
+      </div>
+    );
+  }
 
   const canProceed = () => {
     if (step === 1) return title.trim().length >= 5 && description.trim().length >= 20;
@@ -93,10 +145,10 @@ export default function NeedWizard({ organizationId, organizationName }: NeedWiz
           desiredOutcome: desiredOutcome.trim(),
           category,
           priority,
-          budgetRange: budgetRange || undefined,
-          timeline: timeline || undefined,
-          deadline: deadline || undefined,
-          supportingDocuments: documents.length > 0 ? documents : undefined
+          ...(budgetRange ? { budgetRange } : {}),
+          ...(timeline ? { timeline } : {}),
+          ...(deadline ? { deadline } : {}),
+          supportingDocuments: documents.length > 0 ? documents : []
         },
         profile
       );

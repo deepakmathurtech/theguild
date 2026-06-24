@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { fetchOrganizations, RECEPTIONISTS } from '../lib/repository';
-import type { Organization } from '../types/guild';
+import { fetchOrganizations, fetchReceptionistById, fetchOrganizationNeeds, fetchOrganizationActivities } from '../lib/repository';
+import { useAuth } from '../context/AuthContext';
+import type { Organization, Need, OrganizationActivity, GuildUser } from '../types/guild';
 import { Link, useParams } from 'react-router-dom';
+import GuildContactCard from '../components/GuildContactCard';
 import { Building, ShieldCheck, Mail, ArrowRight, Plus, Search, Filter, MapPin, Globe, Users, TrendingUp, Calendar, ExternalLink, ChevronRight, Star, Briefcase, Target, Award, X } from 'lucide-react';
 import EmptyState from '../components/EmptyState';
 import SEO, { PAGE_SEO } from '../components/SEO';
@@ -297,8 +299,64 @@ function OrganizationCard({ org }: { org: Organization }) {
   );
 }
 
+// Check if user can view need details based on role
+function canViewNeedDetails(need: Need, user: GuildUser | null, _org: Organization): boolean {
+  if (!user) return false;
+  // Founder can see everything
+  if (user.role === 'founder' || user.role === 'guildFounder') return true;
+  // Receptionist assigned to this org can see
+  if (need.assignedReceptionistId === user.uid) return true;
+  // Branch head can see needs for their branch (from jurisdiction or direct field)
+  const userBranchId = user.jurisdiction?.guildBranchId || user.branchId;
+  const needBranchId = (need as any).branchId || need.jurisdiction?.guildBranchId;
+  if (userBranchId && needBranchId && userBranchId === needBranchId) return true;
+  // Guild staff roles can see
+  if (user.role === 'receptionist' || user.role === 'cityGuildMaster' ||
+      user.role === 'stateGuildMaster' || user.role === 'nationalGuildMaster' ||
+      user.role === 'centralGuildMaster') return true;
+  return false;
+}
+
 // Organization Profile Page
 function OrganizationProfile({ org }: { org: Organization }) {
+  const { profile } = useAuth();
+  const [receptionist, setReceptionist] = useState<any>(null);
+  const [loadingRec, setLoadingRec] = useState(false);
+  const [needs, setNeeds] = useState<Need[]>([]);
+  const [activities, setActivities] = useState<OrganizationActivity[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
+
+  // Fetch receptionist, needs, and activities
+  useEffect(() => {
+    async function loadData() {
+      setLoadingData(true);
+      try {
+        // Fetch receptionist
+        if (org.assignedReceptionistId) {
+          fetchReceptionistById(org.assignedReceptionistId)
+            .then(rec => {
+              setReceptionist(rec);
+              setLoadingRec(false);
+            });
+        }
+
+        // Fetch needs and activities
+        const [needsData, activitiesData] = await Promise.all([
+          fetchOrganizationNeeds(org.id),
+          fetchOrganizationActivities(org.id)
+        ]);
+        setNeeds(needsData);
+        setActivities(activitiesData);
+      } catch (e) {
+        console.error('Failed to load org data:', e);
+      } finally {
+        setLoadingData(false);
+      }
+    }
+
+    loadData();
+  }, [org.id, org.assignedReceptionistId]);
+
   // Determine trust badge color
   const trustColor = org.trustLevel === 'partner' ? 'text-purple-400' : org.trustLevel === 'trusted' ? 'text-emerald-400' : 'text-amber-400';
   const trustBg = org.trustLevel === 'partner' ? 'bg-purple-500/10 border-purple-500/20' : org.trustLevel === 'trusted' ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20';
@@ -394,30 +452,179 @@ function OrganizationProfile({ org }: { org: Organization }) {
               {org.verificationStatus === 'verified' ? 'Verified' : org.verificationStatus === 'pending' ? 'Under Review' : 'Not Verified'}
             </div>
           </div>
-          {org.assignedReceptionistId && (() => {
-            const receptionist = RECEPTIONISTS.find(r => r.uid === org.assignedReceptionistId);
-            return (
-              <div className="p-4 rounded-xl bg-[var(--card-subtle)] border border-[var(--border)] md:col-span-2">
-                <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-2">Dedicated Guild Representative</p>
-                {receptionist ? (
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg overflow-hidden border border-[var(--border)]">
-                      <img src={receptionist.photoURL} alt={receptionist.fullName} className="w-full h-full object-cover" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-[var(--text)]">{receptionist.fullName}</p>
-                      <p className="text-xs text-[var(--text-muted)]">{receptionist.role}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm font-medium">Account Manager Assigned</p>
-                )}
-                <p className="text-xs text-[var(--text-muted)] mt-2">This organization has a dedicated Guild representative for partnership support.</p>
+
+          {/* Branch Info - Show if assigned */}
+          {org.branchId && (
+            <div className="p-4 rounded-xl bg-[var(--card-subtle)] border border-[var(--border)]">
+              <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-2">Assigned Branch</p>
+              <div className="flex items-center gap-2">
+                <Building size={16} className="text-[var(--primary)]" />
+                <span className="text-sm font-bold">{org.branchName || org.branchId}</span>
               </div>
-            );
-          })()}
+              {org.city && (
+                <p className="text-xs text-[var(--text-muted)] mt-1">{org.city}{org.state ? `, ${org.state}` : ''}</p>
+              )}
+            </div>
+          )}
+
+          {/* Receptionist - Show if assigned */}
+          {org.assignedReceptionistId && (
+            <div className="md:col-span-2">
+              {loadingRec ? (
+                <div className="p-4 rounded-xl bg-[var(--card-subtle)] border border-[var(--border)]">
+                  <p className="text-sm text-[var(--text-muted)]">Loading representative...</p>
+                </div>
+              ) : receptionist ? (
+                <GuildContactCard
+                  contact={{
+                    uid: receptionist.uid,
+                    fullName: receptionist.fullName,
+                    photoURL: receptionist.photoURL,
+                    phone: receptionist.phone,
+                    email: receptionist.email,
+                    role: receptionist.role
+                  }}
+                  roleLabel="Dedicated Guild Representative"
+                />
+              ) : (
+                <div className="p-4 rounded-xl bg-[var(--card-subtle)] border border-[var(--border)]">
+                  <p className="text-sm font-medium">Account Manager Assigned</p>
+                  <p className="text-xs text-[var(--text-muted)] mt-1">This organization has a dedicated Guild representative for partnership support.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Show message if no branch assigned */}
+          {!org.branchId && (
+            <div className="p-4 rounded-xl bg-[var(--card-subtle)] border border-[var(--border)]">
+              <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-2">Branch</p>
+              <p className="text-sm text-[var(--text-muted)]">Branch assignment pending</p>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Contact Information Section */}
+      {(org.phone || org.contactPerson || org.address) && (
+        <div className="panel p-6 rounded-xl">
+          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <Users size={18} /> Contact Information
+          </h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            {org.contactPerson && (
+              <div className="p-4 rounded-xl bg-[var(--card-subtle)] border border-[var(--border)]">
+                <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-2">Contact Person</p>
+                <p className="text-sm font-bold">{org.contactPerson}</p>
+              </div>
+            )}
+            {org.phone && (
+              <div className="p-4 rounded-xl bg-[var(--card-subtle)] border border-[var(--border)]">
+                <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-2">Phone</p>
+                <p className="text-sm font-bold">{org.phone}</p>
+              </div>
+            )}
+            {org.address && (
+              <div className="p-4 rounded-xl bg-[var(--card-subtle)] border border-[var(--border)]">
+                <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-2">Address</p>
+                <p className="text-sm">{org.address}</p>
+                {(org.city || org.state) && (
+                  <p className="text-xs text-[var(--text-muted)] mt-1">{[org.city, org.state].filter(Boolean).join(', ')}</p>
+                )}
+              </div>
+            )}
+            {org.website && (
+              <div className="p-4 rounded-xl bg-[var(--card-subtle)] border border-[var(--border)]">
+                <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-2">Website</p>
+                <a href={org.website} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-[var(--primary)] hover:underline flex items-center gap-1">
+                  {org.website.replace(/^https?:\/\//, '')} <ExternalLink size={12} />
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Needs Section - Show needs with role-based visibility */}
+      {(needs.length > 0 || loadingData) && (
+        <div className="panel p-6 rounded-xl">
+          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <Target size={18} /> Organization Needs ({needs.length})
+          </h2>
+          {loadingData ? (
+            <p className="text-sm text-[var(--text-muted)]">Loading needs...</p>
+          ) : needs.length > 0 ? (
+            <div className="space-y-3">
+              {needs.map(need => {
+                // Check if current user can see this need's details
+                const canView = canViewNeedDetails(need, profile, org);
+                return (
+                  <div key={need.id} className="p-4 rounded-xl bg-[var(--card-subtle)] border border-[var(--border)] flex justify-between items-center">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-[var(--text-secondary)] truncate">{need.title}</span>
+                        <span className={`text-[9px] uppercase px-2 py-0.5 rounded font-bold ${
+                          need.status === 'submitted' ? 'bg-slate-500/20 text-slate-400' :
+                          need.status === 'underReview' ? 'bg-amber-500/20 text-amber-400' :
+                          need.status === 'accepted' ? 'bg-emerald-500/20 text-emerald-400' :
+                          need.status === 'inProgress' ? 'bg-blue-500/20 text-blue-400' :
+                          need.status === 'completed' ? 'bg-emerald-500/20 text-emerald-500' :
+                          'bg-slate-500/20 text-slate-400'
+                        }`}>
+                          {need.status}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-[10px] text-[var(--text-muted)]">
+                        <span>{need.category}</span>
+                        <span className="uppercase">{need.priority} priority</span>
+                        {need.budgetRange && <span>{need.budgetRange}</span>}
+                      </div>
+                    </div>
+                    {canView ? (
+                      <Link to={`/needs/${need.id}`} className="text-[var(--primary)] text-xs font-bold hover:underline flex items-center gap-1">
+                        View <ArrowRight size={12} />
+                      </Link>
+                    ) : (
+                      <span className="text-[10px] text-[var(--text-muted)]">Contact rep to view</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-[var(--text-muted)]">No needs submitted yet.</p>
+          )}
+        </div>
+      )}
+
+      {/* Activity Timeline */}
+      {(activities.length > 0) && (
+        <div className="panel p-6 rounded-xl">
+          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <Calendar size={18} /> Recent Activity
+          </h2>
+          <div className="space-y-2">
+            {activities.slice(0, 5).map(activity => (
+              <div key={activity.id} className="flex items-start gap-3 text-xs">
+                <div className={`w-2 h-2 rounded-full mt-1 flex-shrink-0 ${
+                  activity.type === 'needSubmitted' ? 'bg-blue-500' :
+                  activity.type === 'opportunityCreated' ? 'bg-amber-500' :
+                  activity.type === 'questCreated' ? 'bg-purple-500' :
+                  activity.type === 'outcomeDelivered' ? 'bg-emerald-500' :
+                  'bg-slate-500'
+                }`} />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-[var(--text)]">{activity.title}</p>
+                  <p className="text-[var(--text-muted)]">{activity.description}</p>
+                  <p className="text-[10px] text-[var(--text-muted)] mt-1">
+                    {activity.createdAt ? new Date(activity.createdAt).toLocaleDateString() : ''}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Contact CTA */}
       <div className="panel p-6 rounded-xl bg-gradient-to-r from-[var(--primary)]/10 to-transparent border-[var(--primary)]/20">

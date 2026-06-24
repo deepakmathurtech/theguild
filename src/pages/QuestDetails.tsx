@@ -3,7 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
 import { doc, getDoc, updateDoc, collection, query, getDocs } from 'firebase/firestore';
-import { applyForQuest, submitQuestCompletion, nowIso, RECEPTIONISTS, getVerificationRequirement, meetsVerificationRequirement, getQuestApplications, getUserQuestParticipation, updateParticipationStatus, notifyUser } from '../lib/repository';
+import { applyForQuest, submitQuestCompletion, nowIso, RECEPTIONISTS, getVerificationRequirement, meetsVerificationRequirement, getQuestApplications, getUserQuestParticipation, updateParticipationStatus, notifyUser, acceptApplicant } from '../lib/repository';
+import GuildContactCard from '../components/GuildContactCard';
 import type { Quest, QuestApplication } from '../types/guild';
 import { ArrowLeft, Compass, Award, Calendar, Clock, MapPin, Check, CheckCircle, Send, ShieldAlert, Sparkles, Users, ExternalLink, Wallet, Book, User, FileCheck, XCircle, Pause, Play, Send as SendIcon, Trash2, Loader } from 'lucide-react';
 import { PAGE_SEO } from '../components/SEO';
@@ -31,6 +32,7 @@ export default function QuestDetails() {
   const [showRemovalModal, setShowRemovalModal] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<{ userId: string; name: string } | null>(null);
   const [removalReason, setRemovalReason] = useState('');
+  const [acceptingMember, setAcceptingMember] = useState<string | null>(null);
 
   // Submission Form States - ALL defined at top level
   const [report, setReport] = useState('');
@@ -326,6 +328,37 @@ export default function QuestDetails() {
     }
   };
 
+  // Handle accepting an applicant - adds to quest and updates application status
+  const handleAcceptApplicant = async (applicationId: string, applicantId: string, applicantName: string) => {
+    if (!quest || !profile || !isAdmin) return;
+
+    setAcceptingMember(applicationId);
+    try {
+      await acceptApplicant(applicationId, quest.id, applicantId, profile.uid);
+
+      // Refresh applications
+      const apps = await getQuestApplications(quest.id);
+      setApplicantApps(apps);
+
+      // Notify the accepted member
+      await notifyUser(
+        applicantId,
+        'quest_accepted',
+        'Accepted to Quest',
+        `You have been accepted to "${quest.title}"! Check your quest dashboard for next steps.`,
+        `/quests/${quest.id}`,
+        'high'
+      );
+
+      alert(`${applicantName || 'Applicant'} has been accepted to the quest.`);
+    } catch (err) {
+      console.error('Failed to accept applicant:', err);
+      alert('Failed to accept applicant. Please try again.');
+    } finally {
+      setAcceptingMember(null);
+    }
+  };
+
   const handleSubmission = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
@@ -573,11 +606,17 @@ export default function QuestDetails() {
                   <p className="text-xs text-[var(--text-secondary)]">{quest.expectedOutcome}</p>
                 </div>
               )}
-              {/* Assigned Receptionist */}
-              {quest.assignedReceptionistName && (
-                <div>
-                  <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">Assigned Coordinator</span>
-                  <span className="text-[var(--text-secondary)] font-semibold">{quest.assignedReceptionistName}</span>
+              {/* Guild Contact Card - replaces simple text display */}
+              {quest.assignedReceptionistId && (
+                <div className="col-span-2 md:col-span-3">
+                  <GuildContactCard
+                    contact={{
+                      uid: quest.assignedReceptionistId,
+                      fullName: quest.assignedReceptionistName || 'Unknown',
+                      role: 'receptionist'
+                    }}
+                    roleLabel="Guild Contact"
+                  />
                 </div>
               )}
               {/* Verification Method */}
@@ -1102,6 +1141,21 @@ export default function QuestDetails() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      {/* Accept button for pending applicants (admin only) */}
+                      {isAdmin && (app.status === 'submitted' || app.status === 'underReview' || app.status === 'draft') && (
+                        <button
+                          onClick={() => handleAcceptApplicant(app.id, app.applicantId, app.applicantName || app.applicantId.slice(0, 8))}
+                          disabled={acceptingMember === app.id}
+                          className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors"
+                          title="Accept applicant to quest"
+                        >
+                          {acceptingMember === app.id ? (
+                            <Loader size={12} className="animate-spin" />
+                          ) : (
+                            <Check size={12} />
+                          )}
+                        </button>
+                      )}
                       {/* Remove button for accepted members (admin only) */}
                       {isAdmin && app.status === 'accepted' && (
                         <button

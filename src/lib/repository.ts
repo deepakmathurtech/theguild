@@ -108,7 +108,7 @@ export async function logActivity(input: Omit<ActivityLog, 'id' | 'time'>) {
   }
 }
 
-// Receptionist directory for Relationship Matching
+// Receptionist directory for Relationship Matching (fallback)
 export const RECEPTIONISTS: Receptionist[] = [
   {
     uid: 'rec_amit',
@@ -136,6 +136,55 @@ export const RECEPTIONISTS: Receptionist[] = [
   }
 ];
 
+// Fetch receptionists dynamically from Firestore
+export async function fetchReceptionists(): Promise<Receptionist[]> {
+  try {
+    const q = query(collection(db, 'users'), where('role', '==', 'receptionist'));
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) {
+      return RECEPTIONISTS;
+    }
+    return snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        uid: data.uid,
+        fullName: data.fullName || data.displayName || 'Receptionist',
+        role: data.role || 'Receptionist',
+        email: data.email,
+        phone: data.phone,
+        photoURL: data.photoURL
+      } as Receptionist;
+    });
+  } catch (e) {
+    console.warn('Failed to fetch receptionists from Firestore, using static data:', e);
+    return RECEPTIONISTS;
+  }
+}
+
+// Fetch a specific receptionist by ID
+export async function fetchReceptionistById(uid: string): Promise<Receptionist | null> {
+  try {
+    const q = query(collection(db, 'users'), where('uid', '==', uid), limit(1));
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) {
+      return RECEPTIONISTS.find(r => r.uid === uid) || null;
+    }
+    const data = snapshot.docs[0].data();
+    return {
+      uid: data.uid,
+      fullName: data.fullName || data.displayName || 'Receptionist',
+      role: data.role || 'Receptionist',
+      email: data.email,
+      phone: data.phone,
+      photoURL: data.photoURL
+    } as Receptionist;
+  } catch (e) {
+    console.warn('Failed to fetch receptionist:', e);
+    return RECEPTIONISTS.find(r => r.uid === uid) || null;
+  }
+}
+
+// Get random receptionist for fallback
 export function getRandomReceptionist(): Receptionist {
   return RECEPTIONISTS[Math.floor(Math.random() * RECEPTIONISTS.length)];
 }
@@ -1846,6 +1895,26 @@ export async function updateLedgerRecord<T extends DocumentData>(
   });
 }
 
+// Normalize Quest data - fallback assignedMembers to acceptedMembers for compatibility
+function normalizeQuest(quest: Quest): Quest {
+  if (!quest) return quest;
+  // If acceptedMembers is missing but assignedMembers exists (from guild-auth), use that
+  const hasAccepted = quest.acceptedMembers !== undefined;
+  const hasAssigned = (quest as Quest & { assignedMembers?: string[] }).assignedMembers !== undefined;
+  if (!hasAccepted && hasAssigned) {
+    return {
+      ...quest,
+      acceptedMembers: (quest as Quest & { assignedMembers?: string[] }).assignedMembers
+    };
+  }
+  return quest;
+}
+
+// Normalize array of quests
+function normalizeQuests(quests: Quest[]): Quest[] {
+  return quests.map(normalizeQuest);
+}
+
 // Fetch all quests with pagination
 export async function fetchQuests(filters?: {
   category?: string;
@@ -1880,7 +1949,8 @@ export async function fetchQuests(filters?: {
 
   const q = query(collection(db, 'quests'), ...constraints);
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Quest));
+  const quests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Quest));
+  return normalizeQuests(quests);
 }
 
 // Check if user has existing application for a quest
@@ -1949,11 +2019,46 @@ export async function getQuestApplications(questId: string): Promise<QuestApplic
   return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as QuestApplication));
 }
 
+// Accept an applicant - adds to quest acceptedMembers and updates application status
+export async function acceptApplicant(
+  applicationId: string,
+  questId: string,
+  applicantId: string,
+  reviewerId: string
+): Promise<void> {
+  const now = nowIso();
+
+  // Get current quest data
+  const questSnap = await getDoc(doc(db, 'quests', questId));
+  if (!questSnap.exists()) {
+    throw new Error('Quest not found');
+  }
+  const quest = questSnap.data() as Quest;
+
+  // Normalize acceptedMembers (handles assignedMembers fallback)
+  const normalizedQuest = normalizeQuest(quest);
+  const currentAccepted = normalizedQuest.acceptedMembers || [];
+
+  // Update quest - add to acceptedMembers
+  await updateDoc(doc(db, 'quests', questId), {
+    acceptedMembers: [...currentAccepted, applicantId],
+    updatedAt: now
+  } as DocumentData);
+
+  // Update application status to accepted
+  await updateDoc(doc(db, 'questApplications', applicationId), {
+    status: 'accepted',
+    reviewedAt: now,
+    reviewedBy: reviewerId
+  } as DocumentData);
+}
+
 // Get single quest by ID
 export async function getQuest(questId: string): Promise<Quest | null> {
   const snap = await getDoc(doc(db, 'quests', questId));
   if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() } as Quest;
+  const quest = { id: snap.id, ...snap.data() } as Quest;
+  return normalizeQuest(quest);
 }
 
 // ========== QUEST PARTICIPATION (Source of Truth for Accepted Quests) ==========
@@ -2607,6 +2712,14 @@ export async function fetchUserOrganization(userId: string): Promise<Organizatio
   return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Organization;
 }
 
+// Fetch organization by ID
+export async function fetchOrganizationById(orgId: string): Promise<Organization | null> {
+  if (!orgId) return null;
+  const orgSnap = await getDoc(doc(db, 'organizations', orgId));
+  if (!orgSnap.exists()) return null;
+  return { id: orgSnap.id, ...orgSnap.data() } as Organization;
+}
+
 // Create a Need for an organization
 export async function createNeed(
   organizationId: string,
@@ -2624,15 +2737,40 @@ export async function createNeed(
   },
   actor: GuildUser
 ): Promise<Need> {
+  // Fetch organization to get assigned receptionist
+  const orgSnap = await getDoc(doc(db, 'organizations', organizationId));
+  const organization = orgSnap.exists() ? orgSnap.data() as Organization : null;
+
+  // Filter out undefined values to prevent Firestore errors
+  const filteredData: any = {};
+  if (data.title) filteredData.title = data.title;
+  if (data.description) filteredData.description = data.description;
+  if (data.desiredOutcome) filteredData.desiredOutcome = data.desiredOutcome;
+  if (data.category) filteredData.category = data.category;
+  if (data.priority) filteredData.priority = data.priority;
+  if (data.budgetRange) filteredData.budgetRange = data.budgetRange;
+  if (data.timeline) filteredData.timeline = data.timeline;
+  if (data.deadline) filteredData.deadline = data.deadline;
+  if (data.supportingDocuments && data.supportingDocuments.length > 0) filteredData.supportingDocuments = data.supportingDocuments;
+
+  // Assign to the guild receptionist handling this org, fallback to actor if none assigned
+  const needReceptionistId = organization?.assignedReceptionistId || actor.uid;
+  const needReceptionistName = organization?.assignedReceptionistName || actor.fullName || actor.email;
+
   const needData = {
-    ...data,
+    ...filteredData,
     searchName: data.title.toLowerCase(),
     organizationId,
     organizationName,
     estimatedValue: 0,
     status: 'submitted' as const,
     lastUpdatedAt: nowIso(),
-    nextAction: 'Under review by Guild Representative'
+    nextAction: 'Under review by Guild Representative',
+    // Assign to the organization's guild receptionist (not the org user who submitted)
+    assignedReceptionistId: needReceptionistId,
+    assignedReceptionistName: needReceptionistName,
+    // Use organization's jurisdiction so state/city GMs can see it
+    jurisdiction: organization?.jurisdiction || actor.jurisdiction
   };
 
   return createLedgerRecord<Need>('needs', needData as any, actor, `Submitted need: ${data.title}`);
@@ -2643,6 +2781,28 @@ export async function fetchOrganizationNeeds(organizationId: string): Promise<Ne
   const q = query(collection(db, 'needs'), where('organizationId', '==', organizationId), where('archiveStatus', '==', 'active'));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Need));
+}
+
+// Fetch needs created by a user (their submitted needs)
+export async function fetchUserNeeds(userId: string): Promise<Need[]> {
+  // Use createdBy field to find needs the user created
+  const q = query(collection(db, 'needs'), where('createdBy', '==', userId), where('archiveStatus', '==', 'active'));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Need));
+}
+
+// Fetch needs assigned to a user (as their receptionist handling)
+export async function fetchAssignedNeeds(userId: string): Promise<Need[]> {
+  const q = query(collection(db, 'needs'), where('assignedReceptionistId', '==', userId), where('archiveStatus', '==', 'active'));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Need));
+}
+
+// Fetch quests linked to a specific need
+export async function fetchQuestsByNeedId(needId: string): Promise<Quest[]> {
+  const q = query(collection(db, 'quests'), where('needId', '==', needId));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Quest));
 }
 
 // Log organization activity
@@ -3585,7 +3745,7 @@ export async function fetchMemberGrowthMetrics(userId: string): Promise<MemberGr
 
   // Count quests where user was applicant/accepted/completed
   const questsSnap = await getDocs(query(collection(db, 'quests')));
-  const allQuests = questsSnap.docs.map(d => ({ id: d.id, ...d.data() } as Quest));
+  const allQuests = normalizeQuests(questsSnap.docs.map(d => ({ id: d.id, ...d.data() } as Quest)));
 
   const appliedQuests = allQuests.filter(q => q.applicants?.includes(userId));
   const inProgressQuests = allQuests.filter(q => q.acceptedMembers?.includes(userId) && q.status === 'inProgress');
@@ -3662,7 +3822,7 @@ export async function fetchMemberGrowthTimeline(userId: string): Promise<MemberG
 
   // First quest application
   const questsSnap = await getDocs(query(collection(db, 'quests')));
-  const allQuests = questsSnap.docs.map(d => ({ id: d.id, ...d.data() } as Quest));
+  const allQuests = normalizeQuests(questsSnap.docs.map(d => ({ id: d.id, ...d.data() } as Quest)));
   const appliedQuest = allQuests.find(q => q.applicants?.includes(userId));
   if (appliedQuest) {
     timeline.push({ milestone: 'First Quest Application', date: appliedQuest.createdAt });
@@ -3845,7 +4005,7 @@ export async function fetchOrganizationImpactMetrics(orgId: string): Promise<Org
 
   // Fetch related quests
   const questsSnap = await getDocs(query(collection(db, 'quests'), where('organizationId', '==', orgId)));
-  const quests = questsSnap.docs.map(d => ({ id: d.id, ...d.data() } as Quest));
+  const quests = normalizeQuests(questsSnap.docs.map(d => ({ id: d.id, ...d.data() } as Quest)));
 
   // Fetch related outcomes
   const outcomesSnap = await getDocs(query(collection(db, 'outcomes'), where('organizationId', '==', orgId)));
@@ -3953,7 +4113,7 @@ export async function fetchReceptionistImpactMetrics(userId: string): Promise<Re
 
   // Quests managed
   const questsSnap = await getDocs(query(collection(db, 'quests')));
-  const allQuests = questsSnap.docs.map(d => ({ id: d.id, ...d.data() } as Quest));
+  const allQuests = normalizeQuests(questsSnap.docs.map(d => ({ id: d.id, ...d.data() } as Quest)));
   const managedQuests = allQuests.filter(q => q.assignedReceptionistId === userId);
 
   // Calculate metrics
@@ -4033,7 +4193,7 @@ export async function calculateBranchHealth(branchId: string): Promise<BranchHea
   const orgs = allOrgs.filter(o => o.jurisdiction?.guildBranchId === branchId);
 
   const questsSnap = await getDocs(query(collection(db, 'quests')));
-  const allQuests = questsSnap.docs.map(d => ({ id: d.id, ...d.data() } as Quest));
+  const allQuests = normalizeQuests(questsSnap.docs.map(d => ({ id: d.id, ...d.data() } as Quest)));
   const branchQuests = allQuests.filter(q => q.jurisdiction?.guildBranchId === branchId);
 
   const outcomesSnap = await getDocs(query(collection(db, 'outcomes'), where('archiveStatus', '==', 'active')));
@@ -4796,7 +4956,7 @@ export async function fetchMemberContributions(userId: string): Promise<{
   organizationsWorked: { id: string; name: string }[];
 }> {
   const questsSnap = await getDocs(query(collection(db, 'quests')));
-  const allQuests = questsSnap.docs.map(d => ({ id: d.id, ...d.data() } as Quest));
+  const allQuests = normalizeQuests(questsSnap.docs.map(d => ({ id: d.id, ...d.data() } as Quest)));
 
   const questsApplied = allQuests.filter(q => q.applicants?.includes(userId));
   const questsCompleted = allQuests.filter(q => q.completedMembers?.includes(userId));
