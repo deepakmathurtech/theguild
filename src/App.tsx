@@ -20,6 +20,7 @@ const OrgOnboarding = lazy(() => import('./features/onboarding/OrgOnboarding'));
 const PublicOrgRegistration = lazy(() => import('./features/onboarding/PublicOrgRegistration'));
 const OrgLanding = lazy(() => import('./pages/OrgLanding'));
 const OrgDashboard = lazy(() => import('./pages/OrgDashboard'));
+const OrgTeam = lazy(() => import('./pages/OrgTeam'));
 const OrgOutcomes = lazy(() => import('./pages/OrgOutcomes'));
 const OrgNeedsPage = lazy(() => import('./pages/OrgNeedsPage'));
 const QuestBoard = lazy(() => import('./pages/QuestBoard'));
@@ -107,7 +108,7 @@ const organizationItems = [
   { to: '/org-outcomes', label: 'Outcomes', icon: Award },
   { to: '/need-submit', label: 'Post Need', icon: Target },
   { to: '/my-needs', label: 'My Needs', icon: FileText },
-    { to: '/org-team', label: 'Team', icon: Users },
+
   { to: '/org-messages', label: 'Messages', icon: Bell },
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
@@ -608,6 +609,7 @@ const routerConfig = createBrowserRouter([
       { path: '/org-register', element: <PublicOrgRegistration /> },
       { path: '/org-onboarding', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgOnboarding /></RoleRoute> },
       { path: '/org-dashboard', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgDashboard /></RoleRoute> },
+      { path: '/org-team', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgTeam /></RoleRoute> },
       { path: '/org-outcomes', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgOutcomes /></RoleRoute> },
       { path: '/my-needs', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgNeedsPage /></RoleRoute> },
             { path: '/org-messages', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NotificationCenter /></RoleRoute> },
