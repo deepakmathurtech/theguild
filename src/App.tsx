@@ -82,8 +82,7 @@ const organizationItems = [
   { to: '/org-outcomes', label: 'Outcomes', icon: Award },
   { to: '/need-submit', label: 'Post Need', icon: Target },
   { to: '/my-needs', label: 'My Needs', icon: FileText },
-  { to: '/submission-reviews', label: 'Reviews', icon: ShieldCheck },
-  { to: '/org-team', label: 'Team', icon: Users },
+    { to: '/org-team', label: 'Team', icon: Users },
   { to: '/org-messages', label: 'Messages', icon: Bell },
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
@@ -570,13 +569,13 @@ const routerConfig = createBrowserRouter([
       { path: '/docs', element: <PrivateRoute><KnowledgeHub /></PrivateRoute> },
       { path: '/impact', element: <Impact /> },
       { path: '/profile', element: <PrivateRoute><MemberProfile /></PrivateRoute> },
+      { path: '/member/:id', element: <PrivateRoute><MemberProfile /></PrivateRoute> },
       { path: '/verification', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><NeedReviewQueue /></RoleRoute> },
       { path: '/notifications', element: <PrivateRoute><NotificationCenter /></PrivateRoute> },
       { path: '/settings', element: <PrivateRoute><Settings /></PrivateRoute> },
       { path: '/needs/:id', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedDetails /></RoleRoute> },
       { path: '/need-submit', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedWizard organizationId="" organizationName="" /></RoleRoute> },
-      { path: '/submission-reviews', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><SubmissionReviews /></RoleRoute> },
-      { path: '/need-reviews', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><NeedReviewQueue /></RoleRoute> },
+            { path: '/need-reviews', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><NeedReviewQueue /></RoleRoute> },
       { path: '/org-management', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><SubmissionReviewQueue /></RoleRoute> },
       { path: '*', element: <NotFound /> }
     ]

@@ -6,7 +6,7 @@ import type { Quest, QuestApplication, QuestApplicationStatus } from '../types/g
 import { Compass, CheckCircle, XCircle, Clock, User, ChevronRight, Award, Loader, FileText, Briefcase, BookOpen, Send, Users, FileCheck, Undo2, Pause, Play, Archive } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import EmptyState from '../components/EmptyState';
-import { nowIso, createParticipation, notifyUser, getUserQuestParticipation, updateParticipationStatus } from '../lib/repository';
+import { nowIso, createParticipation, notifyUser, getUserQuestParticipation, updateParticipationStatus, checkQuestCapacity, checkExistingParticipation } from '../lib/repository';
 
 interface ApplicationWithDetails extends QuestApplication {
   questTitle?: string;
@@ -105,9 +105,29 @@ export default function QuestApplications() {
     if (!showModal || !profile) return;
     setProcessing(showModal.application.id);
 
+    console.log('[QuestApplications] Starting review - action:', showModal.action, 'appId:', showModal.application.id, 'status:', showModal.application.status);
+
     try {
       const appRef = doc(db, 'questApplications', showModal.application.id);
       let newStatus: QuestApplicationStatus;
+
+      // Verify current application status before processing
+      const currentAppDoc = await getDoc(appRef);
+      if (currentAppDoc.exists()) {
+        const currentData = currentAppDoc.data() as QuestApplication;
+        console.log('[QuestApplications] Current app status in Firestore:', currentData.status);
+        if (currentData.status === 'accepted') {
+          console.warn('[QuestApplications] App is already accepted - may be duplicate click');
+          alert('This application has already been accepted. Please refresh the page.');
+          setProcessing(null);
+          return;
+        }
+      } else {
+        console.error('[QuestApplications] App document not found!');
+        alert('Application not found. It may have been deleted.');
+        setProcessing(null);
+        return;
+      }
 
       switch (showModal.action) {
         case 'accept':
@@ -126,35 +146,72 @@ export default function QuestApplications() {
           return;
       }
 
-      const updateData: Record<string, unknown> = {
-        status: newStatus,
-        reviewerId: profile.uid,
-        reviewerNotes: notes || undefined,
-        reviewedAt: nowIso()
-      };
-
-      await updateDoc(appRef, updateData);
-
-      // Also update the quest document and create participation record if accepting
+      // CRITICAL: Move ALL pre-acceptance checks BEFORE updating status to prevent desync
+      // The issue: Previously, status was updated to "accepted" BEFORE capacity/duplicate checks,
+      // causing desync when checks failed (application shows "accepted" but no participation exists)
       if (showModal.action === 'accept') {
-        console.log('[QuestApplications] Accepting applicant:', showModal.application.applicantId, 'for quest:', showModal.application.questId);
+        console.log('[QuestApplications] Pre-accept validation for:', showModal.application.applicantId, 'quest:', showModal.application.questId);
+
+        // Check quest exists first
         const questRef = doc(db, 'quests', showModal.application.questId);
         const questDoc = await getDoc(questRef);
-        if (questDoc.exists()) {
-          const questData = questDoc.data() as Quest;
-          const existingMembers = questData.acceptedMembers || [];
-          console.log('[QuestApplications] Existing acceptedMembers:', existingMembers);
+        if (!questDoc.exists()) {
+          console.error('[QuestApplications] ERROR: Quest document not found:', showModal.application.questId);
+          alert(`ERROR: Quest not found. Please refresh and try again.`);
+          setProcessing(null);
+          return;
+        }
+
+        const questData = questDoc.data() as Quest;
+        const existingMembers = questData.acceptedMembers || [];
+
+        // SECURITY FIX: Check quest capacity BEFORE accepting (moved before any status updates)
+        const capacity = await checkQuestCapacity(showModal.application.questId);
+        if (!capacity.hasCapacity) {
+          console.error('[QuestApplications] Quest is full:', capacity);
+          alert(`ERROR: Quest is full (${capacity.current}/${capacity.required} members). Cannot accept more applicants.`);
+          setProcessing(null);
+          return;
+        }
+
+        // SECURITY FIX: Check if user already has participation record BEFORE accepting
+        const existingPart = await checkExistingParticipation(showModal.application.questId, showModal.application.applicantId);
+        if (existingPart) {
+          console.error('[QuestApplications] User already has participation record:', existingPart.id);
+          alert(`ERROR: User already has a participation record for this quest. They may have been accepted already.`);
+          setProcessing(null);
+          return;
+        }
+
+        console.log('[QuestApplications] All pre-checks passed, proceeding with acceptance');
+
+        // Only now - update quest acceptedMembers (safe to do)
+        if (!existingMembers.includes(showModal.application.applicantId)) {
           await updateDoc(questRef, {
             acceptedMembers: [...existingMembers, showModal.application.applicantId],
             updatedAt: nowIso()
           });
-          console.log('[QuestApplications] Added to acceptedMembers, new list:', [...existingMembers, showModal.application.applicantId]);
+          console.log('[QuestApplications] Added to acceptedMembers:', showModal.application.applicantId);
+        }
 
-          // Create participation record - this is the source of truth for user's quest involvement
-          await createParticipation(showModal.application as QuestApplication, questData, profile.uid);
-          console.log('[QuestApplications] Created participation record for user:', showModal.application.applicantId);
+        // Create participation record - this is the source of truth for user's quest involvement
+        try {
+          const participationId = await createParticipation(showModal.application as QuestApplication, questData, profile.uid);
+          console.log('[QuestApplications] Created participation record:', participationId);
+        } catch (participationErr) {
+          console.error('[QuestApplications] FAILED to create participation:', participationErr);
+          // Rollback: Remove from acceptedMembers if participation creation failed
+          await updateDoc(questRef, {
+            acceptedMembers: existingMembers.filter(id => id !== showModal.application.applicantId),
+            updatedAt: nowIso()
+          });
+          alert(`ERROR: Could not complete acceptance. ${participationErr}. Please try again.`);
+          setProcessing(null);
+          return;
+        }
 
-          // Send notification to the accepted user
+        // Send notification to the accepted user
+        try {
           await notifyUser(
             showModal.application.applicantId,
             'quest_accepted',
@@ -164,12 +221,34 @@ export default function QuestApplications() {
             'high'
           );
           console.log('[QuestApplications] Sent notification to user:', showModal.application.applicantId);
-        } else {
-          console.error('[QuestApplications] Quest document not found:', showModal.application.questId);
+        } catch (notifyErr) {
+          console.error('[QuestApplications] FAILED to send notification:', notifyErr);
+          // Don't fail the whole flow for notification error
         }
       }
 
-      // Update local state
+      // NOW update application status (after all pre-checks passed and participation created)
+      // CRITICAL: This must succeed - if it fails, the application stays in submitted
+      // but user already has participation record created above
+      try {
+        const updateData: Record<string, unknown> = {
+          status: newStatus,
+          reviewerId: profile.uid,
+          reviewerNotes: notes || undefined,
+          reviewedAt: nowIso()
+        };
+
+        console.log('[QuestApplications] About to update status to:', newStatus, 'for app:', showModal.application.id);
+        await updateDoc(appRef, updateData);
+        console.log('[QuestApplications] Updated application status to:', newStatus);
+      } catch (statusErr) {
+        console.error('[QuestApplications] CRITICAL ERROR - Failed to update application status:', statusErr);
+        alert(`CRITICAL ERROR: Application acceptance may be incomplete.\n\nStatus update failed: ${statusErr}\nThe participation record was created but application status couldn't be updated. Please check Firebase Console.`);
+        // Don't close the modal - let user see the error and refresh
+        return;
+      }
+
+      // Update local state (now we know it succeeded)
       setApplications(prev =>
         prev.map(app =>
           app.id === showModal.application.id
@@ -228,10 +307,64 @@ export default function QuestApplications() {
         }
       }
 
+      // Handle Withdraw/Remove from Quest (admin removing an accepted member)
+      if (showModal.action === 'withdraw') {
+        const memberUserId = showModal.application.applicantId;
+        const questId = showModal.application.questId;
+
+        console.log('[QuestApplications] Withdrawing member:', memberUserId, 'from quest:', questId);
+
+        // Get the participation record and update status to 'withdrawn'
+        const participation = await getUserQuestParticipation(memberUserId, questId);
+        if (participation) {
+          // Update participation status to withdrawn
+          await updateParticipationStatus(participation.id, 'withdrawn', profile.uid);
+          console.log('[QuestApplications] Updated participation to withdrawn:', participation.id);
+
+          // Remove from quest acceptedMembers
+          const questRef = doc(db, 'quests', questId);
+          const questDoc = await getDoc(questRef);
+          if (questDoc.exists()) {
+            const questData = questDoc.data() as Quest;
+            const accepted = questData.acceptedMembers || [];
+            await updateDoc(questRef, {
+              acceptedMembers: accepted.filter(id => id !== memberUserId),
+              updatedAt: nowIso()
+            });
+            console.log('[QuestApplications] Removed member from quest acceptedMembers');
+          }
+        } else {
+          // Fallback: just remove from quest acceptedMembers (participation might not exist)
+          const questRef = doc(db, 'quests', questId);
+          const questDoc = await getDoc(questRef);
+          if (questDoc.exists()) {
+            const questData = questDoc.data() as Quest;
+            const accepted = questData.acceptedMembers || [];
+            await updateDoc(questRef, {
+              acceptedMembers: accepted.filter(id => id !== memberUserId),
+              updatedAt: nowIso()
+            });
+            console.log('[QuestApplications] Removed member from quest acceptedMembers (no participation record)');
+          }
+        }
+
+        // Notify the removed member
+        await notifyUser(
+          memberUserId,
+          'quest_withdrawn',
+          'Removed from Quest',
+          `You have been removed from "${showModal.application.questTitle}". Reason: ${notes || 'No reason provided'}. Please contact the guild for more information.`,
+          `/quests`,
+          'medium'
+        );
+        console.log('[QuestApplications] Sent withdraw notification to member');
+      }
+
       setShowModal(null);
       setNotes('');
     } catch (err) {
-      console.error('Failed to review application:', err);
+      console.error('[QuestApplications] FAILED to review application:', err);
+      alert(`ERROR: Failed to process application. Check console for details.\n\nError: ${err}`);
     } finally {
       setProcessing(null);
     }
@@ -365,7 +498,7 @@ export default function QuestApplications() {
                   <div key={app.id} className="panel p-5">
                     {/* Header */}
                     <div className="flex items-start justify-between mb-4 pb-3 border-b border-[var(--border)]">
-                      <div className="flex items-center gap-3">
+                      <Link to={`/member/${app.applicantId}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                         <div className="w-10 h-10 rounded-full bg-[var(--primary)]/20 flex items-center justify-center">
                           <User size={18} className="text-[var(--primary)]" />
                         </div>
@@ -375,7 +508,7 @@ export default function QuestApplications() {
                             Applied {app.createdAt ? new Date(app.createdAt).toLocaleDateString() : 'recently'}
                           </div>
                         </div>
-                      </div>
+                      </Link>
                       <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${statusInfo.color}`}>
                         {statusInfo.label}
                       </span>

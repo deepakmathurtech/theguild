@@ -39,40 +39,28 @@ export default function MyQuests() {
 
   const currentQuest = activeQuests.find(q => q.id === selectedQuestId);
 
-  // Load quest data and set up auto-refresh
+  // Load quest data with smart refresh
   useEffect(() => {
     if (!profile) return;
 
+    let cancelled = false;
+
     async function loadMyQuests() {
-      if (!profile) return;
+      if (!profile || cancelled) return;
       setLoading(true);
       try {
-        console.log('[MyQuests] Starting load for user:', profile.uid);
-
-        // 1. Fetch user's participations (source of truth for accepted quests)
-        // Force fresh fetch by adding signal timestamp to prevent cache
+        // Fetch user's participations (source of truth for accepted quests)
         const participations = await getUserParticipations(profile.uid);
-        console.log('[MyQuests] ===== TRACING ACCEPTANCE PIPELINE =====');
-        console.log('[MyQuests] Fetched participations:', participations.length);
-        console.log('[MyQuests] ALL Participation records:', participations.map(p => ({
-          id: p.id,
-          questId: p.questId,
-          status: p.status,
-          questTitle: p.questTitle,
-          userId: p.userId
-        })));
 
-        // 2. Filter active vs completed (CRITICAL: include 'accepted' status for newly accepted quests)
-        // NOTE: 'accepted' is the initial status set by createParticipation!
+        // Filter active vs completed
+        // Read status from user's participation record only
         const activeParts = participations.filter(p =>
-          p.status && ['pending', 'accepted', 'active', 'inProgress', 'awaitingCompletionReview'].includes(p.status)
+          p.status && ['pending', 'accepted', 'active', 'inProgress'].includes(p.status)
         );
+        // Only show as completed if user's participation is marked completed
         const completedParts = participations.filter(p => p.status === 'completed');
 
-        console.log('[MyQuests] Active participations (after filter):', activeParts.length);
-        console.log('[MyQuests] Active quest IDs:', activeParts.map(p => p.questId));
-
-        // 3. Fetch quest details for each participation
+        // Fetch quest details for each participation
         const activeQuestsData = await Promise.all(
           activeParts.map(async (part): Promise<QuestWithParticipation | null> => {
             const quest = await getQuest(part.questId);
@@ -82,7 +70,7 @@ export default function MyQuests() {
 
         const validActiveQuests = activeQuestsData.filter((q): q is QuestWithParticipation => q !== null);
 
-        // 4. Fetch applications to check status
+        // Fetch applications to check status
         const appQ = query(
           collection(db, 'questApplications'),
           where('applicantId', '==', profile.uid)
@@ -90,33 +78,19 @@ export default function MyQuests() {
         const appSnapshot = await getDocs(appQ);
         const userApplications = appSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as QuestApplication));
         const activeQuestIds = new Set(activeParts.map(p => p.questId));
-        console.log('[MyQuests] Active quest IDs from participations:', Array.from(activeQuestIds));
+        const completedQuestIds = new Set(completedParts.map(p => p.questId));
 
-        // Also check for old accepted applications without participation records
-        // This is a fallback in case createParticipation failed
+        // Also check for old accepted applications WITHOUT participation records (but only if not completed)
         const acceptedApps = userApplications.filter(a =>
-          a.status === 'accepted' && !activeQuestIds.has(a.questId)
+          a.status === 'accepted' && !activeQuestIds.has(a.questId) && !completedQuestIds.has(a.questId)
         );
 
-        console.log('[MyQuests] ALL user applications:', userApplications.map(a => ({
-          id: a.id,
-          questId: a.questId,
-          status: a.status,
-          questTitle: a.questTitle
-        })));
-        console.log('[MyQuests] Accepted applications without participation record:', acceptedApps.length);
-        console.log('[MyQuests] Accepted apps questIds:', acceptedApps.map(a => a.questId));
-
         // Fetch quest details for old accepted apps
-        if (acceptedApps.length > 0) {
-          console.log('[MyQuests] Accepted apps found (showing as fallback):', acceptedApps.map(a => ({ id: a.id, questId: a.questId, title: a.questTitle })));
+        if (acceptedApps.length > 0 && !cancelled) {
           const oldQuests = await Promise.all(
             acceptedApps.map(async (app): Promise<QuestWithParticipation | null> => {
               const quest = await getQuest(app.questId);
-              if (!quest) {
-                console.warn('[MyQuests] Quest not found for accepted app:', app.questId);
-                return null;
-              }
+              if (!quest) return null;
               return {
                 ...quest,
                 participation: undefined,
@@ -126,77 +100,58 @@ export default function MyQuests() {
           );
           const validOldQuests = oldQuests.filter((q): q is QuestWithParticipation => q !== null);
           if (validOldQuests.length > 0) {
-            console.log('[MyQuests] Adding accepted applications as fallback quests:', validOldQuests.map(q => q.title));
             validActiveQuests.push(...validOldQuests);
           }
         }
 
+        if (cancelled) return;
+
         setActiveQuests(validActiveQuests);
         setCompletedQuests(completedParts);
 
-        // CRITICAL FIX: Correct the pending logic
         // Pending = applications where user is STILL WAITING for a decision
-        // NOT 'accepted' (we have a decision!)
-        // Also exclude applications that already have participation (handled in activeQuests)
         const pending = userApplications.filter(a => {
           const hasParticipation = activeQuestIds.has(a.questId);
-          const isAccepted = a.status === 'accepted';
 
-          // DEBUG: Log each application decision
-          console.log(`[MyQuests] Filtering app ${a.questTitle}:`, {
-            status: a.status,
-            hasParticipation,
-            includeInPending: !isAccepted && !hasParticipation && !['completed', 'withdrawn', 'rejected'].includes(a.status)
-          });
-
-          // Exclude accepted applications WITH participation - those show in Active Assignments
+          // Exclude accepted applications WITH participation - those show in Active
           if (a.status === 'accepted' && activeQuestIds.has(a.questId)) return false;
-          // Exclude applications that are accepted but missing participation (fallback shows as Active)
+          // Exclude applications that are accepted but missing participation
           if (a.status === 'accepted' && !activeQuestIds.has(a.questId)) return false;
           // Exclude completed/withdrawn/rejected applications
           if (a.status === 'completed' || a.status === 'withdrawn' || a.status === 'rejected') return false;
-          // Include only truly pending applications (submitted/underReview/draft)
+          // Include only truly pending applications
           return (a.status === 'submitted' || a.status === 'underReview' || a.status === 'draft');
         });
-
-        console.log('[MyQuests] ===== DISPLAY STATE =====');
-        console.log('[MyQuests] Active Assignments (from participation):', validActiveQuests.map(q => ({ id: q.id, title: q.title, status: q.participationStatus })));
-        console.log('[MyQuests] Pending Applications (still waiting):', pending.map(a => ({ id: a.id, title: a.questTitle, status: a.status })));
-        console.log('[MyQuests] ===== END PIPELINE TRACE =====');
 
         setPendingApplications(pending);
 
       } catch (err) {
         console.error('[MyQuests] Error loading:', err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
-    // Initial load - double refresh to ensure we catch recently accepted applications
+    // Initial load
     loadMyQuests();
 
-    // Immediate second refresh after 2 seconds to catch any pending writes
-    const initialRefresh = setTimeout(loadMyQuests, 2000);
+    // Auto-refresh every 60 seconds (less aggressive)
+    const interval = setInterval(loadMyQuests, 60000);
 
-    // Auto-refresh every 30 seconds to catch new acceptances
-    const interval = setInterval(loadMyQuests, 30000);
-
-    // Refresh when page becomes visible again (user returns from notification or switches tabs)
+    // Refresh when page becomes visible again
     const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        console.log('[MyQuests] Page became visible - refreshing data');
+      if (!document.hidden && !cancelled) {
         loadMyQuests();
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
+      cancelled = true;
       clearInterval(interval);
-      clearTimeout(initialRefresh);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [profile, selectedQuestId, workspaceView]);
+  }, [profile]);
 
   if (loading) {
     return (
@@ -257,10 +212,13 @@ export default function MyQuests() {
           <div className="text-2xl font-black text-[var(--primary)]">{totalActive}</div>
           <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Active</div>
         </div>
-        <div className="panel text-center">
+        <button
+          onClick={() => setWorkspaceView('history')}
+          className="panel text-center hover:bg-emerald-500/10 transition-colors cursor-pointer"
+        >
           <div className="text-2xl font-black text-emerald-400">{totalCompleted}</div>
-          <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Completed</div>
-        </div>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">View History</div>
+        </button>
       </div>
 
       {workspaceView === 'history' ? (

@@ -49,9 +49,9 @@ export default function QuestBoard() {
     loadData();
   }, []);
 
-  // Filter logic - show all available quests (not completed/closed/archived)
+  // Filter logic - show only open quests (not in progress/completed/closed/archived)
   useEffect(() => {
-    let result = quests.filter(q => !q.status || !['completed', 'closed', 'archived'].includes(q.status));
+    let result = quests.filter(q => q.status && ['open', 'assigned', 'underReview'].includes(q.status));
 
     if (search.trim()) {
       const searchLower = search.toLowerCase();

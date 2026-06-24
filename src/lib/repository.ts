@@ -57,7 +57,7 @@ export function nowIso() {
 // Send notification to user (used for acceptance, completion, etc.)
 export async function notifyUser(
   userId: string,
-  type: 'quest_accepted' | 'quest_rejected' | 'submission_approved' | 'submission_rejected' | 'quest_completed' | 'application_submitted',
+  type: 'quest_accepted' | 'quest_rejected' | 'submission_approved' | 'submission_rejected' | 'quest_completed' | 'application_submitted' | 'quest_withdrawn',
   title: string,
   body: string,
   actionUrl?: string,
@@ -1895,6 +1895,40 @@ export async function checkExistingApplication(questId: string, userId: string):
   return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as QuestApplication;
 }
 
+// Check if user already has participation record for a quest (prevents duplicate assignments)
+export async function checkExistingParticipation(questId: string, userId: string): Promise<QuestParticipation | null> {
+  const q = query(
+    collection(db, 'questParticipations'),
+    where('questId', '==', questId),
+    where('userId', '==', userId)
+  );
+  const snapshot = await getDocs(q);
+  if (snapshot.empty) return null;
+  return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as QuestParticipation;
+}
+
+// Check quest capacity - returns whether quest can accept more members
+export async function checkQuestCapacity(questId: string): Promise<{ hasCapacity: boolean; current: number; required: number; available: number }> {
+  const questRef = doc(db, 'quests', questId);
+  const questSnap = await getDoc(questRef);
+  if (!questSnap.exists()) {
+    return { hasCapacity: false, current: 0, required: 0, available: 0 };
+  }
+  const quest = questSnap.data() as Quest;
+  const current = quest.acceptedMembers?.length || 0;
+  const required = quest.membersRequired || 1;
+  const available = Math.max(0, required - current);
+  return { hasCapacity: available > 0, current, required, available };
+}
+
+// Validate quest has capacity - throws error if full
+export async function validateQuestCapacity(questId: string): Promise<void> {
+  const capacity = await checkQuestCapacity(questId);
+  if (!capacity.hasCapacity) {
+    throw new Error(`Quest is full (${capacity.current}/${capacity.required} members already assigned)`);
+  }
+}
+
 // Get all applications for a user
 export async function getUserQuestApplications(userId: string): Promise<QuestApplication[]> {
   const q = query(
@@ -2081,6 +2115,33 @@ export async function submitParticipationCompletion(
 
   await updateDoc(doc(db, 'questParticipations', participationId), updateData);
 
+  // DEBUG: Log what's being received
+  console.log('[submitParticipationCompletion] data received:', JSON.stringify(data));
+  console.log('[submitParticipationCompletion] participation:', participation.questTitle, participation.questId);
+
+  // ALSO create questSubmissions record so guild-auth can read it
+  const questDoc = await getDoc(doc(db, 'quests', participation.questId));
+  const quest = questDoc.exists() ? questDoc.data() : null;
+  const submissionData = {
+    questId: participation.questId,
+    questTitle: participation.questTitle || quest?.title || 'Unknown Quest',
+    questType: participation.questType,
+    memberId: participation.userId,
+    memberName: participation.userName,
+    report: data.report || 'NO_REPORT_PROVIDED',
+    summary: data.summary || '',
+    achievements: data.achievements || [],
+    evidenceUrls: data.evidenceUrls || [],
+    links: [],
+    status: 'pending',
+    archiveStatus: 'active',
+    jurisdiction: (quest as any)?.jurisdiction || {}
+  };
+  console.log('[submitParticipationCompletion] submissionData:', JSON.stringify(submissionData));
+
+  const _user = { uid: userId, fullName: participation.userName || 'Unknown' } as GuildUser;
+  await createLedgerRecord('questSubmissions', submissionData as any, _user, `Submitted completion report for quest: ${participation.questTitle}`);
+
   // Notify quest creator/coordinator about the submission
   if (participation.createdBy) {
     await notifyUser(
@@ -2088,7 +2149,7 @@ export async function submitParticipationCompletion(
       'application_submitted',
       'Completion Report Submitted',
       `${participation.userName || participation.userId} has submitted a completion report for "${participation.questTitle}". Please review it.`,
-      '/submission-reviews',
+      undefined,
       'medium'
     );
   }
@@ -2292,6 +2353,13 @@ export async function applyForQuest(questId: string, user: GuildUser): Promise<v
   }
   // ==============================================
 
+  // === QUEST CAPACITY CHECK (prevent applying to full quests) ===
+  const capacity = await checkQuestCapacity(questId);
+  if (!capacity.hasCapacity) {
+    throw new Error(`This quest is full (${capacity.current}/${capacity.required} members already assigned)`);
+  }
+  // ==============================================
+
   // === SLOT ENFORCEMENT ===
   const questType = quest.questType || 'standard';
   await validateQuestSlot(user.uid, questType);
@@ -2361,6 +2429,7 @@ export async function submitQuestCompletion(
   const quest = snap.data() as Quest;
 
   // Create submission record
+  const questJurisdiction = (quest as any).jurisdiction || {};
   const submissionData: Omit<QuestSubmission, 'id' | keyof AuditFields> = {
     questId,
     questTitle: quest.title,
@@ -2376,8 +2445,10 @@ export async function submitQuestCompletion(
     evidenceUrls: evidence.evidenceUrls,
     links: evidence.links,
     attachments: evidence.attachments,
-    status: 'pending'
-  };
+    status: 'pending',
+    archiveStatus: 'active',
+    jurisdiction: questJurisdiction
+  } as any;
 
   const submission = await createLedgerRecord<QuestSubmission>(
     'questSubmissions',
@@ -2391,6 +2462,34 @@ export async function submitQuestCompletion(
     status: 'underReview',
     updatedAt: nowIso()
   });
+
+  // Update participation status to awaitingCompletionReview so it shows in submission queue
+  const participationQuery = query(
+    collection(db, 'questParticipations'),
+    where('questId', '==', questId),
+    where('userId', '==', user.uid),
+    where('status', 'in', ['active', 'inProgress'])
+  );
+  const participationSnapshot = await getDocs(participationQuery);
+  if (!participationSnapshot.empty) {
+    const participationDoc = participationSnapshot.docs[0];
+    await updateDoc(doc(db, 'questParticipations', participationDoc.id), {
+      status: 'awaitingCompletionReview',
+      updatedAt: nowIso()
+    });
+  }
+
+  // Notify quest creator/coordinator about the submission
+  if (quest.createdBy) {
+    await notifyUser(
+      quest.createdBy,
+      'application_submitted',
+      'Completion Report Submitted',
+      `${user.fullName} has submitted a completion report for "${quest.title}". Please review it.`,
+      undefined,
+      'medium'
+    );
+  }
 
   return submission;
 }
@@ -2721,7 +2820,15 @@ export function getBranchById(id: string): BranchProfileData | undefined {
 
 // Notification CRUD
 export async function fetchUserNotifications(userId: string, limitCount = 50): Promise<NotificationRecord[]> {
-  const q = query(collection(db, 'notifications'), where('userId', '==', userId), limit(limitCount));
+  // IMPORTANT: Exclude dismissed and archived notifications by default
+  // Only show 'unread', 'read', and 'pending' status notifications
+  // This prevents dismissed/archived notifications from reappearing on refresh
+  const q = query(
+    collection(db, 'notifications'),
+    where('userId', '==', userId),
+    where('status', 'in', ['unread', 'read', 'pending']),
+    limit(limitCount)
+  );
   const snapshot = await getDocs(q);
   return snapshot.docs
     .map(doc => ({ id: doc.id, ...doc.data() } as NotificationRecord))

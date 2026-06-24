@@ -5,7 +5,7 @@ import { db } from '../lib/firebase';
 import { doc, getDoc, updateDoc, collection, query, getDocs } from 'firebase/firestore';
 import { applyForQuest, submitQuestCompletion, nowIso, RECEPTIONISTS, getVerificationRequirement, meetsVerificationRequirement, getQuestApplications, getUserQuestParticipation, updateParticipationStatus, notifyUser } from '../lib/repository';
 import type { Quest, QuestApplication } from '../types/guild';
-import { ArrowLeft, Compass, Award, Calendar, Clock, MapPin, Check, Send, ShieldAlert, Sparkles, Users, ExternalLink, Wallet, Book, User, FileCheck, XCircle, Pause, Play, Send as SendIcon, Trash2, Loader } from 'lucide-react';
+import { ArrowLeft, Compass, Award, Calendar, Clock, MapPin, Check, CheckCircle, Send, ShieldAlert, Sparkles, Users, ExternalLink, Wallet, Book, User, FileCheck, XCircle, Pause, Play, Send as SendIcon, Trash2, Loader } from 'lucide-react';
 import { PAGE_SEO } from '../components/SEO';
 
 type ApplicantTab = 'applicants' | 'accepted' | 'reports' | 'completed' | 'rejected' | 'removed';
@@ -193,18 +193,70 @@ export default function QuestDetails() {
     applicantApps.some(a => a.applicantId === profile.uid && a.status === 'accepted')
   );
   const hasCompleted = profile && (quest.completedMembers?.includes(profile.uid) || quest.status === 'completed');
+  const hasRemoved = profile && quest.removedMembers?.includes(profile.uid);
+  const hasRejected = profile && quest.rejectedMembers?.includes(profile.uid);
+
+  // Get user's application status for detailed messaging
+  const myApplication = profile ? applicantApps.find(a => a.applicantId === profile.uid) : undefined;
+  const appStatus = myApplication?.status;
+
+  // Determine the user's primary quest relationship state
+  type QuestRelationshipState = 'notApplied' | 'pending' | 'accepted' | 'active' | 'completed' | 'removed' | 'rejected';
+  let relationshipState: QuestRelationshipState = 'notApplied';
+  if (hasCompleted) relationshipState = 'completed';
+  else if (hasRemoved) relationshipState = 'removed';
+  else if (hasRejected) relationshipState = 'rejected';
+  else if (hasBeenAccepted) relationshipState = quest.status === 'inProgress' ? 'active' : 'accepted';
+  else if (hasApplied && (appStatus === 'submitted' || appStatus === 'underReview' || appStatus === 'draft')) relationshipState = 'pending';
+  else if (hasApplied) relationshipState = 'pending';
 
   const handleApply = async () => {
     if (!profile) {
       navigate('/auth');
       return;
     }
+
+    // Prevent duplicate applications - check all states before applying
+    const myApp = applicantApps.find(a => a.applicantId === profile.uid);
+    const appStatus = myApp?.status;
+    const isAlreadyAccepted = quest.acceptedMembers?.includes(profile.uid);
+    const isRemoved = quest.removedMembers?.includes(profile.uid);
+    const isCompleted = quest.completedMembers?.includes(profile.uid);
+
+    // State-based blocking messages
+    if (isAlreadyAccepted) {
+      setError('You are already accepted for this quest.');
+      return;
+    }
+    if (isCompleted) {
+      setError('You have already completed this quest.');
+      return;
+    }
+    if (isRemoved) {
+      setError('You were previously removed from this quest.');
+      return;
+    }
+    if (appStatus === 'accepted') {
+      setError('You have already been accepted for this quest.');
+      return;
+    }
+    if (appStatus === 'submitted' || appStatus === 'underReview') {
+      setError('Application already under review. Please wait for a decision.');
+      return;
+    }
+    if (appStatus === 'draft') {
+      // Allow continuing draft application
+      navigate(`/quests/${quest.id}/apply`);
+      return;
+    }
+
     // Check verification requirement
     const requirement = getVerificationRequirement('joinQuest');
     if (!meetsVerificationRequirement(profile, requirement)) {
       setError(`Verification required: ${requirement} level needed to apply for this quest.`);
       return;
     }
+
     setSubmitting(true);
     setError('');
     try {
@@ -413,6 +465,23 @@ export default function QuestDetails() {
         <div className="space-y-6">
           {/* Header Panel */}
           <div className="panel space-y-4">
+            {/* Acceptance Banner */}
+            {hasBeenAccepted && (
+              <div className="p-4 rounded-xl bg-gradient-to-r from-[var(--primary)]/20 to-emerald-500/10 border border-[var(--primary)]/30">
+                <div className="flex gap-3 items-center">
+                  <div className="w-10 h-10 rounded-full bg-[var(--primary)]/20 flex items-center justify-center">
+                    <CheckCircle size={20} className="text-[var(--primary)]" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-[var(--primary)]">You have been accepted for this quest</h3>
+                    <p className="text-xs text-[var(--text-muted)]">
+                      You are an active participant • Complete this quest to earn reputation
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-2 items-center">
               <span className="text-[10px] uppercase font-bold text-[var(--primary)] bg-[var(--primary)]/10 px-2.5 py-0.5 rounded border border-[var(--primary)]/20">
                 {quest.difficulty} Difficulty
@@ -427,13 +496,101 @@ export default function QuestDetails() {
 
             <h1 className="text-2xl md:text-3xl font-black tracking-tight leading-tight">{quest.title}</h1>
 
-            <p className="text-xs text-[var(--text-muted)] flex items-center gap-2">
+            <p className="text-xs text-[var(--text-muted)] flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="text-[10px] font-mono bg-[var(--bg-subtle)] px-1.5 py-0.5 rounded border border-[var(--border)]">
+                ID: {quest.guildQuestId || quest.id.slice(0, 12)}
+              </span>
               <span>Posted by: <strong className="text-[var(--text-secondary)] font-bold">{quest.organizationName || 'Guild Hub'}</strong></span>
-              <span>•</span>
-              {/* Debug: show user role */}
-              <span className="text-[10px] text-gray-500">Your role: {profile?.role}</span>
+              <span className="text-[10px] text-gray-500 hidden">Your role: {profile?.role}</span>
               <span>Status: <strong className="text-[var(--primary)] uppercase tracking-wider">{quest.status}</strong></span>
             </p>
+          </div>
+
+          {/* Quest Comprehensive Information */}
+          <div className="panel space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Quest Details</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+              {/* Branch/Receptionist */}
+              <div>
+                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">Assigned Branch</span>
+                <span className="text-[var(--text-secondary)] font-semibold">{quest.location?.city || quest.assignedReceptionistName || 'Not Assigned'}</span>
+              </div>
+              {/* City */}
+              <div>
+                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">City</span>
+                <span className="text-[var(--text-secondary)] font-semibold">{quest.location?.city || '—'}</span>
+              </div>
+              {/* State */}
+              <div>
+                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">State</span>
+                <span className="text-[var(--text-secondary)] font-semibold">{quest.location?.state || '—'}</span>
+              </div>
+              {/* Priority */}
+              <div>
+                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">Priority</span>
+                <span className="text-[var(--text-secondary)] font-semibold">{quest.priority || 'Standard'}</span>
+              </div>
+              {/* Mode */}
+              <div>
+                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">Mode</span>
+                <span className="text-[var(--text-secondary)] font-semibold">{quest.mode || 'Remote'}</span>
+              </div>
+              {/* Classification */}
+              <div>
+                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">Classification</span>
+                <span className="text-[var(--text-secondary)] font-semibold">{quest.classification || 'Internal Guild'}</span>
+              </div>
+              {/* Members Required */}
+              <div>
+                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">Members Needed</span>
+                <span className="text-[var(--text-secondary)] font-semibold">{quest.membersRequired || 1}</span>
+              </div>
+              {/* Members Assigned */}
+              <div>
+                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">Members Assigned</span>
+                <span className="text-[var(--text-secondary)] font-semibold">{quest.acceptedMembers?.length || 0}</span>
+              </div>
+              {/* Deadline */}
+              <div>
+                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">Deadline</span>
+                <span className="text-[var(--text-secondary)] font-semibold">{quest.deadline ? new Date(quest.deadline as string).toLocaleDateString() : 'Open-ended'}</span>
+              </div>
+              {/* Required Skills */}
+              <div className="col-span-2 md:col-span-3">
+                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider mb-1">Required Skills</span>
+                <div className="flex flex-wrap gap-1">
+                  {quest.requiredSkills?.length ? quest.requiredSkills.map((skill, i) => (
+                    <span key={i} className="text-[10px] bg-[var(--primary)]/10 text-[var(--primary)] px-2 py-0.5 rounded border border-[var(--primary)]/20">
+                      {skill}
+                    </span>
+                  )) : <span className="text-[var(--text-muted)]">No specific skills required</span>}
+                </div>
+              </div>
+              {/* Expected Outcome */}
+              {quest.expectedOutcome && (
+                <div className="col-span-2 md:col-span-3">
+                  <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider mb-1">Expected Outcome</span>
+                  <p className="text-xs text-[var(--text-secondary)]">{quest.expectedOutcome}</p>
+                </div>
+              )}
+              {/* Assigned Receptionist */}
+              {quest.assignedReceptionistName && (
+                <div>
+                  <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">Assigned Coordinator</span>
+                  <span className="text-[var(--text-secondary)] font-semibold">{quest.assignedReceptionistName}</span>
+                </div>
+              )}
+              {/* Verification Method */}
+              <div>
+                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">Verification</span>
+                <span className="text-[var(--text-secondary)] font-semibold">{quest.verificationMethod || 'Manual Review'}</span>
+              </div>
+              {/* Knowledge Requirement */}
+              <div>
+                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">Knowledge Output</span>
+                <span className="text-[var(--text-secondary)] font-semibold">{quest.knowledgeRequired ? 'Required' : 'Not Required'}</span>
+              </div>
+            </div>
           </div>
 
           {/* Description */}
@@ -443,6 +600,58 @@ export default function QuestDetails() {
               {quest.description}
             </p>
           </div>
+
+          {/* "What should I do next?" Panel - for accepted members */}
+          {hasBeenAccepted && !hasCompleted && (
+            <div className="panel space-y-3 border border-amber-500/20 bg-amber-500/5">
+              <div className="flex gap-2 items-center">
+                <Compass size={16} className="text-amber-500" />
+                <h3 className="text-sm font-bold uppercase tracking-wider">What should I do next?</h3>
+              </div>
+
+              {/* Context-aware next steps based on quest status */}
+              {quest.status === 'open' || quest.status === 'assigned' ? (
+                <div className="space-y-2">
+                  <div className="flex gap-2 items-start text-xs">
+                    <CheckCircle size={14} className="text-emerald-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-[var(--text-secondary)]">Read the quest details above and prepare to begin your mission</p>
+                  </div>
+                  <div className="flex gap-2 items-start text-xs">
+                    <CheckCircle size={14} className="text-emerald-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-[var(--text-secondary)]">Gather any resources, tools, or materials needed</p>
+                  </div>
+                  <div className="flex gap-2 items-start text-xs">
+                    <CheckCircle size={14} className="text-emerald-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-[var(--text-secondary)]">Review deadlines and requirements carefully</p>
+                  </div>
+                  <div className="flex gap-2 items-start text-xs">
+                    <CheckCircle size={14} className="text-emerald-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-[var(--text-secondary)]">Start working on your deliverables</p>
+                  </div>
+                </div>
+              ) : quest.status === 'inProgress' ? (
+                <div className="space-y-2">
+                  <div className="flex gap-2 items-start text-xs">
+                    <Play size={14} className="text-amber-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-[var(--text-secondary)]">Quest is in progress - continue working on your deliverables</p>
+                  </div>
+                  <div className="flex gap-2 items-start text-xs">
+                    <CheckCircle size={14} className="text-emerald-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-[var(--text-secondary)]">Document your work as you complete it</p>
+                  </div>
+                  <div className="flex gap-2 items-start text-xs">
+                    <CheckCircle size={14} className="text-emerald-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-[var(--text-secondary)]">When ready, submit proof of completion below</p>
+                  </div>
+                </div>
+              ) : quest.status === 'underReview' ? (
+                <div className="flex gap-2 items-start text-xs">
+                  <Clock size={14} className="text-amber-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-[var(--text-secondary)]">Your submission is being reviewed. You'll be notified once evaluation is complete.</p>
+                </div>
+              ) : null}
+            </div>
+          )}
 
           {/* Submission panel for accepted members */}
           {hasBeenAccepted && !hasCompleted && (quest.status === 'inProgress' || quest.status === 'assigned') && (
@@ -639,9 +848,10 @@ export default function QuestDetails() {
             <div className="space-y-1">
               <span className="text-[10px] font-black uppercase text-[var(--text-muted)] tracking-wider">Quest Reward Index</span>
               <strong className="text-3xl font-extrabold text-[var(--primary)] block">+{quest.reputationPoints} Rep</strong>
-              {quest.isPaid && quest.paymentAmount && (
+              {quest.isPaid && quest.memberPayout && (
                 <span className="text-sm font-bold text-emerald-400 block mt-1">
-                  Payout: ₹{quest.paymentAmount} ({quest.paymentType || 'Bank Transfer'})
+                  Reward: ₹{quest.memberPayout}
+                  {quest.paymentStatus === 'Paid' ? ' (Paid)' : quest.paymentStatus === 'Pending' ? ' (Pending)' : ''}
                 </span>
               )}
             </div>
@@ -705,20 +915,76 @@ export default function QuestDetails() {
               </div>
             )}
 
-            {/* Application action trigger */}
+            {/* Application action trigger - with detailed state messaging */}
             {!hasBeenAccepted && !hasCompleted && quest.status === 'open' && (
-              <button
-                onClick={handleApply}
-                disabled={submitting || hasApplied || false}
-                className={`w-full py-3 rounded-xl font-bold text-xs cursor-pointer ${hasApplied ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'primary'}`}
-              >
-                {hasApplied ? 'Application Pending Review' : 'Apply For Quest'}
-              </button>
+              <div>
+                {hasApplied ? (
+                  // Show detailed status based on application state
+                  (() => {
+                    const myApp = applicantApps.find(a => a.applicantId === profile?.uid);
+                    const appStatus = myApp?.status || 'submitted';
+                    if (appStatus === 'draft') {
+                      return (
+                        <button
+                          onClick={handleApply}
+                          disabled={submitting}
+                          className="w-full py-3 rounded-xl font-bold text-xs cursor-pointer bg-amber-500/10 text-amber-500 border border-amber-500/20"
+                        >
+                          Continue Application
+                        </button>
+                      );
+                    }
+                    if (appStatus === 'submitted' || appStatus === 'underReview') {
+                      return (
+                        <div className="p-3 text-center bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-bold rounded-xl">
+                          <Clock size={14} className="inline mr-1" />
+                          Application Under Review
+                        </div>
+                      );
+                    }
+                    if (appStatus === 'rejected') {
+                      return (
+                        <div className="p-3 text-center bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold rounded-xl">
+                          <XCircle size={14} className="inline mr-1" />
+                          Not Selected This Time
+                        </div>
+                      );
+                    }
+                    if (appStatus === 'withdrawn') {
+                      return (
+                        <div className="p-3 text-center bg-gray-500/10 border border-gray-500/20 text-gray-500 text-xs font-bold rounded-xl">
+                          <Pause size={14} className="inline mr-1" />
+                          Application Withdrawn
+                        </div>
+                      );
+                    }
+                    // Default: pending
+                    return (
+                      <button
+                        onClick={handleApply}
+                        disabled={submitting}
+                        className="w-full py-3 rounded-xl font-bold text-xs cursor-pointer bg-amber-500/10 text-amber-500 border border-amber-500/20"
+                      >
+                        Application Pending Review
+                      </button>
+                    );
+                  })()
+                ) : (
+                  <button
+                    onClick={handleApply}
+                    disabled={submitting}
+                    className="w-full py-3 rounded-xl font-bold text-xs cursor-pointer primary"
+                  >
+                    Apply For Quest
+                  </button>
+                )}
+              </div>
             )}
 
-            {hasBeenAccepted && (
-              <div className="p-3 text-center bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-bold rounded-xl">
-                Quest Assigned to You
+            {hasCompleted && (
+              <div className="p-3 text-center bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[var(--primary)] text-xs font-bold rounded-xl">
+                <Award size={14} className="inline mr-1" />
+                Quest Completed
               </div>
             )}
           </div>

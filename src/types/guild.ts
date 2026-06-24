@@ -429,11 +429,17 @@ export interface Quest extends AuditFields {
   isMandatory: boolean;
   difficulty: 'easy' | 'medium' | 'hard' | 'legendary';
 
+  // Timeline
+  deadline?: string;
+
   // Members & Application List
   applicants?: string[];
+  membersRequired?: number;
   acceptedMembers?: string[];
   completedMembers?: string[];
   rejectedMembers?: string[];
+  removedMembers?: string[];
+  removalHistory?: { memberId: string; reason: string; removedAt: string; removedBy: string; memberName?: string }[];
   assignedReceptionistId?: string;
   assignedReceptionistName?: string;
 

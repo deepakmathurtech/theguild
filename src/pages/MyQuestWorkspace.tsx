@@ -96,7 +96,32 @@ export default function MyQuestWorkspace() {
     if (!participation || !completionReport.trim() || !profile) return;
     setSubmitting(true);
     try {
-      await submitParticipationCompletion(participation.id, { report: completionReport }, profile.uid);
+      // SIMPLE: Save report directly to Firestore
+      const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+      const { db } = await import('../lib/firebase');
+
+      const submissionId = `sub_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+      await setDoc(doc(db, 'questSubmissions', submissionId), {
+        id: submissionId,
+        questId: participation.questId,
+        questTitle: participation.questTitle,
+        memberId: profile.uid,
+        memberName: profile.fullName,
+        report: completionReport,  // <-- THE TEXT USER TYPED
+        status: 'pending',
+        archiveStatus: 'active',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+      // Update participation status
+      const { updateDoc } = await import('firebase/firestore');
+      await updateDoc(doc(db, 'questParticipations', participation.id), {
+        status: 'awaitingCompletionReview',
+        submittedAt: new Date().toISOString()
+      });
+
       setShowCompleteModal(false);
       navigate('/my-quests');
     } catch (err) {

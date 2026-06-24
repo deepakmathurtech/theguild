@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useParams } from 'react-router-dom';
 import { updateLedgerRecord, RECEPTIONISTS, fetchOrganizationNeeds, getUserQuestStats, type UserQuestStats } from '../lib/repository';
 import { db } from '../lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import {
   Award, ShieldCheck, Mail, Calendar, Phone, Plus, ExternalLink,
   BookOpen, Star, Compass, UserCheck, Briefcase, FileText, CheckCircle,
@@ -15,6 +16,21 @@ import { Link } from 'react-router-dom';
 
 export default function MemberProfile() {
   const { profile } = useAuth();
+  const params = useParams<{ id: string }>();
+  const viewMemberId = params.id;
+  const isViewingOther = !!viewMemberId && viewMemberId !== profile?.uid;
+
+  // Viewed member data (when viewing another member's profile)
+  const [viewedMember, setViewedMember] = useState<{
+    displayName: string;
+    photoURL: string;
+    bio: string;
+    role: string;
+    verificationLevel: string;
+    reputationPoints: number;
+    joinedAt: string;
+  } | null>(null);
+
   const isOrgRep = profile?.role === 'organizationRepresentative';
 
   // Organization data for org reps
@@ -74,6 +90,32 @@ export default function MemberProfile() {
     }
   }, [isOrgRep, profile]);
 
+  // Load viewed member data when viewing another member's profile
+  useEffect(() => {
+    if (!isViewingOther || !viewMemberId) return;
+
+    async function loadViewedMember() {
+      try {
+        const memberDoc = await getDoc(doc(db, 'members', viewMemberId!));
+        if (memberDoc.exists()) {
+          const data = memberDoc.data();
+          setViewedMember({
+            displayName: data.displayName || data.fullName || 'Unknown Member',
+            photoURL: data.photoURL || '',
+            bio: data.bio || '',
+            role: data.role || 'member',
+            verificationLevel: data.verificationLevel || 'none',
+            reputationPoints: data.reputationPoints || 0,
+            joinedAt: data.createdAt || data.joinedAt || ''
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load member:', err);
+      }
+    }
+    loadViewedMember();
+  }, [isViewingOther, viewMemberId]);
+
   // Proof creation inputs
   const [addingProof, setAddingProof] = useState(false);
   const [proofTitle, setProofTitle] = useState('');
@@ -82,6 +124,59 @@ export default function MemberProfile() {
   const [proofSkills, setProofSkills] = useState('');
 
   if (!profile) return null;
+
+  // Show another member's profile
+  if (isViewingOther && viewedMember) {
+    return (
+      <div className="space-y-8 py-4 text-left max-w-3xl mx-auto animate-fade-up">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight">Member Profile</h1>
+          <p className="text-xs text-[var(--text-muted)] mt-1">Viewing member details</p>
+        </div>
+
+        {/* Member Header */}
+        <div className="panel space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="w-20 h-20 rounded-full bg-[var(--primary)]/20 flex items-center justify-center overflow-hidden border border-[var(--border)]">
+              {viewedMember.photoURL ? (
+                <img src={viewedMember.photoURL} alt={viewedMember.displayName} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-2xl font-black text-[var(--primary)]">{viewedMember.displayName.charAt(0)}</span>
+              )}
+            </div>
+            <div>
+              <h2 className="text-xl font-black tracking-tight">{viewedMember.displayName}</h2>
+              <p className="text-xs text-[var(--text-muted)]">{viewedMember.role}</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3 text-xs">
+            <span className="bg-[var(--primary)]/10 text-[var(--primary)] px-2 py-1 rounded border border-[var(--primary)]/20">
+              {viewedMember.verificationLevel} Verified
+            </span>
+            <span className="bg-amber-500/10 text-amber-400 px-2 py-1 rounded">
+              +{viewedMember.reputationPoints} Rep
+            </span>
+          </div>
+
+          {viewedMember.bio && (
+            <p className="text-sm text-[var(--text-secondary)]">{viewedMember.bio}</p>
+          )}
+
+          {viewedMember.joinedAt && (
+            <p className="text-xs text-[var(--text-muted)]">
+              Joined {new Date(viewedMember.joinedAt).toLocaleDateString()}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Show another member's profile - loading
+  if (isViewingOther && !viewedMember) {
+    return <div className="p-12 text-center text-xs text-[var(--text-muted)]">Loading member profile...</div>;
+  }
 
   // Show organization profile for org reps
   if (isOrgRep) {
