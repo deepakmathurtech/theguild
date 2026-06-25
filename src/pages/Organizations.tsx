@@ -19,20 +19,7 @@ export default function Organizations() {
   // Temporary restriction: hide directory + profile from the UI for now.
   // Public browsing is being paused to prevent unauthorized data reads during rollout.
   const { profile } = useAuth();
-  const organizationsHidden = true;
 
-  if (organizationsHidden) {
-    return (
-      <div className="page-shell max-w-3xl mx-auto py-12 px-6">
-        <div className="panel p-8 text-center">
-          <h1 className="text-xl font-bold">Organizations are currently unavailable</h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-2">
-            Please access organization features from your dashboard.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
@@ -564,8 +551,8 @@ function OrganizationProfile({ org }: { org: Organization }) {
         </div>
       )}
 
-      {/* Needs Section - hidden from non-org users in this UI rollout */}
-      {false && (needs.length > 0 || loadingData) && (
+      {/* Needs Section - Show needs with role-based visibility */}
+      {(needs.length > 0 || loadingData) && (
         <div className="panel p-6 rounded-xl">
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
             <Target size={18} /> Organization Needs ({needs.length})
