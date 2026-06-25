@@ -551,8 +551,8 @@ function OrganizationProfile({ org }: { org: Organization }) {
         </div>
       )}
 
-      {/* Needs Section - Show needs with role-based visibility */}
-      {(needs.length > 0 || loadingData) && (
+{/* Needs Section removed from org profile UI rollout */}
+      {false && (needs.length > 0 || loadingData) && (
         <div className="panel p-6 rounded-xl">
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
             <Target size={18} /> Organization Needs ({needs.length})
