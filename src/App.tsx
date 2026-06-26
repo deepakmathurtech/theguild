@@ -92,7 +92,6 @@ const navItems = [
   { to: '/docs', label: 'Knowledge', icon: FileText },
   { to: '/impact', label: 'Impact', icon: Target },
   { to: '/org-register', label: 'Partner With Us', icon: Handshake },
-  { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
 
 const memberItems = [
