@@ -30,36 +30,50 @@ export default function Impact() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <div className="panel p-6 rounded-2xl border border-[var(--border)] text-center">
-          <Building2 size={24} className="mx-auto text-[var(--primary)] mb-2" />
-          <div className="text-3xl font-black text-[var(--text)]">{stats.organizationsServed}+</div>
-          <div className="text-xs text-[var(--text-muted)] uppercase tracking-wider mt-1">Organizations Served</div>
-        </div>
-        <div className="panel p-6 rounded-2xl border border-[var(--border)] text-center">
-          <Users size={24} className="mx-auto text-[var(--primary)] mb-2" />
-          <div className="text-3xl font-black text-[var(--text)]">{stats.activeMembers}+</div>
-          <div className="text-xs text-[var(--text-muted)] uppercase tracking-wider mt-1">Active Members</div>
-        </div>
-        <div className="panel p-6 rounded-2xl border border-[var(--border)] text-center">
-          <Trophy size={24} className="mx-auto text-[var(--primary)] mb-2" />
-          <div className="text-3xl font-black text-[var(--text)]">{stats.questsCompleted}+</div>
-          <div className="text-xs text-[var(--text-muted)] uppercase tracking-wider mt-1">Quests Completed</div>
-        </div>
-        <div className="panel p-6 rounded-2xl border border-[var(--border)] text-center">
-          <CheckCircle size={24} className="mx-auto text-emerald-400 mb-2" />
-          <div className="text-3xl font-black text-[var(--text)]">{stats.outcomesDelivered}+</div>
-          <div className="text-xs text-[var(--text-muted)] uppercase tracking-wider mt-1">Outcomes Delivered</div>
-        </div>
-        <div className="panel p-6 rounded-2xl border border-[var(--border)] text-center">
-          <Award size={24} className="mx-auto text-amber-400 mb-2" />
-          <div className="text-3xl font-black text-[var(--text)]">{stats.knowledgeProduced}+</div>
-          <div className="text-xs text-[var(--text-muted)] uppercase tracking-wider mt-1">Knowledge Documents</div>
-        </div>
-        <div className="panel p-6 rounded-2xl border border-[var(--border)] text-center">
-          <TrendingUp size={24} className="mx-auto text-emerald-400 mb-2" />
-          <div className="text-3xl font-black text-[var(--text)]">{stats.trustScore}%</div>
-          <div className="text-xs text-[var(--text-muted)] uppercase tracking-wider mt-1">Trust Score</div>
-        </div>
+        {[
+          {
+            label: 'Organizations Served',
+            value: `${stats.organizationsServed}+`,
+            Icon: Building2,
+            iconClass: 'text-[var(--primary)]'
+          },
+          {
+            label: 'Active Members',
+            value: `${stats.activeMembers}+`,
+            Icon: Users,
+            iconClass: 'text-[var(--primary)]'
+          },
+          {
+            label: 'Quests Completed',
+            value: `${stats.questsCompleted}+`,
+            Icon: Trophy,
+            iconClass: 'text-[var(--primary)]'
+          },
+          {
+            label: 'Outcomes Delivered',
+            value: `${stats.outcomesDelivered}+`,
+            Icon: CheckCircle,
+            iconClass: 'text-emerald-400'
+          },
+          {
+            label: 'Knowledge Documents',
+            value: `${stats.knowledgeProduced}+`,
+            Icon: Award,
+            iconClass: 'text-amber-400'
+          },
+          {
+            label: 'Trust Score',
+            value: `${stats.trustScore}%`,
+            Icon: TrendingUp,
+            iconClass: 'text-emerald-400'
+          }
+        ].map((s) => (
+          <div key={s.label} className="panel p-6 rounded-2xl border border-[var(--border)] text-center">
+            <s.Icon size={24} className={`mx-auto mb-2 ${s.iconClass}`} />
+            <div className="text-3xl font-black text-[var(--text)] mt-1">{s.value}</div>
+            <div className="text-xs text-[var(--text-muted)] uppercase tracking-wider mt-2">{s.label}</div>
+          </div>
+        ))}
       </div>
 
       {/* Success Stories */}

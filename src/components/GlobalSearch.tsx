@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, Compass, Building, User, BookOpen, X } from 'lucide-react';
 import { db } from '../lib/firebase';
-import { collection, query, getDocs, limit, where, or } from 'firebase/firestore';
+import { collection, query, getDocs, limit, where } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import { fetchUserDirectory, fetchOrgDirectory } from '../lib/repository';
+import { ecosystemLinks } from '../lib/ecosystemLinks';
 
 interface SearchResult {
   id: string;
@@ -61,7 +62,7 @@ export default function GlobalSearch() {
               id: doc.id,
               type: 'quest',
               title: d.title,
-              subtitle: `Quest • ${d.category || 'General'}`,
+              subtitle: `Quest - ${d.category || 'General'}`,
               url: `/quests/${doc.id}`
             });
           }
@@ -75,7 +76,7 @@ export default function GlobalSearch() {
               id: org.id,
               type: 'organization',
               title: org.name,
-              subtitle: `Organization • ${org.category || 'General'} • ${org.branchName || ''}`,
+              subtitle: `Organization - ${org.category || 'General'}${org.branchName ? ` - ${org.branchName}` : ''}`,
               url: `/organizations`
             });
           }
@@ -89,8 +90,8 @@ export default function GlobalSearch() {
               id: user.uid,
               type: 'profile',
               title: user.fullName,
-              subtitle: `Member • Rank ${user.guildRank || 'Applicant'} • ${user.branchName || 'No branch'}`,
-              url: `/profile`
+              subtitle: `Member - Rank ${user.guildRank || 'Applicant'} - ${user.branchName || 'No branch'}`,
+              url: ecosystemLinks.passport(user.uid)
             });
           }
         });
@@ -108,8 +109,8 @@ export default function GlobalSearch() {
               id: doc.id,
               type: 'document',
               title: d.title,
-              subtitle: `Knowledge Hub • ${d.type || 'Lesson'}`,
-              url: `/docs`
+              subtitle: `Knowledge Hub - ${d.type || 'Lesson'}`,
+              url: `/docs#${doc.id}`
             });
           }
         });

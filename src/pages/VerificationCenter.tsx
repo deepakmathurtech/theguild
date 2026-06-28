@@ -100,7 +100,7 @@ export default function VerificationCenter() {
                 <select
                   value={method}
                   onChange={e => setMethod(e.target.value)}
-                  className="w-full bg-[var(--input-bg)] border border-[var(--border)] rounded-lg p-2.5 text-xs cursor-pointer"
+                  className="w-full bg-[var(--input-bg)] border border-[var(--border)] rounded-lg px-4 py-3 text-[var(--text)] text-xs shadow-sm focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/30 transition-all outline-none appearance-none"
                 >
                   <option value="reportReview">Review of Contribution Report</option>
                   <option value="documentUpload">Government ID / Credentials Audit</option>

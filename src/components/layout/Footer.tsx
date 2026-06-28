@@ -40,7 +40,7 @@ export default function Footer() {
               <li><a href="mailto:support@guild.example" className="hover:text-[var(--primary)] flex items-center gap-2">
                 <Mail className="w-3 h-3" /> Contact
               </a></li>
-              <li><Link to="/knowledge" className="hover:text-[var(--primary)]">Knowledge Base</Link></li>
+              <li><Link to="/docs" className="hover:text-[var(--primary)]">Knowledge Base</Link></li>
             </ul>
           </div>
 

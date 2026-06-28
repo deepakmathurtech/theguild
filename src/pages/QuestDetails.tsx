@@ -6,7 +6,7 @@ import { doc, getDoc, updateDoc, collection, query, getDocs } from 'firebase/fir
 import { applyForQuest, submitQuestCompletion, nowIso, RECEPTIONISTS, getVerificationRequirement, meetsVerificationRequirement, getQuestApplications, getUserQuestParticipation, updateParticipationStatus, notifyUser, acceptApplicant } from '../lib/repository';
 import GuildContactCard from '../components/GuildContactCard';
 import type { Quest, QuestApplication } from '../types/guild';
-import { ArrowLeft, Compass, Award, Calendar, Clock, MapPin, Check, CheckCircle, Send, ShieldAlert, Sparkles, Users, ExternalLink, Wallet, Book, User, FileCheck, XCircle, Pause, Play, Send as SendIcon, Trash2, Loader } from 'lucide-react';
+import { ArrowLeft, Compass, Award, Calendar, Clock, MapPin, Check, CheckCircle, Send, ShieldAlert, Sparkles, Users, ExternalLink, Wallet, Book, User, FileCheck, XCircle, Pause, Play, Send as SendIcon, Trash2, Loader, Target } from 'lucide-react';
 import { PAGE_SEO } from '../components/SEO';
 
 type ApplicantTab = 'applicants' | 'accepted' | 'reports' | 'completed' | 'rejected' | 'removed';
@@ -141,11 +141,14 @@ export default function QuestDetails() {
         const questSnap = await getDoc(doc(db, 'quests', questId));
         if (questSnap.exists() && !cancelled) {
           const questData = questSnap.data() as Quest;
-          const memberIds = [...(questData.acceptedMembers || []), ...(questData.completedMembers || [])];
+          const memberIds = Array.from(new Set([...(questData.acceptedMembers || []), ...(questData.completedMembers || [])]));
           const profiles: Record<string, { displayName: string; photoURL: string }> = {};
           for (const memberId of memberIds) {
             try {
-              const memberDoc = await getDoc(doc(db, 'members', memberId));
+              let memberDoc = await getDoc(doc(db, 'users', memberId));
+              if (!memberDoc.exists()) {
+                memberDoc = await getDoc(doc(db, 'members', memberId));
+              }
               if (memberDoc.exists()) {
                 const memberData = memberDoc.data();
                 profiles[memberId] = {
@@ -546,106 +549,139 @@ export default function QuestDetails() {
             </p>
           </div>
 
-          {/* Quest Comprehensive Information */}
-          <div className="panel space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Quest Details</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-              {/* Branch/Receptionist */}
-              <div>
-                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">Assigned Branch</span>
-                <span className="text-[var(--text-secondary)] font-semibold">{quest.location?.city || quest.assignedReceptionistName || 'Not Assigned'}</span>
+          {/* Quest Executive Briefing (grouped for readability) */}
+          <div className="panel space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Quest Executive Brief</h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Blueprint */}
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--card-subtle)]/30 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Book size={14} className="text-[var(--primary)]" />
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-[var(--text-muted)]">Blueprint</span>
+                </div>
+                <p className="text-xs text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">{quest.description}</p>
               </div>
-              {/* City */}
-              <div>
-                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">City</span>
-                <span className="text-[var(--text-secondary)] font-semibold">{quest.location?.city || '—'}</span>
-              </div>
-              {/* State */}
-              <div>
-                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">State</span>
-                <span className="text-[var(--text-secondary)] font-semibold">{quest.location?.state || '—'}</span>
-              </div>
-              {/* Priority */}
-              <div>
-                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">Priority</span>
-                <span className="text-[var(--text-secondary)] font-semibold">{quest.priority || 'Standard'}</span>
-              </div>
-              {/* Mode */}
-              <div>
-                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">Mode</span>
-                <span className="text-[var(--text-secondary)] font-semibold">{quest.mode || 'Remote'}</span>
-              </div>
-              {/* Classification */}
-              <div>
-                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">Classification</span>
-                <span className="text-[var(--text-secondary)] font-semibold">{quest.classification || 'Internal Guild'}</span>
-              </div>
-              {/* Members Required */}
-              <div>
-                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">Members Needed</span>
-                <span className="text-[var(--text-secondary)] font-semibold">{quest.membersRequired || 1}</span>
-              </div>
-              {/* Members Assigned */}
-              <div>
-                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">Members Assigned</span>
-                <span className="text-[var(--text-secondary)] font-semibold">{quest.acceptedMembers?.length || 0}</span>
-              </div>
-              {/* Deadline */}
-              <div>
-                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">Deadline</span>
-                <span className="text-[var(--text-secondary)] font-semibold">{quest.deadline ? new Date(quest.deadline as string).toLocaleDateString() : 'Open-ended'}</span>
-              </div>
-              {/* Required Skills */}
-              <div className="col-span-2 md:col-span-3">
-                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider mb-1">Required Skills</span>
-                <div className="flex flex-wrap gap-1">
-                  {quest.requiredSkills?.length ? quest.requiredSkills.map((skill, i) => (
-                    <span key={i} className="text-[10px] bg-[var(--primary)]/10 text-[var(--primary)] px-2 py-0.5 rounded border border-[var(--primary)]/20">
-                      {skill}
+
+              {/* Requirements */}
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--card-subtle)]/30 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Target size={14} className="text-[var(--primary)]" />
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-[var(--text-muted)]">Requirements</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Members needed</span>
+                    <span className="block font-semibold text-[var(--text-secondary)]">{quest.membersRequired || 1}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Members assigned</span>
+                    <span className="block font-semibold text-[var(--text-secondary)]">{quest.acceptedMembers?.length || 0}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Deadline</span>
+                    <span className="block font-semibold text-[var(--text-secondary)]">
+                      {quest.deadline ? new Date(quest.deadline as string).toLocaleDateString() : 'Open-ended'}
                     </span>
-                  )) : <span className="text-[var(--text-muted)]">No specific skills required</span>}
+                  </div>
+                </div>
+
+                <div className="mt-3">
+                  <span className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Required skills</span>
+                  <div className="flex flex-wrap gap-1">
+                    {quest.requiredSkills?.length ? quest.requiredSkills.map((skill, i) => (
+                      <span key={i} className="text-[10px] bg-[var(--primary)]/10 text-[var(--primary)] px-2 py-0.5 rounded border border-[var(--primary)]/20">
+                        {skill}
+                      </span>
+                    )) : <span className="text-[var(--text-muted)] text-xs">No specific skills required</span>}
+                  </div>
+                </div>
+
+                <div className="mt-3">
+                  <span className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Knowledge output</span>
+                  <span className="font-semibold text-[var(--text-secondary)] text-xs">
+                    {quest.knowledgeRequired ? 'Required' : 'Not Required'}
+                  </span>
                 </div>
               </div>
-              {/* Expected Outcome */}
-              {quest.expectedOutcome && (
-                <div className="col-span-2 md:col-span-3">
-                  <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider mb-1">Expected Outcome</span>
-                  <p className="text-xs text-[var(--text-secondary)]">{quest.expectedOutcome}</p>
+
+              {/* Verification */}
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--card-subtle)]/30 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <FileCheck size={14} className="text-[var(--primary)]" />
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-[var(--text-muted)]">Verification</span>
                 </div>
-              )}
-              {/* Guild Contact Card - replaces simple text display */}
-              {quest.assignedReceptionistId && (
-                <div className="col-span-2 md:col-span-3">
-                  <GuildContactCard
-                    contact={{
-                      uid: quest.assignedReceptionistId,
-                      fullName: quest.assignedReceptionistName || 'Unknown',
-                      role: 'receptionist'
-                    }}
-                    roleLabel="Guild Contact"
-                  />
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="col-span-2">
+                    <span className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Method</span>
+                    <span className="block font-semibold text-[var(--text-secondary)]">{quest.verificationMethod || 'Manual Review'}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Rank required</span>
+                    <span className="block font-semibold text-[var(--text-secondary)]">Rank {quest.requiredRank || 'Applicant'}</span>
+                  </div>
                 </div>
-              )}
-              {/* Verification Method */}
-              <div>
-                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">Verification</span>
-                <span className="text-[var(--text-secondary)] font-semibold">{quest.verificationMethod || 'Manual Review'}</span>
               </div>
-              {/* Knowledge Requirement */}
-              <div>
-                <span className="text-[10px] text-[var(--text-muted)] block uppercase tracking-wider">Knowledge Output</span>
-                <span className="text-[var(--text-secondary)] font-semibold">{quest.knowledgeRequired ? 'Required' : 'Not Required'}</span>
+
+              {/* Outcome */}
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--card-subtle)]/30 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Award size={14} className="text-[var(--primary)]" />
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-[var(--text-muted)]">Outcome</span>
+                </div>
+                {quest.expectedOutcome ? (
+                  <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{quest.expectedOutcome}</p>
+                ) : (
+                  <p className="text-xs text-[var(--text-muted)]">Outcome details not specified.</p>
+                )}
+
+                <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Priority</span>
+                    <span className="block font-semibold text-[var(--text-secondary)]">{quest.priority || 'Standard'}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Mode</span>
+                    <span className="block font-semibold text-[var(--text-secondary)]">{quest.mode || 'Remote'}</span>
+                  </div>
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider">City</span>
+                    <span className="block font-semibold text-[var(--text-secondary)]">{quest.location?.city || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider">State</span>
+                    <span className="block font-semibold text-[var(--text-secondary)]">{quest.location?.state || '—'}</span>
+                  </div>
+                </div>
+
+                {quest.assignedReceptionistId && (
+                  <div className="mt-3">
+                    <GuildContactCard
+                      contact={{
+                        uid: quest.assignedReceptionistId,
+                        fullName: quest.assignedReceptionistName || 'Unknown',
+                        role: 'receptionist'
+                      }}
+                      roleLabel="Guild Contact"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Description */}
+          {/* Description (left as existing section for scrolling continuity on desktop; Blueprint now appears in the executive brief) */}
           <div className="panel space-y-3">
             <h3 className="text-sm font-bold uppercase tracking-wider">Quest Blueprint</h3>
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap font-normal">
               {quest.description}
             </p>
           </div>
+
 
           {/* "What should I do next?" Panel - for accepted members */}
           {hasBeenAccepted && !hasCompleted && (

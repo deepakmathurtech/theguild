@@ -139,7 +139,7 @@ export default function MemberOnboarding() {
               <div className="space-y-4">
                 <h2 className="text-2xl font-bold tracking-tight">Welcome to the Guild Growth Engine</h2>
                 <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                  We exist to ensure human potential is not wasted. Our platform helps members become more **capable**, **connected**, and **useful** through hands-on project quests and organization building.
+                  We exist to ensure human potential is not wasted. Guild helps members become more capable, connected, and useful through hands-on quests, verified outcomes, and organization-backed proof of work.
                 </p>
                 <div className="p-4 rounded-xl bg-[var(--card-subtle)] border border-[var(--border)] mt-4">
                   <span className="text-[10px] uppercase font-bold text-[var(--primary)] tracking-widest block mb-2">Guild Ethics code</span>

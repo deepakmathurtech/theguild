@@ -108,9 +108,10 @@ export default function Organizations() {
           <span className="eyebrow block">Guild Ecosystem</span>
           <h1 className="text-3xl font-black tracking-tight mt-0.5">Organizations Directory</h1>
           <p className="text-xs text-[var(--text-muted)] mt-1.5 max-w-lg leading-relaxed font-normal">
-            Discover verified organizations powering community outcomes. NGOs, businesses, and institutions driving impact through Guild partnerships.
+            Discover verified organizations powering community outcomes—NGOs, businesses, and institutions driving impact through Guild partnerships.
           </p>
         </div>
+
 
         <div className="flex flex-wrap gap-3 whitespace-nowrap">
           <Link to="/org-landing" className="secondary px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5">

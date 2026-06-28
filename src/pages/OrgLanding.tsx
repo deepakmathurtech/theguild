@@ -21,10 +21,10 @@ export default function OrgLanding() {
             Guild for Organizations
           </span>
           <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-none text-[var(--text)]">
-            Deploy verified contractor cohorts in minutes.
+            Turn important work into verified Guild outcomes.
           </h1>
           <p className="text-sm md:text-base text-[var(--text-secondary)] leading-relaxed font-normal">
-            Need developers, product designers, campaign managers, or policy auditors? Guild matches your needs to vetted cohorts and handles coordination logs under direct receptionist stewardship.
+            Guild helps organizations define needs, coordinate contributors, verify delivered work, preserve knowledge, and build long-term trusted collaborators.
           </p>
 
           <div className="flex flex-wrap gap-4 pt-2 justify-center md:justify-start">
@@ -48,10 +48,10 @@ export default function OrgLanding() {
             <ShieldCheck size={18} />
           </div>
           <div>
-            <span className="text-[10px] font-black uppercase text-emerald-400 tracking-widest block mb-0.5">Trust Layer</span>
+            <span className="text-[10px] font-black uppercase text-[var(--trust)] tracking-widest block mb-0.5">Trust Layer</span>
             <strong className="text-sm font-bold text-[var(--text)] block mb-1">Receptionist Led Stewardship</strong>
             <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-              Every deployment gets an assigned Relationship Manager. We log deliverables and audit outcomes. No ticket queues.
+              Every deployment gets an assigned relationship manager. Guild records deliverables, verifies outcomes, and keeps the work history legible.
             </p>
           </div>
         </div>
@@ -67,9 +67,9 @@ export default function OrgLanding() {
               Scale community campaigns, volunteer coordination, and regional mapping efforts with verified student and professional workforces.
             </p>
             <ul className="text-xs text-[var(--text-secondary)] font-semibold space-y-1.5 pt-2 border-t border-[var(--border)]">
-              <li>• Sourcing volunteers</li>
-              <li>• Outcome campaign audits</li>
-              <li>• Public awareness projects</li>
+              <li>- Sourcing volunteers</li>
+              <li>- Outcome campaign audits</li>
+              <li>- Public awareness projects</li>
             </ul>
           </div>
 
@@ -79,9 +79,9 @@ export default function OrgLanding() {
               Acquire software engineering, UI designs, documentation, and user feedback cohorts without complex hiring paperwork.
             </p>
             <ul className="text-xs text-[var(--text-secondary)] font-semibold space-y-1.5 pt-2 border-t border-[var(--border)]">
-              <li>• Frontend developer cohorts</li>
-              <li>• Product design feedback</li>
-              <li>• Rapid technical reviews</li>
+              <li>- Frontend developer cohorts</li>
+              <li>- Product design feedback</li>
+              <li>- Rapid technical reviews</li>
             </ul>
           </div>
 
@@ -91,9 +91,9 @@ export default function OrgLanding() {
               Build campus hubs, connect students directly with partner corporations, and support practical engineering campaigns.
             </p>
             <ul className="text-xs text-[var(--text-secondary)] font-semibold space-y-1.5 pt-2 border-t border-[var(--border)]">
-              <li>• Industry apprenticeship matching</li>
-              <li>• Technical workshops</li>
-              <li>• Campus leadership roles</li>
+              <li>- Industry apprenticeship matching</li>
+              <li>- Technical workshops</li>
+              <li>- Campus leadership roles</li>
             </ul>
           </div>
         </div>
@@ -104,7 +104,7 @@ export default function OrgLanding() {
         <div className="space-y-2">
           <h3 className="text-lg font-bold">Ready to see what Guild can do for your projects?</h3>
           <p className="text-xs text-[var(--text-muted)] max-w-xl">
-            Pass through our 3-step organization wizard to configure your sector needs, match your receptionist manager, and set up your active needs panel.
+            Register once, submit a need, and your Guild relationship path connects needs, quests, contributors, outcomes, and knowledge in one place.
           </p>
         </div>
         <Link to="/org-onboarding" className="secondary px-6 py-3 rounded-xl font-bold flex items-center gap-2 whitespace-nowrap text-xs">

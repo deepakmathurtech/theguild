@@ -249,7 +249,7 @@ export default function Settings() {
                   </div>
                   <select
                     onChange={e => { if (e.target.value) { handleAddSkill(e.target.value); e.target.value = ''; } }}
-                    className="text-xs"
+                    className="w-full bg-[var(--input-bg)] border border-[var(--border)] rounded-lg px-4 py-3 text-[var(--text)] text-xs shadow-sm focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/30 transition-all outline-none appearance-none"
                     value=""
                   >
                     <option value="">+ Add a skill...</option>
@@ -274,8 +274,7 @@ export default function Settings() {
                   </div>
                   <select
                     onChange={e => { if (e.target.value) { handleAddInterest(e.target.value); e.target.value = ''; } }}
-                    className="text-xs"
-                    value=""
+                    className="w-full bg-[var(--input-bg)] border border-[var(--border)] rounded-lg px-4 py-3 text-[var(--text)] text-xs shadow-sm focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/30 transition-all outline-none appearance-none"
                   >
                     <option value="">+ Add an interest...</option>
                     {SKILL_OPTIONS.filter(s => !interests.includes(s)).map(s => (
@@ -327,7 +326,7 @@ export default function Settings() {
                   <select
                     value={path}
                     onChange={e => setPath(e.target.value)}
-                    className="w-full bg-[var(--input-bg)] border border-[var(--border)] rounded-lg p-2.5 text-xs cursor-pointer"
+                    className="w-full bg-[var(--input-bg)] border border-[var(--border)] rounded-lg px-4 py-3 text-[var(--text)] text-xs shadow-sm focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/30 transition-all outline-none appearance-none"
                   >
                     {PATHS.map(p => (
                       <option key={p.id} value={p.id}>{p.title}</option>

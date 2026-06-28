@@ -602,15 +602,16 @@ export async function getNotificationCounter(userId: string): Promise<Notificati
 
 // Update notification counter
 export async function updateNotificationCounter(userId: string): Promise<NotificationCounter> {
-  const [unreadSnap, criticalSnap] = await Promise.all([
+  const [unreadSnap, criticalSnap, legacyUrgentSnap] = await Promise.all([
     getCountFromServer(query(collection(db, 'notifications'), where('userId', '==', userId), where('status', '==', 'unread'))),
+    getCountFromServer(query(collection(db, 'notifications'), where('userId', '==', userId), where('priority', '==', 'critical'), where('status', '==', 'unread'))),
     getCountFromServer(query(collection(db, 'notifications'), where('userId', '==', userId), where('priority', '==', 'urgent'), where('status', '==', 'unread')))
   ]);
 
   const counter: NotificationCounter = {
     userId,
     unreadCount: unreadSnap.data().count,
-    criticalCount: criticalSnap.data().count,
+    criticalCount: criticalSnap.data().count + legacyUrgentSnap.data().count,
     updatedAt: nowIso()
   };
 
@@ -5176,6 +5177,7 @@ export function getOrganizationActionItems(org: Organization, quests: Quest[], n
       description: 'Add description and industry to attract members',
       priority: 'high',
       status: 'open',
+      link: '/org-dashboard',
       createdAt: now
     });
   }
@@ -5189,6 +5191,7 @@ export function getOrganizationActionItems(org: Organization, quests: Quest[], n
       description: 'Verification builds trust with members',
       priority: org.trustLevel === 'partner' ? 'low' : 'high',
       status: 'open',
+      link: '/org-dashboard',
       createdAt: now
     });
   }
@@ -5203,6 +5206,7 @@ export function getOrganizationActionItems(org: Organization, quests: Quest[], n
       description: 'Add needs to find help for your projects',
       priority: 'medium',
       status: 'open',
+      link: '/need-submit',
       createdAt: now
     });
   }
@@ -5217,6 +5221,7 @@ export function getOrganizationActionItems(org: Organization, quests: Quest[], n
       description: `${activeQuests.length} submission${activeQuests.length > 1 ? 's' : ''} waiting`,
       priority: 'high',
       status: 'open',
+      link: activeQuests[0]?.id ? `/quests/${activeQuests[0].id}` : '/org-dashboard',
       createdAt: now
     });
   }
@@ -5230,6 +5235,7 @@ export function getOrganizationActionItems(org: Organization, quests: Quest[], n
       description: 'Regular contact maintains engagement',
       priority: 'medium',
       status: 'open',
+      link: '/org-messages',
       createdAt: now
     });
   }

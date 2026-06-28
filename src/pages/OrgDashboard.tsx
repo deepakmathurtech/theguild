@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import { Building, Award, ShieldCheck, Mail, Phone, ExternalLink, Calendar, HelpCircle, ArrowRight, Activity, Plus, FileText, CheckCircle, Clock, AlertCircle, Send, Check, Edit2, X, Globe, Users, TrendingUp, Target, DollarSign, Handshake, BarChart3 } from 'lucide-react';
 import EmptyState from '../components/EmptyState';
 import ActionCenter from '../components/ActionCenter';
+import { ecosystemLinks } from '../lib/ecosystemLinks';
 
 const CATEGORIES = ['Business', 'NGO', 'College', 'School', 'Community', 'Government Related', 'Individual Initiative'] as const;
 const VISIBILITY_OPTIONS = ['public', 'guildMembers', 'private', 'draft'] as const;
@@ -250,7 +251,7 @@ export default function OrgDashboard() {
                 <select
                   value={editForm.category}
                   onChange={e => setEditForm({ ...editForm, category: e.target.value })}
-                  className="text-sm"
+                  className="w-full bg-[var(--input-bg)] border border-[var(--border)] rounded-lg px-4 py-3 text-[var(--text)] text-sm shadow-sm focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/30 transition-all outline-none"
                 >
                   {CATEGORIES.map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
@@ -262,7 +263,7 @@ export default function OrgDashboard() {
                 <select
                   value={editForm.visibility}
                   onChange={e => setEditForm({ ...editForm, visibility: e.target.value as any })}
-                  className="text-sm"
+                  className="w-full bg-[var(--input-bg)] border border-[var(--border)] rounded-lg px-4 py-3 text-[var(--text)] text-sm shadow-sm focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/30 transition-all outline-none appearance-none"
                 >
                   {VISIBILITY_OPTIONS.map(vis => (
                     <option key={vis} value={vis}>{vis}</option>
@@ -404,7 +405,7 @@ export default function OrgDashboard() {
           <div className="grid gap-2">
             {needs.length > 0 ? (
               needs.slice(0, 4).map(need => (
-                <Link key={need.id} to={`/needs/${need.id}`} className="p-3 bg-[var(--card-subtle)] border border-[var(--border)] rounded-lg text-xs hover:border-[var(--primary)]/30 transition-colors flex justify-between items-center">
+                <Link key={need.id} to={ecosystemLinks.need(need)} className="p-3 bg-[var(--card-subtle)] border border-[var(--border)] rounded-lg text-xs hover:border-[var(--primary)]/30 transition-colors flex justify-between items-center">
                   <span className="font-semibold text-[var(--text-secondary)] truncate flex-1">{need.title}</span>
                   <span className={`px-2 py-0.5 rounded text-[9px] uppercase font-bold ${
                     String(need.status) === 'submitted' ? 'bg-slate-500/20 text-slate-400' :
@@ -437,7 +438,7 @@ export default function OrgDashboard() {
 
           {/* Branch Info - Show branch if assigned */}
           {org.branchId ? (
-            <div className="p-3.5 rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/5">
+            <Link to={ecosystemLinks.branch(org.branchId)} className="block p-3.5 rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/5 hover:border-[var(--primary)]/60 transition-colors">
               <div className="text-[10px] font-bold uppercase text-[var(--primary)] mb-2">Your Branch</div>
               <div className="flex items-center gap-2">
                 <Building size={18} className="text-[var(--primary)]" />
@@ -448,7 +449,7 @@ export default function OrgDashboard() {
                   )}
                 </div>
               </div>
-            </div>
+            </Link>
           ) : (
             <div className="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--card-subtle)]">
               <div className="text-[10px] font-bold uppercase text-[var(--text-muted)] mb-2">Branch</div>
@@ -459,8 +460,9 @@ export default function OrgDashboard() {
           {/* Manager Card - Show if assigned */}
           {org.assignedReceptionistId && manager ? (
             <div className="flex gap-3.5 items-center bg-[var(--card-subtle)] p-3.5 rounded-xl border border-[var(--border)]">
-              <div className="w-12 h-12 rounded-xl overflow-hidden border border-[var(--border)] bg-black flex-shrink-0">
+              <div className="w-12 h-12 rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--card-subtle)] flex-shrink-0">
                 {manager.photoURL ? (
+
                   <img src={manager.photoURL} alt={manager.fullName} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-[var(--primary)] font-bold">
@@ -468,12 +470,12 @@ export default function OrgDashboard() {
                   </div>
                 )}
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <strong className="text-sm font-bold text-[var(--text)] block leading-tight">{manager.fullName}</strong>
                 <span className="text-[10px] text-[var(--text-muted)] block mt-0.5">{manager.role}</span>
-                <span className="text-[10px] text-[var(--primary)] font-bold block mt-1.5 flex items-center gap-1">
+                <Link to={ecosystemLinks.passport(manager.uid || org.assignedReceptionistId)} className="text-[10px] text-[var(--primary)] font-bold mt-1.5 inline-flex items-center gap-1 hover:underline">
                   <Calendar size={11} /> Your Guild Representative
-                </span>
+                </Link>
               </div>
             </div>
           ) : (
@@ -508,10 +510,19 @@ export default function OrgDashboard() {
                 </div>
                 <div className="border-t border-[var(--border)] pt-3 flex justify-between items-center text-xs">
                   <span className="font-semibold text-[var(--text-secondary)]">Status: {q.status.toUpperCase()}</span>
-                  <Link to={`/quests/${q.id}`} className="text-[var(--primary)] font-bold hover:underline flex items-center gap-0.5">
+                  <Link to={ecosystemLinks.quest(q)} className="text-[var(--primary)] font-bold hover:underline flex items-center gap-0.5">
                     Evaluate Submissions <ArrowRight size={12} />
                   </Link>
                 </div>
+                {q.acceptedMembers?.length ? (
+                  <div className="flex flex-wrap gap-2 border-t border-[var(--border)] pt-3 text-[10px] font-bold">
+                    {q.acceptedMembers.slice(0, 4).map((memberId) => (
+                      <Link key={memberId} to={ecosystemLinks.passport(memberId)} className="badge badge-blue">
+                        Contributor Passport
+                      </Link>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
@@ -525,6 +536,27 @@ export default function OrgDashboard() {
             icon={<Award size={22} />}
           />
         )}
+      </section>
+
+      <section className="panel p-5">
+        <div className="flex items-center gap-2">
+          <Handshake size={16} className="text-[var(--primary)]" />
+          <h2 className="text-sm font-black uppercase tracking-wider">Organization Trust Network</h2>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <Link to={ecosystemLinks.organization(org)} className="rounded-xl border border-[var(--border)] bg-[var(--card-subtle)] p-4 text-xs font-bold hover:border-[var(--primary)]/40">
+            Organization Profile
+            <p className="mt-1 text-[10px] font-normal text-[var(--text-muted)]">Public-facing identity and relationship record.</p>
+          </Link>
+          <Link to="/org-outcomes" className="rounded-xl border border-[var(--border)] bg-[var(--card-subtle)] p-4 text-xs font-bold hover:border-[var(--primary)]/40">
+            Verified Outcomes
+            <p className="mt-1 text-[10px] font-normal text-[var(--text-muted)]">Completed work and trust indicators.</p>
+          </Link>
+          <Link to="/docs" className="rounded-xl border border-[var(--border)] bg-[var(--card-subtle)] p-4 text-xs font-bold hover:border-[var(--primary)]/40">
+            Knowledge Generated
+            <p className="mt-1 text-[10px] font-normal text-[var(--text-muted)]">Lessons and proof created through Guild work.</p>
+          </Link>
+        </div>
       </section>
 
       {/* Activity Timeline */}

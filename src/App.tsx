@@ -1,5 +1,5 @@
 import { useState, lazy, Suspense } from 'react';
-import { createBrowserRouter, RouterProvider, Outlet, Navigate, useNavigate, NavLink, isRouteErrorResponse, useRouteError } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Outlet, Navigate, useNavigate, NavLink, isRouteErrorResponse, useRouteError, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { logout } from './lib/auth';
@@ -31,6 +31,9 @@ const UserQuestCenter = lazy(() => import('./pages/UserQuestCenter'));
 const QuestApplications = lazy(() => import('./pages/QuestApplications'));
 const SubmissionReviews = lazy(() => import('./pages/SubmissionReviews'));
 const MemberProfile = lazy(() => import('./pages/MemberProfile'));
+const PublicGuildProfile = lazy(() => import('./pages/PublicGuildProfile'));
+const PublicProfileSettings = lazy(() => import('./pages/PublicProfileSettings'));
+const GuildCardPage = lazy(() => import('./pages/GuildCardPage'));
 const BranchesPage = lazy(() => import('./pages/Branches'));
 const Organizations = lazy(() => import('./pages/Organizations'));
 const KnowledgeHub = lazy(() => import('./pages/KnowledgeHub'));
@@ -94,6 +97,7 @@ const navItems = [
   { to: '/org-register', label: 'Partner With Us', icon: Handshake },
 ];
 
+
 const memberItems = [
   { to: '/profile', label: 'Profile', icon: User },
   { to: '/my-quests', label: 'My Quests', icon: Compass },
@@ -114,8 +118,9 @@ const organizationItems = [
 
 // Layout Shell - Same as guild-auth
 function AppShell() {
-  const { profile } = useAuth();
+  const { profile, firebaseUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { resolvedTheme, setTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -126,6 +131,17 @@ function AppShell() {
   async function handleLogout() {
     await logout();
     navigate('/auth');
+  }
+
+  // Standalone mode for the landing page when guest is viewing
+  const isLandingPageStandalone = location.pathname === '/' && !firebaseUser;
+
+  if (isLandingPageStandalone) {
+    return (
+      <div className="bg-[var(--bg)] text-[var(--text)] min-h-screen">
+        <Outlet />
+      </div>
+    );
   }
 
   return (
@@ -198,7 +214,7 @@ function AppShell() {
           )}
 
           {/* Show member/admin items only for NON-org-rep users */}
-          {profile && profile.role !== 'organizationRepresentative' && (
+      {profile && profile.role !== 'organizationRepresentative' && profile.role !== 'organization' && (
             <div>
               <p className="px-4 mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-60">
                 Personal
@@ -233,6 +249,7 @@ function AppShell() {
               )}
             </div>
           )}
+
         </nav>
 
         {/* Profile footer */}
@@ -328,7 +345,7 @@ function AppShell() {
               })}
 
               {/* Show member/admin items only for NON-org-rep users */}
-              {profile && profile.role as string !== 'organizationRepresentative' && (
+              {profile && !['organizationRepresentative', 'organization'].includes(profile.role as string) && (
                 <>
                   <div className="h-px bg-[var(--border)] my-4" />
                   {memberItems.map((item) => {
@@ -620,6 +637,9 @@ const routerConfig = createBrowserRouter([
       { path: '/terms', element: <TermsOfService /> },
       { path: '/community', element: <CommunityGuidelines /> },
       { path: '/profile', element: <PrivateRoute><MemberProfile /></PrivateRoute> },
+      { path: '/guild-card', element: <PrivateRoute><GuildCardPage /></PrivateRoute> },
+      { path: '/public-profile-settings', element: <PrivateRoute><PublicProfileSettings /></PrivateRoute> },
+      { path: '/g/:guildId', element: <PublicGuildProfile /> },
       { path: '/member/:id', element: <PrivateRoute><MemberProfile /></PrivateRoute> },
       { path: '/verification', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><NeedReviewQueue /></RoleRoute> },
       { path: '/notifications', element: <PrivateRoute><NotificationCenter /></PrivateRoute> },
@@ -628,6 +648,7 @@ const routerConfig = createBrowserRouter([
       { path: '/need-submit', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedWizard /></RoleRoute> },
             { path: '/need-reviews', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><NeedReviewQueue /></RoleRoute> },
       { path: '/org-management', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><SubmissionReviewQueue /></RoleRoute> },
+      { path: '/:guildId', element: <PublicGuildProfile /> },
       { path: '*', element: <NotFound /> }
     ]
   }

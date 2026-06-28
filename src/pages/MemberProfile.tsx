@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import EmptyState from '../components/EmptyState';
 import { PAGE_SEO } from '../components/SEO';
+import { getPublicGuildProfilePath } from '../lib/guildIdentity';
+import { ecosystemLinks, getMemberNextActions } from '../lib/ecosystemLinks';
 import type { Organization, Need } from '../types/guild';
 import { Link } from 'react-router-dom';
 
@@ -164,6 +166,7 @@ export default function MemberProfile() {
   const [proofSkills, setProofSkills] = useState('');
 
   if (!profile) return null;
+  const memberNextActions = getMemberNextActions(profile, questStats?.accepted || 0);
 
   // Show another member's profile
   if (isViewingOther && viewedMember) {
@@ -208,6 +211,10 @@ export default function MemberProfile() {
               Joined {new Date(viewedMember.joinedAt).toLocaleDateString()}
             </p>
           )}
+          <Link to={ecosystemLinks.passport(viewMemberId || '')} className="secondary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold">
+            <ExternalLink size={13} />
+            Open Guild Passport
+          </Link>
         </div>
       </div>
     );
@@ -430,6 +437,48 @@ export default function MemberProfile() {
           </div>
         </div>
       </div>
+
+      <section className="panel flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="eyebrow">Access Your Guild Card</p>
+          <h2 className="text-xl font-black tracking-tight">Open Guild Passport</h2>
+          <p className="mt-1 text-xs text-[var(--text-muted)]">
+            Your card opens a public, verified proof-of-work profile. Verified facts remain public for trust.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link to="/guild-card" className="primary rounded-xl px-4 py-2 text-xs font-bold">
+            View Your Guild Card
+          </Link>
+          <Link to={getPublicGuildProfilePath(profile)} className="secondary rounded-xl px-4 py-2 text-xs font-bold">
+            Open Passport
+          </Link>
+          <Link to="/public-profile-settings" className="secondary rounded-xl px-4 py-2 text-xs font-bold">
+            Public Profile Settings
+          </Link>
+        </div>
+      </section>
+
+      <section className="panel p-5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="eyebrow">What To Do Next</p>
+            <h2 className="text-lg font-black tracking-tight">Keep Building Your Verified Record</h2>
+          </div>
+          <Link to={ecosystemLinks.passport(profile)} className="secondary inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold">
+            <ExternalLink size={13} />
+            Public Passport
+          </Link>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {memberNextActions.map((action) => (
+            <Link key={action.href} to={action.href} className="rounded-xl border border-[var(--border)] bg-[var(--card-subtle)] p-4 transition-colors hover:border-[var(--primary)]/40">
+              <span className="text-xs font-black text-[var(--text)]">{action.label}</span>
+              <p className="mt-1 text-[11px] leading-relaxed text-[var(--text-muted)]">{action.hint}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
 
       {/* Row 2: Skills, Goals, Interests Dossier */}
       <div className="grid md:grid-cols-[1fr_2fr] gap-6">

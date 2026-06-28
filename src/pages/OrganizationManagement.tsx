@@ -206,7 +206,7 @@ export default function OrganizationManagement() {
             <select
               value={categoryFilter}
               onChange={e => setCategoryFilter(e.target.value)}
-              className="px-3 py-2 text-xs bg-[var(--input-bg)] border border-[var(--border)] rounded-xl cursor-pointer"
+              className="px-3 py-2 text-xs bg-[var(--input-bg)] border border-[var(--border)] rounded-xl cursor-pointer appearance-none"
             >
               <option value="">All Categories</option>
               {CATEGORIES.filter(c => c).map(c => (

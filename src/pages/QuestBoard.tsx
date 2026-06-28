@@ -5,7 +5,7 @@ import { fetchQuests } from '../lib/repository';
 import type { Quest } from '../types/guild';
 import { Link } from 'react-router-dom';
 import EmptyState from '../components/EmptyState';
-import { Search, MapPin, Award, Compass, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, MapPin, Award, Compass, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -111,7 +111,7 @@ export default function QuestBoard() {
       <div>
         <h1 className="text-3xl font-black tracking-tight">Active Quest Board</h1>
         <p className="text-xs text-[var(--text-muted)] mt-1">
-          Claim assignments, verify outcomes, earn reputation index points, and grow your ranking profile.
+          Find verified work, apply with intent, earn XP, and strengthen your Guild Passport with every approved contribution.
         </p>
       </div>
 
@@ -202,8 +202,9 @@ export default function QuestBoard() {
           {paginatedQuests.map(q => {
             const hasApplied = profile && q.applicants?.includes(profile.uid);
             return (
-              <div key={q.id} className="panel flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
+              <div key={q.id} className="panel flex flex-col justify-between space-y-4 card-premium">
                 <div className="space-y-3">
+
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex gap-1.5 items-center">
                       <span className="text-[10px] font-black uppercase tracking-wider text-[var(--primary)] bg-[var(--primary)]/10 px-2.5 py-0.5 rounded border border-[var(--primary)]/20">
@@ -244,17 +245,16 @@ export default function QuestBoard() {
                     </span>
                     {q.isPaid && q.paymentAmount && (
                       <span className="font-bold flex items-center gap-0.5 text-emerald-400">
-                        <DollarSign size={13} />
-                        ₹{q.paymentAmount}
+                        INR {q.paymentAmount}
                       </span>
                     )}
                   </div>
 
                   <Link
                     to={`/quests/${q.id}`}
-                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${hasApplied ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'primary'}`}
+                    className="btn-premium btn-premium-secondary focus-ring-premium px-4 py-1.5 rounded-lg text-xs font-bold touch-target"
                   >
-                    {hasApplied ? 'Review Application' : 'View details'}
+                    {hasApplied ? 'Review Application' : 'View Details'}
                   </Link>
                 </div>
               </div>
@@ -281,7 +281,7 @@ export default function QuestBoard() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-6 border-t border-[var(--border)]">
           <div className="text-xs text-[var(--text-muted)]">
-            Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredQuests.length)} of {filteredQuests.length}
+            Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredQuests.length)} of {filteredQuests.length}
           </div>
           <div className="flex gap-2">
             <button
@@ -296,7 +296,7 @@ export default function QuestBoard() {
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${currentPage === page ? 'bg-[var(--primary)] text-white' : 'border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--card-subtle)]'}`}
+                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${currentPage === page ? 'bg-[var(--primary)] text-black' : 'border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--card-subtle)]'}`}
                 >
                   {page}
                 </button>

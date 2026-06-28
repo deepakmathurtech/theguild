@@ -87,6 +87,56 @@ export interface Achievement {
   unlockedAt: string;
 }
 
+export interface PublicProfileSocialLinks {
+  personalWebsite?: string;
+  portfolioWebsite?: string;
+  github?: string;
+  linkedin?: string;
+  instagram?: string;
+  x?: string;
+  youtube?: string;
+  behance?: string;
+  dribbble?: string;
+  discord?: string;
+  telegram?: string;
+  medium?: string;
+  blog?: string;
+}
+
+export interface PublicProfileVisibility {
+  showBio?: boolean;
+  showSocialLinks?: boolean;
+  showPersonalWebsite?: boolean;
+  showPortfolioWebsite?: boolean;
+  showFeaturedSection?: boolean;
+}
+
+export interface PublicProfileSettings {
+  bannerUrl?: string;
+  headline?: string;
+  shortBio?: string;
+  professionalSummary?: string;
+  profilePhotoUrl?: string;
+  socialLinks?: PublicProfileSocialLinks;
+  visibility?: PublicProfileVisibility;
+  sectionOrder?: string[];
+  featuredQuestId?: string;
+  featuredOrganizationId?: string;
+  featuredSkill?: string;
+  contactPreference?: string;
+}
+
+export interface VerifiedSkillRecord {
+  skill: string;
+  sourceType: 'quest' | 'outcome' | 'knowledge' | 'organization' | 'guild';
+  sourceId?: string;
+  sourceTitle?: string;
+  organizationId?: string;
+  organizationName?: string;
+  verifiedAt?: string;
+  verifierId?: string;
+}
+
 export interface GuildUser extends AuditFields {
   uid: string;
   email: string;
@@ -98,6 +148,8 @@ export interface GuildUser extends AuditFields {
   status: UserStatus;
   contactInformation?: string;
   skills: string[];
+  verifiedSkills?: string[];
+  verifiedSkillRecords?: VerifiedSkillRecord[];
   interests: string[];
   bio?: string;
   verificationStatus: VerificationStatus;
@@ -107,6 +159,12 @@ export interface GuildUser extends AuditFields {
   knowledgeEntriesCount: number;
   completedQuests: number;
   verifiedOutcomes: number;
+  rankExamEligible?: boolean;
+  rankExamEligibleAt?: string;
+  rankExamTargetRank?: GuildRank | 'SS' | 'SSS';
+  guildId?: string;
+  adventurerId?: string;
+  publicProfile?: PublicProfileSettings;
   revenueEarned: number;
   activityHistory: string[];
   successionPlan?: SuccessionPlan;
