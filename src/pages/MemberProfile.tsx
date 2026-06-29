@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useParams } from 'react-router-dom';
-import { updateLedgerRecord, RECEPTIONISTS, fetchOrganizationNeeds, getUserQuestStats, fetchQuestsByNeedId, type UserQuestStats } from '../lib/repository';
+import { updateLedgerRecord, RECEPTIONISTS, fetchUserOrganization, fetchOrganizationNeeds, getUserQuestStats, fetchQuestsByNeedId, type UserQuestStats } from '../lib/repository';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import {

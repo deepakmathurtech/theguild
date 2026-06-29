@@ -146,6 +146,8 @@ export interface GuildUser extends AuditFields {
   city?: string;
   role: GuildRole;
   status: UserStatus;
+  organizationId?: string;
+  organizationName?: string;
   contactInformation?: string;
   skills: string[];
   verifiedSkills?: string[];

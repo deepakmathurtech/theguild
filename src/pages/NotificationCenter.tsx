@@ -45,10 +45,20 @@ const getPriorityColor = (priority: string) => {
   }
 };
 
+const getNotificationError = (action: string) =>
+  `We couldn't ${action}. Please check your connection and try again.`;
+
+function getSafeActionPath(actionUrl?: string) {
+  if (!actionUrl || !actionUrl.startsWith('/') || actionUrl.startsWith('//')) return '';
+  return actionUrl;
+}
+
 export default function NotificationCenter() {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
+  const [error, setError] = useState('');
+  const [workingId, setWorkingId] = useState('');
 
   // SEO: Set page title
   useEffect(() => {
@@ -65,6 +75,7 @@ export default function NotificationCenter() {
         setNotifications(list);
       } catch (err) {
         console.error('Failed to load notifications:', err);
+        setError("We couldn't load your notifications. Please refresh the page.");
       } finally {
         setLoading(false);
       }
@@ -83,42 +94,62 @@ export default function NotificationCenter() {
   const handleMarkAsRead = async (id: string) => {
     if (!profile?.uid) return;
     try {
+      setError('');
+      setWorkingId(id);
       await markNotificationAsRead(id, profile.uid);
       setNotifications(prev =>
-        prev.map(n => n.id === id ? { ...n, status: 'read' } : n)
+        prev.map(n => n.id === id ? { ...n, status: 'read', read: true } : n)
       );
     } catch (err) {
       console.error('Failed to mark as read:', err);
+      setError(getNotificationError('mark that notification as read'));
+    } finally {
+      setWorkingId('');
     }
   };
 
   const handleMarkAllAsRead = async () => {
     if (!profile?.uid) return;
     try {
+      setError('');
+      setWorkingId('all');
       await markAllNotificationsAsRead(profile.uid);
       setNotifications(prev =>
-        prev.map(n => ({ ...n, status: 'read' }))
+        prev.map(n => ({ ...n, status: 'read', read: true }))
       );
     } catch (err) {
       console.error('Failed to mark all as read:', err);
+      setError(getNotificationError('mark your notifications as read'));
+    } finally {
+      setWorkingId('');
     }
   };
 
   const handleDismiss = async (id: string) => {
     try {
+      setError('');
+      setWorkingId(id);
       await dismissNotification(id);
       setNotifications(prev => prev.filter(n => n.id !== id));
     } catch (err) {
       console.error('Failed to dismiss:', err);
+      setError(getNotificationError('dismiss that notification'));
+    } finally {
+      setWorkingId('');
     }
   };
 
   const handleArchive = async (id: string) => {
     try {
+      setError('');
+      setWorkingId(id);
       await archiveNotification(id);
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, status: 'archived' } : n));
+      setNotifications(prev => prev.filter(n => n.id !== id));
     } catch (err) {
       console.error('Failed to archive:', err);
+      setError(getNotificationError('archive that notification'));
+    } finally {
+      setWorkingId('');
     }
   };
 
@@ -126,8 +157,9 @@ export default function NotificationCenter() {
     if (notification.status === 'unread') {
       handleMarkAsRead(notification.id);
     }
-    if (notification.actionUrl) {
-      navigate(notification.actionUrl);
+    const actionPath = getSafeActionPath(notification.actionUrl);
+    if (actionPath) {
+      navigate(actionPath);
     }
   };
 
@@ -148,13 +180,21 @@ export default function NotificationCenter() {
         {unreadCount > 0 && (
           <button
             onClick={handleMarkAllAsRead}
+            disabled={workingId === 'all'}
             className="ghost flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
           >
             <CheckCheck size={14} />
-            <span>Mark All Read</span>
+            <span>{workingId === 'all' ? 'Updating...' : 'Mark All Read'}</span>
           </button>
         )}
       </div>
+
+      {error && (
+        <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/25 text-xs text-red-500 font-semibold flex items-center gap-2">
+          <AlertTriangle size={14} />
+          <span>{error}</span>
+        </div>
+      )}
 
       {/* Filter Tabs */}
       <div className="flex gap-2 border-b border-[var(--border)] pb-2">
@@ -179,6 +219,10 @@ export default function NotificationCenter() {
       ) : filteredNotifications.length > 0 ? (
         <div className="space-y-2">
           {filteredNotifications.map(notification => (
+            (() => {
+              const actionPath = getSafeActionPath(notification.actionUrl);
+              const isWorking = workingId === notification.id;
+              return (
             <div
               key={notification.id}
               onClick={() => handleNotificationClick(notification)}
@@ -210,9 +254,9 @@ export default function NotificationCenter() {
 
                   {/* Actions */}
                   <div className="flex gap-2 mt-2">
-                    {notification.actionUrl && (
+                    {actionPath && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); navigate(notification.actionUrl!); }}
+                        onClick={(e) => { e.stopPropagation(); navigate(actionPath); }}
                         className="text-[10px] text-[var(--primary)] font-bold flex items-center gap-0.5 hover:underline"
                       >
                         View <ArrowRight size={10} />
@@ -221,20 +265,23 @@ export default function NotificationCenter() {
                     {notification.status === 'unread' && (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleMarkAsRead(notification.id); }}
-                        className="text-[10px] text-[var(--text-muted)] font-semibold flex items-center gap-0.5"
+                        disabled={isWorking}
+                        className="text-[10px] text-[var(--text-muted)] font-semibold flex items-center gap-0.5 disabled:opacity-50"
                       >
-                        <Check size={10} /> Mark Read
+                        <Check size={10} /> {isWorking ? 'Updating' : 'Mark Read'}
                       </button>
                     )}
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDismiss(notification.id); }}
-                      className="text-[10px] text-[var(--text-muted)] font-semibold flex items-center gap-0.5"
+                      disabled={isWorking}
+                      className="text-[10px] text-[var(--text-muted)] font-semibold flex items-center gap-0.5 disabled:opacity-50"
                     >
                       <Trash2 size={10} /> Dismiss
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleArchive(notification.id); }}
-                      className="text-[10px] text-[var(--text-muted)] font-semibold flex items-center gap-0.5"
+                      disabled={isWorking}
+                      className="text-[10px] text-[var(--text-muted)] font-semibold flex items-center gap-0.5 disabled:opacity-50"
                     >
                       <Archive size={10} /> Archive
                     </button>
@@ -242,6 +289,8 @@ export default function NotificationCenter() {
                 </div>
               </div>
             </div>
+              );
+            })()
           ))}
         </div>
       ) : (

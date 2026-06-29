@@ -18,7 +18,7 @@ export default function OrgNeedsPage() {
       if (!profile) return;
       try {
         // Get user's organization
-        const orgData = await fetchUserOrganization(profile.uid);
+        const orgData = await fetchUserOrganization(profile);
         if (!orgData) {
           setLoading(false);
           return;

@@ -145,7 +145,7 @@ export default function OrgOnboarding() {
         branchName
       };
 
-      await createLedgerRecord<Organization>(
+      const organization = await createLedgerRecord<Organization>(
         'organizations',
         orgData as any,
         profile,
@@ -158,7 +158,19 @@ export default function OrgOnboarding() {
           profile.uid,
           {
             role: 'organizationRepresentative',
+            organizationId: organization.id,
+            organizationName: organization.name,
             activityHistory: [...(profile.activityHistory || []), `CONVERTED: ${profile.role} → organizationRepresentative on ${new Date().toISOString()}`]
+          } as any,
+          profile
+        );
+      } else {
+        await updateUserProfile(
+          profile.uid,
+          {
+            organizationId: organization.id,
+            organizationName: organization.name,
+            activityHistory: [...(profile.activityHistory || []), `LINKED: Organization ${organization.name} on ${new Date().toISOString()}`]
           } as any,
           profile
         );

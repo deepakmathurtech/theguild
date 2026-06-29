@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import GuildLoading from '../components/v2/GuildLoading';
 import { updateLedgerRecord, calculateProfileScore } from '../lib/repository';
 import { Settings as SettingsIcon, Check, ShieldCheck, Clock, User, Target, Star, Heart, Zap, Plus, X } from 'lucide-react';
 import { PAGE_SEO } from '../components/SEO';
@@ -21,8 +22,8 @@ const SKILL_OPTIONS = [
 ];
 
 export default function Settings() {
-  const { profile } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const { profile, loading } = useAuth();
+  const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
 
   // SEO: Set page title
@@ -41,9 +42,9 @@ export default function Settings() {
   const [newGoal, setNewGoal] = useState('');
   const [activeTab, setActiveTab] = useState<'profile' | 'skills' | 'path'>('profile');
 
-  if (!profile) return null;
+  if (loading) return <GuildLoading label="Loading settings..." />;
 
-  // Profile completion score
+  if (!profile) return null;
   const completionScore = calculateProfileScore(profile);
 
   const handleAddSkill = (skill: string) => {
@@ -79,7 +80,7 @@ export default function Settings() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setSaving(true);
     setSuccess('');
     try {
       await updateLedgerRecord(
@@ -102,7 +103,7 @@ export default function Settings() {
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -218,10 +219,10 @@ export default function Settings() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={saving}
               className="primary w-full py-2.5 rounded-xl font-bold text-xs"
             >
-              {loading ? 'Saving Changes...' : 'Save Settings'}
+              {saving ? 'Saving Changes...' : 'Save Settings'}
             </button>
               </>
             )}

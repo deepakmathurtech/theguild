@@ -321,7 +321,12 @@ export default function PublicOrgRegistration() {
         branchName: assignedBranchName
       };
 
-      await createLedgerRecord('organizations', orgData as any, userProfile, `Organization Created via Public Registration by ${fullName}`);
+      const organization = await createLedgerRecord<Organization>('organizations', orgData as any, userProfile, `Organization Created via Public Registration by ${fullName}`);
+      await setDoc(doc(db, 'users', user.uid), {
+        organizationId: organization.id,
+        organizationName: organization.name,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
 
       // Sign in after registration
       await signInWithEmailAndPassword(auth, email, password);

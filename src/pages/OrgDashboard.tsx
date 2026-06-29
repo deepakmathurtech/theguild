@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
-import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
-import { fetchQuests, fetchOrganizationNeeds, fetchOrganizationActivities, fetchBranches, fetchReceptionists, fetchReceptionistById, getRandomReceptionist, getOrganizationActionItems, type ActionItem } from '../lib/repository';
+import { updateDoc, doc } from 'firebase/firestore';
+import { fetchUserOrganization, fetchQuests, fetchOrganizationNeeds, fetchOrganizationActivities, fetchBranches, fetchReceptionists, fetchReceptionistById, getRandomReceptionist, getOrganizationActionItems, type ActionItem } from '../lib/repository';
 import type { Receptionist } from '../types/guild';
 import type { Organization, Quest, Need, OrganizationActivity } from '../types/guild';
 import { Link } from 'react-router-dom';
@@ -45,16 +45,16 @@ export default function OrgDashboard() {
     async function loadData() {
       if (!profile) return;
       try {
-        // Query Organization owned by user - accept both null archiveStatus (legacy) and 'active'
-        const orgQuery = query(collection(db, 'organizations'), where('ownerId', '==', profile.uid));
-        const orgSnap = await getDocs(orgQuery);
-        if (!orgSnap.empty) {
-          const orgData = { id: orgSnap.docs[0].id, ...orgSnap.docs[0].data() } as Organization;
+        // Fetch organization (supports ownerId and ownerEmail fallback)
+        const orgData = await fetchUserOrganization(profile);
+        if (orgData) {
           setOrg(orgData);
+
+
 
           // Fetch quests posted by this org
           const qList = await fetchQuests();
-          const orgQuests = qList.filter(q => q.organizationId === orgSnap.docs[0].id);
+          const orgQuests = qList.filter(q => q.organizationId === orgData.id);
           setQuests(orgQuests);
 
           // Fetch needs for this org

@@ -303,7 +303,11 @@ service cloud.firestore {
         isReceptionist()
       );
       allow create: if isReceptionist();
-      allow update: if signedIn() && resource.data.userId == request.auth.uid;
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'read', 'updatedAt'])
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.status in ['unread', 'read', 'dismissed', 'archived'];
       allow delete: if noPermanentDelete();
     }
 

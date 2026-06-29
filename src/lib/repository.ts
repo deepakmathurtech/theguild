@@ -2701,16 +2701,45 @@ export async function fetchOrganizations(limitCount = 50): Promise<Organization[
   // Filter for public display - only show public or guildMembers visibility
   return orgs.filter(org => {
     // Show if visibility is not set (legacy) or is public/guildMembers
-    return !org.visibility || org.visibility === 'public' || org.visibility === 'guildMembers';
+    return !org.visibility || org.visibility === 'public' || org.visibility === 'guildMembers' || org.visibility === 'private';
   });
 }
 
-// Fetch organizations owned by user
-export async function fetchUserOrganization(userId: string): Promise<Organization | null> {
-  const q = query(collection(db, 'organizations'), where('ownerId', '==', userId), where('archiveStatus', '==', 'active'));
+function isActiveOrganization(org: Organization): boolean {
+  return org.archiveStatus !== 'archived';
+}
+
+async function firstOrganizationByField(field: 'ownerId' | 'ownerEmail', value?: string | null): Promise<Organization | null> {
+  if (!value) return null;
+  const q = query(collection(db, 'organizations'), where(field, '==', value), limit(1));
   const snapshot = await getDocs(q);
   if (snapshot.empty) return null;
-  return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Organization;
+  const org = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Organization;
+  return isActiveOrganization(org) ? org : null;
+}
+
+// Fetch the organization represented by the current user.
+export async function fetchUserOrganization(
+  userOrId: GuildUser | string,
+  email?: string | null
+): Promise<Organization | null> {
+  const userId = typeof userOrId === 'string' ? userOrId : userOrId.uid;
+  const rawEmail = typeof userOrId === 'string' ? email : userOrId.email;
+  const userEmail = rawEmail?.toLowerCase();
+  const profileOrganizationId = typeof userOrId === 'string' ? undefined : userOrId.organizationId;
+
+  if (profileOrganizationId) {
+    const org = await fetchOrganizationById(profileOrganizationId);
+    if (org && isActiveOrganization(org)) return org;
+  }
+
+  const ownedOrg = await firstOrganizationByField('ownerId', userId);
+  if (ownedOrg) return ownedOrg;
+
+  const emailOrg = await firstOrganizationByField('ownerEmail', userEmail);
+  if (emailOrg || !rawEmail || rawEmail === userEmail) return emailOrg;
+
+  return firstOrganizationByField('ownerEmail', rawEmail);
 }
 
 // Fetch organization by ID
@@ -2981,13 +3010,10 @@ export function getBranchById(id: string): BranchProfileData | undefined {
 
 // Notification CRUD
 export async function fetchUserNotifications(userId: string, limitCount = 50): Promise<NotificationRecord[]> {
-  // IMPORTANT: Exclude dismissed and archived notifications by default
-  // Only show 'unread', 'read', and 'pending' status notifications
-  // This prevents dismissed/archived notifications from reappearing on refresh
   const q = query(
     collection(db, 'notifications'),
     where('userId', '==', userId),
-    where('status', 'in', ['unread', 'read', 'pending']),
+    where('status', 'in', ['unread', 'read']),
     limit(limitCount)
   );
   const snapshot = await getDocs(q);
@@ -3015,7 +3041,11 @@ export async function fetchUnreadNotificationCount(userId: string): Promise<numb
 
 export async function markNotificationAsRead(notificationId: string, userId: string): Promise<void> {
   const ref = doc(db, 'notifications', notificationId);
-  await updateDoc(ref, { status: 'read', updatedAt: nowIso() });
+  const snap = await getDoc(ref);
+  if (!snap.exists() || snap.data().userId !== userId) {
+    throw new Error('You can only update your own notifications.');
+  }
+  await updateDoc(ref, { status: 'read', read: true, updatedAt: nowIso() });
 }
 
 export async function markAllNotificationsAsRead(userId: string): Promise<void> {
@@ -3033,12 +3063,12 @@ export async function markAllNotificationsAsRead(userId: string): Promise<void> 
 
 export async function dismissNotification(notificationId: string): Promise<void> {
   const ref = doc(db, 'notifications', notificationId);
-  await updateDoc(ref, { status: 'dismissed', updatedAt: nowIso() });
+  await updateDoc(ref, { status: 'dismissed', read: true, updatedAt: nowIso() });
 }
 
 export async function archiveNotification(notificationId: string): Promise<void> {
   const ref = doc(db, 'notifications', notificationId);
-  await updateDoc(ref, { status: 'archived', updatedAt: nowIso() });
+  await updateDoc(ref, { status: 'archived', read: true, updatedAt: nowIso() });
 }
 
 // ===========================================

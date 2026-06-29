@@ -36,6 +36,7 @@ const PublicProfileSettings = lazy(() => import('./pages/PublicProfileSettings')
 const GuildCardPage = lazy(() => import('./pages/GuildCardPage'));
 const BranchesPage = lazy(() => import('./pages/Branches'));
 const Organizations = lazy(() => import('./pages/Organizations'));
+const PublicOrganizationProfile = lazy(() => import('./pages/PublicOrganizationProfile'));
 const KnowledgeHub = lazy(() => import('./pages/KnowledgeHub'));
 const VerificationCenter = lazy(() => import('./pages/VerificationCenter'));
 const NotificationCenter = lazy(() => import('./pages/NotificationCenter'));
@@ -44,6 +45,7 @@ const Impact = lazy(() => import('./pages/Impact'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const CommunityGuidelines = lazy(() => import('./pages/CommunityGuidelines'));
+const PublicInfoPage = lazy(() => import('./pages/PublicInfoPage'));
 const Footer = lazy(() => import('./components/layout/Footer'));
 const NeedDetails = lazy(() => import('./pages/NeedDetails'));
 const NeedWizard = lazy(() => import('./pages/NeedWizard'));
@@ -620,7 +622,7 @@ const routerConfig = createBrowserRouter([
       { path: '/quest-center', element: <PrivateRoute><UserQuestCenter /></PrivateRoute> },
       { path: '/quest-applications', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><QuestApplications /></RoleRoute> },
       { path: '/organizations', element: <Organizations /> },
-      { path: '/org/:id', element: <Organizations /> },
+      { path: '/org/:id', element: <PublicOrganizationProfile /> },
       { path: '/org-landing', element: <OrgLanding /> },
       { path: '/org-register', element: <PublicOrgRegistration /> },
       { path: '/org-onboarding', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgOnboarding /></RoleRoute> },
@@ -636,6 +638,16 @@ const routerConfig = createBrowserRouter([
       { path: '/privacy', element: <PrivacyPolicy /> },
       { path: '/terms', element: <TermsOfService /> },
       { path: '/community', element: <CommunityGuidelines /> },
+      { path: '/about', element: <PublicInfoPage /> },
+      { path: '/contact', element: <PublicInfoPage /> },
+      { path: '/support', element: <PublicInfoPage /> },
+      { path: '/faq', element: <PublicInfoPage /> },
+      { path: '/refund', element: <PublicInfoPage /> },
+      { path: '/cookies', element: <PublicInfoPage /> },
+      { path: '/disclaimer', element: <PublicInfoPage /> },
+      { path: '/careers', element: <PublicInfoPage /> },
+      { path: '/press', element: <PublicInfoPage /> },
+      { path: '/brand', element: <PublicInfoPage /> },
       { path: '/profile', element: <PrivateRoute><MemberProfile /></PrivateRoute> },
       { path: '/guild-card', element: <PrivateRoute><GuildCardPage /></PrivateRoute> },
       { path: '/public-profile-settings', element: <PrivateRoute><PublicProfileSettings /></PrivateRoute> },

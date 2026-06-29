@@ -16,7 +16,7 @@ export default function OrgOutcomes() {
     async function loadData() {
       if (!profile) return;
       try {
-        const userOrg = await fetchUserOrganization(profile.uid);
+        const userOrg = await fetchUserOrganization(profile);
         if (userOrg) {
           setOrg(userOrg);
           const orgOutcomes = await fetchOrganizationOutcomes(userOrg.id);

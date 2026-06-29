@@ -15,7 +15,10 @@ export const ecosystemLinks = {
   guildCard: () => '/guild-card',
   passportSettings: () => '/public-profile-settings',
   member: (user: EntitySource | string) => `/member/${encodeURIComponent(pickId(user))}`,
-  organization: (_org?: Organization | EntitySource | string) => '/organizations',
+  organization: (org?: Organization | EntitySource | string) => {
+    const id = pickId(org);
+    return id ? `/org/${encodeURIComponent(id)}` : '/organizations';
+  },
   branch: (branchId?: string) => (branchId ? `/branches/${encodeURIComponent(branchId)}` : '/branches'),
   quest: (quest: Quest | EntitySource | string) => `/quests/${encodeURIComponent(pickId(quest))}`,
   need: (need: Need | EntitySource | string) => `/needs/${encodeURIComponent(pickId(need))}`,

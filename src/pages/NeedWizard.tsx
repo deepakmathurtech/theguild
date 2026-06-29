@@ -71,7 +71,7 @@ export default function NeedWizard() {
       // If no URL param, try to get org from user's ownerId
       if (!orgId && profile?.uid) {
         try {
-          const userOrg = await fetchUserOrganization(profile.uid);
+          const userOrg = await fetchUserOrganization(profile);
           orgId = userOrg?.id || '';
           if (userOrg) setOrg(userOrg);
         } catch (e) {
@@ -79,10 +79,6 @@ export default function NeedWizard() {
         }
       }
 
-      // If URL didn't include ?id, we still need to proceed with the inferred orgId.
-      // organizationId is derived from the URL param above, so once we infer orgId we can use `orgId`
-      // for subsequent checks/loading/submit.
-      const effectiveOrganizationId = organizationId || orgId;
       if (!orgId) {
         setLoading(false);
         return;
@@ -142,7 +138,7 @@ export default function NeedWizard() {
     setLoading(true);
     try {
       const need = await createNeed(
-        organizationId,
+        org.id,
         organizationName,
         {
           title: title.trim(),
@@ -159,7 +155,7 @@ export default function NeedWizard() {
       );
 
       await logOrganizationActivity(
-        organizationId,
+        org.id,
         'needSubmitted',
         `Need Submitted: ${title}`,
         `${title} has been submitted for ${category} work with ${priority} priority`,
