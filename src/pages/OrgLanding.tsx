@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -104,7 +103,7 @@ export default function OrgLanding() {
           <ArrowRight size={14} />
         </Link>
       </section>
-    </div>
+    </div></>
   );
 }
 

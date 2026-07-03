@@ -7,8 +7,7 @@ import { applyForQuest, submitQuestCompletion, nowIso, RECEPTIONISTS, getVerific
 import GuildContactCard from '../components/GuildContactCard';
 import type { Quest, QuestApplication } from '../types/guild';
 import { ArrowLeft, Compass, Award, Calendar, Clock, MapPin, Check, CheckCircle, Send, ShieldAlert, Sparkles, Users, ExternalLink, Wallet, Book, User, FileCheck, XCircle, Pause, Play, Send as SendIcon, Trash2, Loader, Target } from 'lucide-react';
-import { PAGE_SEO } from '../components/SEO';
-import SEO from '../components/SEO';
+import SEO, { PAGE_SEO } from '../components/SEO';
 
 type ApplicantTab = 'applicants' | 'accepted' | 'reports' | 'completed' | 'rejected' | 'removed';
 
