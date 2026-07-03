@@ -935,9 +935,9 @@ export default function QuestDetails() {
             <div className="space-y-1">
               <span className="text-[10px] font-black uppercase text-[var(--text-muted)] tracking-wider">Quest Reward Index</span>
               <strong className="text-3xl font-extrabold text-[var(--primary)] block">+{quest.reputationPoints} Rep</strong>
-              {quest.isPaid && quest.memberPayout && (
+              {quest.isPaid && quest.paymentAmount && (
                 <span className="text-sm font-bold text-emerald-400 block mt-1">
-                  Reward: ₹{quest.memberPayout}
+                  Reward: INR {quest.paymentAmount}
                   {quest.paymentStatus === 'Paid' ? ' (Paid)' : quest.paymentStatus === 'Pending' ? ' (Pending)' : ''}
                 </span>
               )}
