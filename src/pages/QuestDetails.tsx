@@ -577,7 +577,7 @@ export default function QuestDetails() {
                   </div>
                   <div>
                     <span className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Members assigned</span>
-                    <span className="block font-semibold text-[var(--text-secondary)]">{quest.acceptedMembers?.length || 0}</span>
+                    <span className="block font-semibold text-[var(--text-secondary)]">{new Set([...(quest.acceptedMembers || []), ...((quest as any).completedMembers || [])]).size}</span>
                   </div>
                   <div className="col-span-2">
                     <span className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Deadline</span>
