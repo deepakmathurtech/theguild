@@ -5198,30 +5198,31 @@ export function getOrganizationActionItems(org: Organization, quests: Quest[], n
   const items: ActionItem[] = [];
   const now = new Date().toISOString();
 
-  // 1. Profile completion
-  if (!org.description || !org.industry) {
+  // 1. Profile completion — check real editable fields
+  const profileIncomplete = !org.description || !org.website || !org.phone;
+  if (profileIncomplete) {
     items.push({
       id: `action-${org.id}-info`,
       type: 'updateInfo',
       title: 'Complete Organization Profile',
-      description: 'Add description and industry to attract members',
+      description: 'Add description, website, and phone to strengthen your profile',
       priority: 'high',
       status: 'open',
-      link: '/org-dashboard',
+      link: '#edit-profile',
       createdAt: now
     });
   }
 
-  // 2. Verification
+  // 2. Verification — links to the actual verification page
   if (org.verificationStatus !== 'verified') {
     items.push({
       id: `action-${org.id}-verify`,
       type: 'verifyIdentity',
       title: 'Get Verified',
-      description: 'Verification builds trust with members',
+      description: 'Submit your verification request to build trust with members',
       priority: org.trustLevel === 'partner' ? 'low' : 'high',
       status: 'open',
-      link: '/org-dashboard',
+      link: '/verification',
       createdAt: now
     });
   }

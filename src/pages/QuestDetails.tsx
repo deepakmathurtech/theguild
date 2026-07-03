@@ -3,11 +3,12 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
 import { doc, getDoc, updateDoc, collection, query, getDocs } from 'firebase/firestore';
-import { applyForQuest, submitQuestCompletion, nowIso, RECEPTIONISTS, getVerificationRequirement, meetsVerificationRequirement, getQuestApplications, getUserQuestParticipation, updateParticipationStatus, notifyUser, acceptApplicant } from '../lib/repository';
+import { applyForQuest, submitQuestCompletion, nowIso, RECEPTIONISTS, getVerificationRequirement, meetsVerificationRequirement, getQuestApplications, getUserQuestParticipation, updateParticipationStatus, notifyUser, acceptApplicant, fetchReceptionistById } from '../lib/repository';
 import GuildContactCard from '../components/GuildContactCard';
 import type { Quest, QuestApplication } from '../types/guild';
 import { ArrowLeft, Compass, Award, Calendar, Clock, MapPin, Check, CheckCircle, Send, ShieldAlert, Sparkles, Users, ExternalLink, Wallet, Book, User, FileCheck, XCircle, Pause, Play, Send as SendIcon, Trash2, Loader, Target } from 'lucide-react';
 import { PAGE_SEO } from '../components/SEO';
+import SEO from '../components/SEO';
 
 type ApplicantTab = 'applicants' | 'accepted' | 'reports' | 'completed' | 'rejected' | 'removed';
 
@@ -22,6 +23,7 @@ export default function QuestDetails() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [assignedReceptionist, setAssignedReceptionist] = useState<any>(null);
 
   // Admin state - always defined but only populated for admins
   const [applicantTab, setApplicantTab] = useState<ApplicantTab>('applicants');
@@ -53,12 +55,7 @@ export default function QuestDetails() {
                  profile?.role === 'stateGuildMaster' || profile?.role === 'founder' || profile?.role === 'guildFounder';
 
   // ALL useEffects must be defined consecutively at top level
-  // Useffect 1: SEO title (runs once on mount)
-  useEffect(() => {
-    document.title = PAGE_SEO.questDetails.title;
-    const descEl = document.querySelector('meta[name="description"]');
-    if (descEl) descEl.setAttribute('content', PAGE_SEO.questDetails.description);
-  }, []);
+  // Useffect 1: SEO title (no longer needed, using SEO component)
 
   // Useffect 2: Load quest and applications (runs when id or success changes)
   useEffect(() => {
@@ -79,12 +76,12 @@ export default function QuestDetails() {
           questLoadedRef.current = true;
           questIdRef.current = questId;
         } else {
-          setError('Quest details not found in ledger.');
+          setError('Quest details not found.');
         }
       } catch (err) {
         if (!cancelled) {
           console.error(err);
-          setError('Failed to fetch quest record.');
+          setError('Failed to fetch quest details.');
         }
       } finally {
         if (!cancelled) {
@@ -174,12 +171,41 @@ export default function QuestDetails() {
     };
   }, [id, success, isAdmin]);
 
+  // Useffect 3: Load assigned receptionist details
+  useEffect(() => {
+    const receptionistId = quest?.assignedReceptionistId;
+    if (!receptionistId) {
+      setAssignedReceptionist(null);
+      return;
+    }
+    const targetId: string = receptionistId;
+    let cancelled = false;
+    async function loadReceptionist() {
+      try {
+        const recep = await fetchReceptionistById(targetId);
+        if (!cancelled && recep) {
+          setAssignedReceptionist(recep);
+        }
+      } catch (err) {
+        console.error("Failed to load receptionist:", err);
+      }
+    }
+    loadReceptionist();
+    return () => {
+      cancelled = true;
+    };
+  }, [quest?.assignedReceptionistId]);
+
   if (loading) {
-    return <div className="p-12 text-center text-xs text-[var(--text-muted)]">Loading Quest from ledger...</div>;
+    return (
+      <><SEO {...PAGE_SEO.questDetails} />
+      <div className="p-12 text-center text-xs text-[var(--text-muted)] font-semibold">Loading quest...</div></>
+    );
   }
 
   if (error || !quest) {
     return (
+      <><SEO {...PAGE_SEO.notFound} />
       <div className="max-w-xl mx-auto py-12 px-4 text-center">
         <div className="panel space-y-4">
           <p className="text-sm text-red-500 font-semibold">{error || 'Quest not found.'}</p>
@@ -187,7 +213,7 @@ export default function QuestDetails() {
             <ArrowLeft size={14} /> Back to Board
           </Link>
         </div>
-      </div>
+      </div></>
     );
   }
 
@@ -486,6 +512,7 @@ export default function QuestDetails() {
   ];
 
   return (
+    <><SEO title={`${quest.title} | Guild Quests`} description={quest.description} keywords={[quest.category || 'Quest', quest.difficulty || 'Medium', quest.mode || 'Remote']} />
     <div className="max-w-4xl mx-auto py-4 space-y-6 text-left animate-fade-up">
       {/* Back button */}
       <div>
@@ -663,18 +690,6 @@ export default function QuestDetails() {
                   </div>
                 </div>
 
-                {quest.assignedReceptionistId && (
-                  <div className="mt-3">
-                    <GuildContactCard
-                      contact={{
-                        uid: quest.assignedReceptionistId,
-                        fullName: quest.assignedReceptionistName || 'Unknown',
-                        role: 'receptionist'
-                      }}
-                      roleLabel="Guild Contact"
-                    />
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -1076,22 +1091,21 @@ export default function QuestDetails() {
             )}
           </div>
 
-          {/* Assigned Representative Details */}
-          <div className="panel space-y-4 text-xs">
-            <h4 className="font-bold text-[var(--text-secondary)] uppercase tracking-wider">Branch Representative</h4>
-            <div className="flex gap-3 items-center">
-              <div className="w-10 h-10 rounded-lg overflow-hidden border border-[var(--border)] bg-black">
-                <img src={coordinator.photoURL} alt={coordinator.fullName} className="w-full h-full object-cover" />
-              </div>
-              <div>
-                <strong className="text-sm font-bold text-[var(--text)] block">{coordinator.fullName}</strong>
-                <span className="text-[10px] text-[var(--text-muted)] block mt-0.5">{coordinator.role}</span>
-              </div>
-            </div>
-            <p className="text-[var(--text-muted)] leading-relaxed pt-2 border-t border-[var(--border)]">
-              This officer validates deliverables and manages coordination logs for this quest's outcomes.
-            </p>
-          </div>
+          {/* Guild Contact Card */}
+          <GuildContactCard
+            contact={{
+              uid: assignedReceptionist?.uid || coordinator.uid,
+              fullName: assignedReceptionist?.fullName || coordinator.fullName,
+              photoURL: assignedReceptionist?.photoURL || coordinator.photoURL,
+              phone: assignedReceptionist?.phone || coordinator.phone,
+              email: assignedReceptionist?.email || coordinator.email,
+              role: assignedReceptionist?.role || coordinator.role,
+              verificationStatus: 'verified',
+              guildRank: 'A'
+            }}
+            roleLabel="Guild Representative"
+            showContactInfo={!!profile}
+          />
         </div>
       </div>
 
@@ -1282,6 +1296,6 @@ export default function QuestDetails() {
           </div>
         </div>
       )}
-    </div>
+    </div></>
   );
 }

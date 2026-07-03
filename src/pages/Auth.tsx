@@ -28,15 +28,35 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  // Handle GitHub OAuth login
-  const handleGitHubLogin = async () => {
+  const mapFirebaseError = (err: any): string => {
+    const msg = err.message || '';
+    if (msg.includes('auth/invalid-credential') || msg.includes('auth/wrong-password') || msg.includes('auth/user-not-found')) {
+      return 'Incorrect email or password. Please try again.';
+    }
+    if (msg.includes('auth/email-already-in-use')) {
+      return 'This email address is already in use by another account.';
+    }
+    if (msg.includes('auth/invalid-email')) {
+      return 'Please enter a valid email address.';
+    }
+    if (msg.includes('auth/weak-password')) {
+      return 'Password should be at least 6 characters.';
+    }
+    if (msg.includes('auth/popup-closed-by-user')) {
+      return 'Sign-in window closed before completion. Please try again.';
+    }
+    return err.message || 'Authentication failed. Please verify credentials.';
+  };
+
+  // Handle Google OAuth login
+  const handleGoogleLogin = async () => {
     try {
       setLoading(true);
       setError('');
       await loginWithGoogle();
       navigate('/');
     } catch (err: any) {
-      setError(err.message || 'GitHub login failed. Please try again.');
+      setError(mapFirebaseError(err));
     } finally {
       setLoading(false);
     }
@@ -47,15 +67,18 @@ export default function Auth() {
     e.preventDefault();
     setError('');
     setSuccess('');
+    setLoading(true);
 
     try {
       if (mode === 'register') {
         if (password !== confirmPassword) {
           setError('Passwords do not match.');
+          setLoading(false);
           return;
         }
         if (password.length < 6) {
           setError('Password must be at least 6 characters.');
+          setLoading(false);
           return;
         }
         await registerWithEmail(
@@ -79,12 +102,13 @@ export default function Auth() {
         if (!firebaseUser?.emailVerified) {
           setMode('verify-email');
           setError('Please verify your email before continuing.');
+          setLoading(false);
           return;
         }
         navigate('/');
       }
     } catch (err: any) {
-      setError(err.message || 'Authentication failed. Please verify credentials.');
+      setError(mapFirebaseError(err));
     } finally {
       setLoading(false);
     }
@@ -94,13 +118,16 @@ export default function Auth() {
     e.preventDefault();
     setError('');
     setSuccess('');
+    setLoading(true);
 
     try {
       await sendPasswordReset(email);
       setSuccess('Password reset link sent! Check your email.');
       setMode('login');
     } catch (err: any) {
-      setError(err.message || 'Failed to send reset email.');
+      setError(mapFirebaseError(err));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -311,11 +338,12 @@ export default function Auth() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="mt-4 flex flex-col gap-3">
               <button
-                onClick={handleGitHubLogin}
+                type="button"
+                onClick={handleGoogleLogin}
                 disabled={loading}
-                className="secondary flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold"
+                className="secondary flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold w-full"
               >
                 <Globe size={14} />
                 <span>Google</span>

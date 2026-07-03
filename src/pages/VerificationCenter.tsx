@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { updateLedgerRecord } from '../lib/repository';
 import { ShieldCheck, Award, FileText, Send, Calendar, AlertTriangle, Check } from 'lucide-react';
+import SEO, { PAGE_SEO } from '../components/SEO';
 
 export default function VerificationCenter() {
   const { profile } = useAuth();
@@ -41,6 +42,7 @@ export default function VerificationCenter() {
   };
 
   return (
+    <><SEO {...PAGE_SEO.verification} />
     <div className="space-y-8 py-4 text-left max-w-3xl mx-auto animate-fade-up">
       {/* Header */}
       <div>
@@ -91,7 +93,7 @@ export default function VerificationCenter() {
               File Verification Request
             </h3>
             <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-              Verify your identity, educational background, or contractor records with your assigned relationship manager.
+              Verify your identity, educational background, or contractor records with your assigned Guild Representative.
             </p>
 
             <form onSubmit={handleSubmitClaim} className="space-y-4 pt-2">
@@ -143,6 +145,6 @@ export default function VerificationCenter() {
           </div>
         )}
       </div>
-    </div>
+    </div></>
   );
 }

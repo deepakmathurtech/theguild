@@ -74,7 +74,7 @@ export default function GrowthDashboard() {
       {/* Top Banner section */}
       <div className="hero-panel bg-gradient-to-br from-[var(--card)] to-[var(--bg-alt)] p-8 rounded-2xl flex flex-col md:flex-row justify-between gap-6 items-start md:items-center">
         <div>
-          <span className="eyebrow block">Personal Growth Core</span>
+          <span className="eyebrow block">Growth Dashboard</span>
           <h1 className="text-3xl font-extrabold tracking-tight">Welcome, {profile.fullName}</h1>
           <p className="text-xs text-[var(--text-muted)] mt-1.5 max-w-md">
             Your growth path is currently set to <strong className="text-[var(--text)] uppercase tracking-wider">{profile.pathSelected || 'Unassigned'}</strong> in {profile.jurisdiction?.guildBranchName}.
@@ -84,7 +84,7 @@ export default function GrowthDashboard() {
         {/* Reputation and experience score chips */}
         <div className="flex gap-4">
           <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 text-center shadow-inner min-w-[100px]">
-            <span className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] font-black">Reputation Index</span>
+            <span className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] font-black">Reputation Score</span>
             <strong className="text-2xl font-black text-[var(--primary)] block mt-1">{profile.reputationScore}</strong>
           </div>
           <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 text-center shadow-inner min-w-[100px]">
@@ -110,10 +110,10 @@ export default function GrowthDashboard() {
           <div className="flex justify-between items-center">
             <h3 className="text-sm font-bold flex items-center gap-1.5 uppercase tracking-wider">
               <Award size={16} className="text-[var(--primary)]" />
-              Rank Progression Check
+              Rank Progression
             </h3>
             <span className="text-xs font-bold text-[var(--text-muted)]">
-              Level {profile.guildRank} → {nextRank}
+              Rank {profile.guildRank} → {nextRank}
             </span>
           </div>
 
@@ -125,13 +125,13 @@ export default function GrowthDashboard() {
               ></div>
             </div>
             <div className="flex justify-between items-center text-[10px] text-[var(--text-muted)]">
-              <span>{profile.reputationScore} XP accumulated</span>
-              <span>{pointsToNextRank} Rep required for Rank {nextRank}</span>
+              <span>{profile.reputationScore} Reputation points</span>
+              <span>{pointsToNextRank} Reputation needed for Rank {nextRank}</span>
             </div>
           </div>
 
           <div className="bg-[var(--card-subtle)] border border-[var(--border)] rounded-xl p-3.5 text-xs text-[var(--text-secondary)] leading-relaxed">
-            <strong className="block text-[var(--text)] font-semibold mb-1">Rank Up How:</strong>
+            <strong className="block text-[var(--text)] font-semibold mb-1">How to progress:</strong>
             Complete quests to earn reputation. Higher difficulty quests (C, B, A, S) unlock at higher ranks. Submit documented playbooks in the Knowledge Hub to claim rank bonuses.
           </div>
         </div>
@@ -241,8 +241,8 @@ export default function GrowthDashboard() {
             ))}
           </div>
         ) : (
-          <div className="panel p-8 text-center text-xs text-[var(--text-muted)] border border-dashed border-[var(--border)]">
-            No dynamic recommendations found. Adjust your skills in settings to trigger matching updates.
+          <div className="panel p-8 text-center text-xs text-[var(--text-secondary)] border border-dashed border-[var(--border)] leading-relaxed">
+            No personalized recommendations match your listed skills yet. Add more skills in Settings to trigger personalized quest matches.
           </div>
         )}
       </section>
@@ -261,7 +261,7 @@ export default function GrowthDashboard() {
                     <span className="text-[9px] text-[var(--text-muted)] block mt-0.5">Category: {q.category}</span>
                   </div>
                   <span className="px-2 py-0.5 bg-amber-500/10 text-amber-500 rounded text-[9px] uppercase font-bold border border-amber-500/20">
-                    Pending Assign
+                    Awaiting Assignment
                   </span>
                 </Link>
               ))}

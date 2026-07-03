@@ -10,6 +10,7 @@ import { Building, Award, ShieldCheck, Mail, Phone, ExternalLink, Calendar, Help
 import EmptyState from '../components/EmptyState';
 import ActionCenter from '../components/ActionCenter';
 import { ecosystemLinks } from '../lib/ecosystemLinks';
+import SEO, { PAGE_SEO } from '../components/SEO';
 
 const CATEGORIES = ['Business', 'NGO', 'College', 'School', 'Community', 'Government Related', 'Individual Initiative'] as const;
 const VISIBILITY_OPTIONS = ['public', 'guildMembers', 'private', 'draft'] as const;
@@ -24,6 +25,7 @@ export default function OrgDashboard() {
   const [receptionists, setReceptionists] = useState<Receptionist[]>([]);
   const [manager, setManager] = useState<Receptionist | null>(null);
   const [loading, setLoading] = useState(true);
+  const [consulted, setConsulted] = useState(false);
 
   // Edit mode states
   const [isEditing, setIsEditing] = useState(false);
@@ -35,6 +37,7 @@ export default function OrgDashboard() {
     email: '',
     address: '',
     category: '',
+    industry: '',
     visibility: 'public' as 'public' | 'guildMembers' | 'private' | 'draft'
   });
   const [savingEdit, setSavingEdit] = useState(false);
@@ -104,6 +107,7 @@ export default function OrgDashboard() {
       email: org.email || '',
       address: org.address || '',
       category: org.category || 'Business',
+      industry: org.industry || '',
       visibility: (org.visibility as any) || 'public'
     });
     setIsEditing(true);
@@ -126,11 +130,12 @@ export default function OrgDashboard() {
         email: editForm.email,
         address: editForm.address,
         category: editForm.category as any,
+        industry: editForm.industry,
         visibility: editForm.visibility,
         updatedAt: new Date().toISOString()
       });
       // Update local state
-      setOrg({ ...org, name: editForm.name, description: editForm.description, website: editForm.website, phone: editForm.phone, email: editForm.email, address: editForm.address, category: editForm.category as any, visibility: editForm.visibility as any, updatedAt: new Date().toISOString() } as Organization);
+      setOrg({ ...org, name: editForm.name, description: editForm.description, website: editForm.website, phone: editForm.phone, email: editForm.email, address: editForm.address, category: editForm.category as any, industry: editForm.industry, visibility: editForm.visibility as any, updatedAt: new Date().toISOString() } as Organization);
       setSaveSuccess('Organization updated successfully');
       setIsEditing(false);
     } catch (err: any) {
@@ -149,28 +154,33 @@ export default function OrgDashboard() {
   if (!profile) return null;
 
   if (loading) {
-    return <div className="p-12 text-center text-xs text-[var(--text-muted)]">Loading Organization space...</div>;
+    return (
+      <><SEO {...PAGE_SEO.orgDashboard} />
+      <div className="p-12 text-center text-xs text-[var(--text-muted)]">Loading Organization space...</div></>
+    );
   }
 
   // If user doesn't own any org, show Org Landing redirect
   if (!org) {
     return (
+      <><SEO {...PAGE_SEO.orgDashboard} />
       <div className="max-w-xl mx-auto py-12 px-4 text-center">
         <EmptyState
           title="No Registered Organization Found"
           description="It looks like you haven't registered an organization space with this account yet."
           whyItMatters="To post quests, request volunteers, and manage student contractor cohorts, you must register a certified group."
           actionText="Register Organization"
-          onAction={() => window.location.href = '/org-onboarding'}
+          onAction={() => window.location.href = '/org-register'}
           icon={<Building size={22} />}
         />
-      </div>
+      </div></>
     );
   }
 
   // Edit mode overlay
   if (isEditing) {
     return (
+      <><SEO title={`Edit ${org.name} | Organization Settings`} description="Update organization profile, website, email, category and visibility." noIndex={true} />
       <div className="max-w-2xl mx-auto py-8 px-4 animate-fade-up">
         <div className="panel p-6 rounded-2xl space-y-6">
           <div className="flex justify-between items-center">
@@ -204,17 +214,30 @@ export default function OrgDashboard() {
                 value={editForm.description}
                 onChange={e => setEditForm({ ...editForm, description: e.target.value })}
                 className="text-sm"
+                placeholder="Describe your organization's mission and focus area..."
               />
             </div>
-            <div>
-              <label className="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Website</label>
-              <input
-                type="text"
-                value={editForm.website}
-                onChange={e => setEditForm({ ...editForm, website: e.target.value })}
-                className="text-sm"
-                placeholder="https://"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Website</label>
+                <input
+                  type="text"
+                  value={editForm.website}
+                  onChange={e => setEditForm({ ...editForm, website: e.target.value })}
+                  className="text-sm"
+                  placeholder="https://"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Industry / Sector</label>
+                <input
+                  type="text"
+                  value={editForm.industry}
+                  onChange={e => setEditForm({ ...editForm, industry: e.target.value })}
+                  className="text-sm"
+                  placeholder="e.g. Healthcare, Education, Tech..."
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -286,21 +309,31 @@ export default function OrgDashboard() {
             </button>
           </div>
         </div>
-      </div>
+      </div></>
     );
   }
+
+  // Map raw trust level to display label
+  const trustLevelLabels: Record<string, string> = {
+    new: 'New Partner',
+    trusted: 'Trusted Partner',
+    verified: 'Verified Partner',
+    premium: 'Premium Partner'
+  };
+  const formatTrustLevel = (level: string | undefined) => trustLevelLabels[level || 'new'] || level || 'New Partner';
 
   // Journey stages for organization lifecycle
   const JOURNEY_STAGES = [
     { key: 'new', label: 'Registered', desc: 'Initial registration complete' },
-    { key: 'contacted', label: 'In Touch', desc: 'Connected with Relationship Manager' },
+    { key: 'contacted', label: 'In Touch', desc: 'Connected with Guild Representative' },
     { key: 'active', label: 'Active', desc: 'Currently working with Guild' },
-    { key: 'trusted', label: 'Trusted', desc: 'Verifiedpartner organization' },
+    { key: 'trusted', label: 'Trusted', desc: 'Verified partner organization' },
     { key: 'partner', label: 'Partner', desc: 'Strategic Guild partner' }
   ];
   const currentStageIndex = JOURNEY_STAGES.findIndex(s => s.key === org.currentStatus) || 0;
 
   return (
+    <><SEO title={`${org.name} | Organization Dashboard`} description="Manage your organization needs, active quests, and verified outcomes." noIndex={true} />
     <div className="space-y-8 py-4 text-left max-w-5xl mx-auto animate-fade-up">
       {/* Header Panel */}
       <div className="hero-panel bg-gradient-to-br from-[var(--card)] to-[var(--bg-alt)] p-8 rounded-2xl flex flex-col md:flex-row justify-between gap-6 items-start md:items-center">
@@ -316,7 +349,7 @@ export default function OrgDashboard() {
             <span className="text-xs text-[var(--text-muted)]">{org.category} Chapter</span>
             <span>•</span>
             <span className={`text-[10px] font-black uppercase tracking-wider ${org.trustLevel === 'new' ? 'text-amber-400' : 'text-emerald-400'}`}>
-              Trust Level: {org.trustLevel}
+              Trust Level: {formatTrustLevel(org.trustLevel)}
             </span>
           </div>
         </div>
@@ -333,11 +366,39 @@ export default function OrgDashboard() {
           </div>
         </div>
 
-        {/* Organization Action Items */}
+        {/* Organization Action Items — intercept #edit-profile to trigger edit form */}
         {actionItems.length > 0 && (
           <div className="mt-4 md:mt-0">
             <span className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] font-black block mb-2">Your Action Items</span>
-            <ActionCenter items={actionItems.slice(0, 3)} title="" maxItems={3} />
+            <div className="space-y-2">
+              {actionItems.slice(0, 3).map(item => {
+                if (item.link === '#edit-profile') {
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={startEdit}
+                      className="w-full text-left block p-3 rounded-lg border bg-amber-500/10 border-amber-500/20 hover:border-[var(--primary)]/30 transition-all"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+                          <Edit2 size={16} className="text-amber-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-[var(--text)] truncate">{item.title}</span>
+                            <span className="text-[9px] uppercase font-black px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500">High</span>
+                          </div>
+                          <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{item.description}</p>
+                        </div>
+                        <ArrowRight size={14} className="text-[var(--text-muted)] flex-shrink-0" />
+                      </div>
+                    </button>
+                  );
+                }
+                return null; // Other items are rendered by ActionCenter
+              })}
+              <ActionCenter items={actionItems.filter(i => i.link !== '#edit-profile').slice(0, 3)} title="" maxItems={3} />
+            </div>
           </div>
         )}
       </div>
@@ -384,7 +445,7 @@ export default function OrgDashboard() {
             <div className="text-[10px] font-bold uppercase text-[var(--text-muted)] mt-1">Activities</div>
           </div>
           <div className="p-4 bg-[var(--card-subtle)] rounded-xl border border-[var(--border)] text-center">
-            <div className="text-2xl font-black text-purple-500">{org.trustLevel || 'new'}</div>
+            <div className="text-2xl font-black text-purple-500">{formatTrustLevel(org.trustLevel)}</div>
             <div className="text-[10px] font-bold uppercase text-[var(--text-muted)] mt-1">Trust Level</div>
           </div>
         </div>
@@ -491,9 +552,9 @@ export default function OrgDashboard() {
       <section className="space-y-4">
         <div className="flex justify-between items-end">
           <h2 className="text-lg font-black uppercase tracking-wider">Our Active Quests ({quests.length})</h2>
-          <button className="primary px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1">
+          <Link to="/need-submit" className="primary px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1">
             <Plus size={14} /> Launch New Quest
-          </button>
+          </Link>
         </div>
 
         {quests.length > 0 ? (
@@ -531,8 +592,12 @@ export default function OrgDashboard() {
             title="No Posted Quests"
             description="You haven't posted any quests for Guild members to claim yet."
             whyItMatters="Quests are how organizations scale work. Your assigned coordinator will assist you in mapping your business needs to Quest parameters."
-            actionText="Consult Relationship Manager"
-            onAction={() => manager && alert(`Email sent to ${manager.email}`)}
+            actionText={consulted ? "Consultation Requested" : "Consult Guild Representative"}
+            onAction={() => {
+              if (manager) {
+                setConsulted(true);
+              }
+            }}
             icon={<Award size={22} />}
           />
         )}
@@ -587,6 +652,6 @@ export default function OrgDashboard() {
           </div>
         </section>
       )}
-    </div>
+    </div></>
   );
 }

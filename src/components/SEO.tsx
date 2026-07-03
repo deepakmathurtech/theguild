@@ -25,11 +25,11 @@ export interface SEOProps {
 /** Site-wide defaults */
 const SITE_DEFAULTS = {
   name: 'Guild',
-  title: 'Guild — The Human Growth Engine',
-  description: 'Guild is a decentralized growth engine that ensures human potential is not wasted. Connect with verified builders, creators, and researchers through localized quest chapters.',
+  title: 'Guild — Verified Work. Real Impact.',
+  description: 'Guild is a civilization-oriented work verification platform. Organizations post needs, members complete quests, and every outcome is verified. Build a proof-of-work identity through real contributions.',
   url: 'https://guild.com',
-  image: '/og-image.png',
-  keywords: ['guild', 'growth', 'skills', 'quests', 'reputation', 'verification', 'career development', 'freelance', 'work', 'opportunity']
+  image: 'https://guild.com/og-image.png',
+  keywords: ['guild', 'verified work', 'proof of work', 'quests', 'reputation', 'skill verification', 'organizations', 'impact', 'career growth', 'freelance', 'professional network']
 };
 
 /**
@@ -85,8 +85,9 @@ export default function SEO({
       name: SITE_DEFAULTS.name,
       description: SITE_DEFAULTS.description,
       url: SITE_DEFAULTS.url,
+      logo: `${SITE_DEFAULTS.url}/guild-logo.png`,
       areaServed: 'India',
-      serviceType: ['Career Development', 'Skill Verification', 'Professional Network']
+      serviceType: ['Work Verification', 'Skill Verification', 'Professional Network', 'Career Development']
     };
   }, [schema]);
 
@@ -251,83 +252,140 @@ export default function SEO({
  */
 export const PAGE_SEO = {
   home: {
-    title: 'Guild — The Human Growth Engine',
-    description: 'Connect with verified professionals, complete skill-building quests, and build your reputation portfolio.',
-    keywords: ['guild', 'growth engine', 'career development', 'professional network']
+    title: 'Guild — Verified Work. Real Impact.',
+    description: 'Guild connects organizations with verified contributors through structured quests. Build a proof-of-work identity, earn XP, and grow your reputation through real contributions.',
+    keywords: ['guild', 'verified work', 'proof of work', 'career growth', 'professional network']
   },
   auth: {
-    title: 'Sign In',
-    description: 'Sign in to Guild to access quests, connect with organizations, and build your professional reputation.',
-    keywords: ['sign in', 'login', 'authentication']
+    title: 'Sign In to Guild',
+    description: 'Sign in to access your Guild Passport, browse quests, and track your reputation. Join organizations and build your verified work history.',
+    keywords: ['sign in', 'login', 'guild account'],
+    noIndex: true
   },
   quests: {
-    title: 'Quest Board',
-    description: 'Browse available skill-building quests from verified organizations. Earn reputation and get rewarded for completing real-world projects.',
-    keywords: ['quests', 'gigs', 'projects', 'freelance work', 'opportunities']
+    title: 'Quest Board — Browse Open Quests',
+    description: 'Find quests from verified organizations. Apply to projects matching your skills, complete deliverables, and earn XP and reputation for verified work.',
+    keywords: ['quests', 'projects', 'open work', 'freelance', 'opportunities', 'apply'],
+    schema: {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: 'Guild Quest Board',
+      description: 'Browse available quests from verified organizations.',
+      url: 'https://guild.com/quests'
+    }
   },
   questDetails: {
     title: 'Quest Details',
-    description: 'View quest requirements, rewards, and submission guidelines.',
-    keywords: ['quest', 'project', 'gig']
+    description: 'View quest requirements, deliverables, timeline, and rewards. Apply to contribute and build your verified work record.',
+    keywords: ['quest', 'project details', 'apply', 'deliverables']
   },
   organizations: {
-    title: 'Organizations Directory | Guild',
-    description: 'Discover verified organizations in the Guild ecosystem. Browse trusted NGOs, businesses, and institutions driving community outcomes. Find partners, explore opportunities, and join the network.',
-    keywords: ['organizations directory', 'verified organizations', 'NGO partners', 'business network', 'community impact', 'Guild ecosystem']
+    title: 'Organizations Directory — Verified Partners',
+    description: 'Discover verified organizations in the Guild ecosystem. Browse trusted NGOs, businesses, startups, and institutions posting real work opportunities.',
+    keywords: ['organizations', 'verified partners', 'NGO', 'business', 'institutions', 'directory'],
+    schema: {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: 'Guild Organizations Directory',
+      description: 'Verified organizations posting work opportunities through Guild.',
+      url: 'https://guild.com/organizations'
+    }
   },
   orgLanding: {
-    title: 'For Organizations',
-    description: 'Post needs, find talent, and grow with Guild. Verification and reputation done right.',
-    keywords: ['for organizations', 'post needs', 'find talent', 'hiring']
+    title: 'Guild for Organizations — Convert Needs into Verified Work',
+    description: 'Register your organization with Guild. Post needs, coordinate contributors, and receive verified outcomes. Built for NGOs, startups, campuses, and institutions.',
+    keywords: ['organizations', 'register', 'post needs', 'verified outcomes', 'hire talent']
+  },
+  orgRegister: {
+    title: 'Register Your Organization',
+    description: 'Create your Guild organization profile. Start posting needs, coordinating work, and building a verified trust record.',
+    keywords: ['register organization', 'create account', 'partner with guild']
   },
   orgDashboard: {
     title: 'Organization Dashboard',
-    description: 'Manage your organization on Guild. Track needs, opportunities, and member contributions.',
-    keywords: ['organization dashboard', 'manage', 'needs']
+    description: 'Manage your organization on Guild. Track submitted needs, active quests, and contributor outcomes.',
+    keywords: ['organization dashboard', 'manage', 'needs', 'quests'],
+    noIndex: true
   },
   branches: {
-    title: 'Network',
-    description: 'Explore the Guild federation network. Find chapters in cities and states across India.',
-    keywords: ['network', 'chapters', 'branches', 'cities', 'states']
+    title: 'Guild Branches — Local Chapters Across India',
+    description: 'Explore Guild branches operating across cities and states. Each branch coordinates local quests, verifies work, and builds community trust.',
+    keywords: ['branches', 'chapters', 'cities', 'states', 'local guild', 'India']
   },
   knowledgeHub: {
-    title: 'Knowledge Hub',
-    description: 'Access verified knowledge entries from Guild members. Learn from real-world projects and experiences.',
-    keywords: ['knowledge', 'docs', 'documentation', 'learn', 'guides']
+    title: 'Knowledge Hub — Playbooks, Lessons & Templates',
+    description: 'Access verified knowledge created by Guild members during quest completions. Browse playbooks, lessons learned, success stories, and reusable templates.',
+    keywords: ['knowledge', 'playbooks', 'lessons', 'templates', 'documentation', 'guides']
   },
   impact: {
-    title: 'Impact',
-    description: 'See the collective impact of Guild members. Track growth, outcomes, and community contribution.',
-    keywords: ['impact', 'statistics', 'growth', 'outcomes']
+    title: 'Guild Impact — Real Results, Real Impact',
+    description: 'See how Guild transforms organizational needs into verified outcomes. Track active members, completed quests, and community impact across India.',
+    keywords: ['impact', 'statistics', 'results', 'outcomes', 'community']
   },
   memberProfile: {
-    title: 'My Profile',
-    description: 'Your Guild profile. Track reputation, completed quests, and professional growth.',
-    keywords: ['profile', 'reputation', 'portfolio']
+    title: 'My Guild Profile',
+    description: 'Your Guild profile and proof-of-work dossier. Track XP, reputation, completed quests, and verified skills.',
+    keywords: ['profile', 'reputation', 'portfolio', 'proof of work'],
+    noIndex: true
+  },
+  guildCard: {
+    title: 'Guild Passport',
+    description: 'Your Guild Passport — a verified proof-of-work identity. Share your QR code, track visibility, and manage your public profile.',
+    keywords: ['guild passport', 'guild card', 'proof of work', 'QR code', 'identity'],
+    noIndex: true
   },
   verification: {
-    title: 'Verification Center',
-    description: 'Verify member submissions and track verification queue.',
-    keywords: ['verification', 'review', 'submissions']
+    title: 'Trust & Verification Center',
+    description: 'Verify your identity and credentials with Guild. Submit verification requests and track your trust status.',
+    keywords: ['verification', 'trust', 'identity', 'credentials'],
+    noIndex: true
   },
   notifications: {
     title: 'Notifications',
-    description: 'Your Guild notifications and alerts.',
-    keywords: ['notifications', 'alerts', 'messages']
+    description: 'Your Guild notifications — quest updates, application status, and system alerts.',
+    keywords: ['notifications', 'alerts', 'updates'],
+    noIndex: true
   },
   settings: {
-    title: 'Settings',
-    description: 'Manage your Guild account settings and preferences.',
-    keywords: ['settings', 'preferences', 'account']
+    title: 'Account Settings',
+    description: 'Manage your Guild account settings, profile details, and preferences.',
+    keywords: ['settings', 'preferences', 'account'],
+    noIndex: true
   },
   needDetails: {
     title: 'Need Details',
-    description: 'View and manage organization needs.',
-    keywords: ['need', 'requirement', 'task']
+    description: 'View organization need details, scope, timeline, and quest mapping status.',
+    keywords: ['need', 'requirement', 'organization']
   },
   submissionReviews: {
     title: 'Submission Reviews',
-    description: 'Review and verify member quest submissions.',
-    keywords: ['submissions', 'reviews', 'verification']
+    description: 'Review and verify member quest submissions and deliverables.',
+    keywords: ['submissions', 'reviews', 'verification'],
+    noIndex: true
+  },
+  about: {
+    title: 'About Guild — The Civilization Work Engine',
+    description: 'Guild ensures human potential is not wasted. Learn how the platform connects organizations with verified contributors through structured quests, proof-of-work identity, and community trust.',
+    keywords: ['about guild', 'mission', 'vision', 'how it works', 'civilization']
+  },
+  privacy: {
+    title: 'Privacy Policy',
+    description: 'Guild privacy policy. How we collect, use, and protect your personal information.',
+    keywords: ['privacy policy', 'data protection', 'personal information']
+  },
+  terms: {
+    title: 'Terms of Service',
+    description: 'Guild terms of service. Rules and guidelines for using the Guild platform.',
+    keywords: ['terms of service', 'terms and conditions', 'usage policy']
+  },
+  community: {
+    title: 'Community Guidelines',
+    description: 'Guild community guidelines. Standards of conduct for members and organizations on the platform.',
+    keywords: ['community guidelines', 'code of conduct', 'rules']
+  },
+  notFound: {
+    title: 'Page Not Found',
+    description: 'The page you are looking for does not exist on Guild.',
+    noIndex: true
   }
-};
+};

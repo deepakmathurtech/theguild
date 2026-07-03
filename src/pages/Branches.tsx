@@ -140,8 +140,12 @@ export default function Branches() {
             </thead>
             <tbody>
               {loading ? (
-        <div className="col-span-3 p-12 text-center text-xs text-[var(--text-muted)]">Loading branches...</div>
-      ) : branches.map(branch => (
+                <tr>
+                  <td colSpan={5} className="p-12 text-center text-xs text-[var(--text-muted)] font-semibold">
+                    Loading branches...
+                  </td>
+                </tr>
+              ) : branches.map(branch => (
                 <tr key={branch.id} className="border-b border-[var(--border)] hover:bg-[var(--card-subtle)]/50">
                   <td className="py-3 px-4 font-bold">{branch.name}</td>
                   <td className="py-3 px-4 text-[var(--text-muted)]">{branch.city}</td>
@@ -157,9 +161,15 @@ export default function Branches() {
 
       {/* Join CTA */}
       <section className="text-center py-8">
-        <Link to="/org-register" className="primary px-6 py-3 rounded-xl font-bold inline-flex items-center gap-2">
-          Register Your Organization <ArrowRight size={16} />
-        </Link>
+        <p className="text-xs text-[var(--text-secondary)] mb-4">Ready to participate or register a local chapter?</p>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Link to="/quests" className="primary px-6 py-3 rounded-xl font-bold inline-flex items-center gap-2">
+            Browse Branch Quests <ArrowRight size={16} />
+          </Link>
+          <Link to="/org-register" className="secondary px-6 py-3 rounded-xl font-bold inline-flex items-center gap-2">
+            Register Organization Chapter
+          </Link>
+        </div>
       </section>
     </div></>
   );

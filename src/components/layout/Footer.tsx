@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Compass, Mail, Shield } from 'lucide-react';
+import { Compass, Shield } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -35,14 +35,11 @@ export default function Footer() {
 
           {/* Support */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4">Support</h4>
+            <h4 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4">Resources</h4>
             <ul className="space-y-2 text-sm">
-              <li><Link to="/support" className="hover:text-[var(--primary)]">Support</Link></li>
-              <li><Link to="/contact" className="hover:text-[var(--primary)] flex items-center gap-2">
-                <Mail className="w-3 h-3" /> Contact
-              </Link></li>
-              <li><Link to="/faq" className="hover:text-[var(--primary)]">FAQ</Link></li>
-              <li><Link to="/docs" className="hover:text-[var(--primary)]">Knowledge Base</Link></li>
+              <li><Link to="/docs" className="hover:text-[var(--primary)]">Knowledge Hub</Link></li>
+              <li><Link to="/about" className="hover:text-[var(--primary)]">About Guild</Link></li>
+              <li><Link to="/org-register" className="hover:text-[var(--primary)]">Partner Portal</Link></li>
             </ul>
           </div>
 
@@ -53,12 +50,6 @@ export default function Footer() {
               <li><Link to="/privacy" className="hover:text-[var(--primary)]">Privacy Policy</Link></li>
               <li><Link to="/terms" className="hover:text-[var(--primary)]">Terms of Service</Link></li>
               <li><Link to="/community" className="hover:text-[var(--primary)]">Community Guidelines</Link></li>
-              <li><Link to="/refund" className="hover:text-[var(--primary)]">Refund & Cancellation</Link></li>
-              <li><Link to="/cookies" className="hover:text-[var(--primary)]">Cookie Policy</Link></li>
-              <li><Link to="/disclaimer" className="hover:text-[var(--primary)]">Disclaimer</Link></li>
-              <li><Link to="/careers" className="hover:text-[var(--primary)]">Careers</Link></li>
-              <li><Link to="/press" className="hover:text-[var(--primary)]">Press / Media</Link></li>
-              <li><Link to="/brand" className="hover:text-[var(--primary)]">Brand Assets</Link></li>
             </ul>
           </div>
         </div>

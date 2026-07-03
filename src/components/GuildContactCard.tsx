@@ -99,20 +99,28 @@ export default function GuildContactCard({
     guildRank?: string;
     verificationStatus?: string;
   };
+  const [imageError, setImageError] = React.useState(false);
+
+  const initials = contactAny.fullName
+    ? contactAny.fullName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
+    : 'G';
+
+  const hasPhoto = !!contactAny.photoURL && !imageError;
   const profileUrl = `/member/${contactAny.uid}`;
 
   if (compact) {
     return (
       <div className="inline-flex items-center gap-2">
-        {contactAny.photoURL ? (
+        {hasPhoto ? (
           <img
             src={contactAny.photoURL}
             alt={contactAny.fullName}
             className="w-6 h-6 rounded-full object-cover"
+            onError={() => setImageError(true)}
           />
         ) : (
-          <div className="w-6 h-6 rounded-full bg-[var(--primary)]/20 flex items-center justify-center">
-            <User size={12} className="text-[var(--primary)]" />
+          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[var(--primary)]/20 to-[var(--primary)]/5 flex items-center justify-center text-[var(--primary)] font-bold text-[9px] select-none border border-[var(--primary)]/20">
+            {initials}
           </div>
         )}
         <div className="flex flex-col">
@@ -139,15 +147,16 @@ export default function GuildContactCard({
       {/* Contact Info */}
       <div className="flex items-start gap-3">
         {/* Avatar */}
-        {contactAny.photoURL ? (
+        {hasPhoto ? (
           <img
             src={contactAny.photoURL}
             alt={contactAny.fullName}
             className="w-12 h-12 rounded-xl object-cover border border-[var(--border)]"
+            onError={() => setImageError(true)}
           />
         ) : (
-          <div className="w-12 h-12 rounded-xl bg-[var(--primary)]/20 flex items-center justify-center border border-[var(--primary)]/30">
-            <User size={24} className="text-[var(--primary)]" />
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--primary)]/20 to-[var(--primary)]/5 flex items-center justify-center border border-[var(--primary)]/30 text-[var(--primary)] font-bold text-sm select-none">
+            {initials}
           </div>
         )}
 

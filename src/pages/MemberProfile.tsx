@@ -10,7 +10,7 @@ import {
   MapPin, Building2, Target, TrendingUp, DollarSign, Play, Clock, Archive
 } from 'lucide-react';
 import EmptyState from '../components/EmptyState';
-import { PAGE_SEO } from '../components/SEO';
+import SEO, { PAGE_SEO } from '../components/SEO';
 import { getPublicGuildProfilePath } from '../lib/guildIdentity';
 import { ecosystemLinks, getMemberNextActions } from '../lib/ecosystemLinks';
 import type { Organization, Need } from '../types/guild';
@@ -41,10 +41,7 @@ export default function MemberProfile() {
   const [orgNeeds, setOrgNeeds] = useState<Need[]>([]);
   const [loadingOrg, setLoadingOrg] = useState(false);
 
-  // SEO: Set page title
-  useEffect(() => {
-    document.title = isOrgRep ? 'Organization Profile' : PAGE_SEO.memberProfile.title;
-  }, [isOrgRep]);
+  // SEO: Managed dynamically via SEO component in returns
   const [activeTab, setActiveTab] = useState<'portfolio' | 'quests' | 'achievements' | 'needs'>('portfolio');
   const [questStats, setQuestStats] = useState<UserQuestStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
@@ -98,11 +95,6 @@ export default function MemberProfile() {
       async function loadOrgData() {
         setLoadingOrg(true);
         try {
-          // Debug: fetch ALL needs first
-          const allNeedsQuery = query(collection(db, 'needs'), where('archiveStatus', '==', 'active'));
-          const allNeedsSnap = await getDocs(allNeedsQuery);
-          console.log('[MemberProfile] ALL needs count:', allNeedsSnap.size);
-
           const orgQuery = query(collection(db, 'organizations'), where('ownerId', '==', userId));
           const orgSnap = await getDocs(orgQuery);
           if (!orgSnap.empty) {
@@ -110,10 +102,6 @@ export default function MemberProfile() {
             setUserOrg(orgData);
             // Fetch org needs
             const needs = await fetchOrganizationNeeds(orgData.id);
-            console.log('[MemberProfile] orgId:', orgData.id, '| needs found:', needs.length);
-            if (needs.length > 0) {
-              console.log('[MemberProfile] sample need:', needs[0]);
-            }
             setOrgNeeds(needs);
           }
         } catch (err) {
@@ -233,10 +221,14 @@ export default function MemberProfile() {
   // Show organization profile for org reps
   if (isOrgRep) {
     if (loadingOrg) {
-      return <div className="p-12 text-center text-xs text-[var(--text-muted)]">Loading organization profile...</div>;
+      return (
+        <><SEO title="Organization Profile" description="Manage and view organization settings." noIndex={true} />
+        <div className="p-12 text-center text-xs text-[var(--text-muted)]">Loading organization profile...</div></>
+      );
     }
 
     return (
+      <><SEO title={userOrg?.name ? `${userOrg.name} | Organization Profile` : "Organization Profile"} description="Manage and view organization settings." noIndex={true} />
       <div className="space-y-8 py-4 text-left max-w-5xl mx-auto animate-fade-up">
         {/* Organization Profile Header */}
         <div className="panel bg-gradient-to-br from-[var(--primary)]/10 to-[var(--card)] border border-[var(--primary)]/20 relative overflow-hidden">
@@ -342,7 +334,7 @@ export default function MemberProfile() {
             <span className="text-[10px] text-[var(--text-muted)]">Track results</span>
           </Link>
         </div>
-      </div>
+      </div></>
     );
   }
 
@@ -384,6 +376,7 @@ export default function MemberProfile() {
   };
 
   return (
+    <><SEO title={PAGE_SEO.memberProfile.title} description={PAGE_SEO.memberProfile.description} noIndex={true} />
     <div className="space-y-8 py-4 text-left max-w-5xl mx-auto animate-fade-up">
       {/* Profile Header */}
       <div className="panel bg-[var(--card)] relative overflow-hidden flex flex-col sm:flex-row gap-6 items-start sm:items-center">
@@ -440,21 +433,21 @@ export default function MemberProfile() {
 
       <section className="panel flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="eyebrow">Access Your Guild Card</p>
-          <h2 className="text-xl font-black tracking-tight">Open Guild Passport</h2>
+          <p className="eyebrow">Your Guild Passport</p>
+          <h2 className="text-xl font-black tracking-tight">Guild Passport</h2>
           <p className="mt-1 text-xs text-[var(--text-muted)]">
-            Your card opens a public, verified proof-of-work profile. Verified facts remain public for trust.
+            Your Guild Passport is your verified proof-of-work identity. Share it to showcase your skills, rank, and contributions.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link to="/guild-card" className="primary rounded-xl px-4 py-2 text-xs font-bold">
-            View Your Guild Card
+            View Guild Card
           </Link>
           <Link to={getPublicGuildProfilePath(profile)} className="secondary rounded-xl px-4 py-2 text-xs font-bold">
-            Open Passport
+            View Public Profile
           </Link>
           <Link to="/public-profile-settings" className="secondary rounded-xl px-4 py-2 text-xs font-bold">
-            Public Profile Settings
+            Profile Settings
           </Link>
         </div>
       </section>
@@ -547,7 +540,7 @@ export default function MemberProfile() {
               onClick={() => setActiveTab('quests')}
               className={`pb-3 px-4 font-bold text-xs border-b-2 cursor-pointer transition-all ${activeTab === 'quests' ? 'border-[var(--primary)] text-[var(--text)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text)]'}`}
             >
-              Completed Campaigns ({profile.completedQuests || 0})
+              Completed Quests ({profile.completedQuests || 0})
             </button>
             <button
               onClick={() => setActiveTab('achievements')}
@@ -697,7 +690,7 @@ export default function MemberProfile() {
             <div className="space-y-4">
               <h3 className="text-sm font-bold uppercase tracking-wider flex items-center gap-1.5">
                 <CheckCircle size={15} className="text-emerald-500" />
-                Completed Campaign Logs
+                Completed Quest History
               </h3>
 
               {loadingStats ? (
@@ -862,6 +855,6 @@ export default function MemberProfile() {
           )}
         </div>
       </div>
-    </div>
+    </div></>
   );
 }

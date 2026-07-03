@@ -6,8 +6,8 @@ export default function Impact() {
   // Public impact statistics
   const stats = {
     organizationsServed: 127,
-    activeMembers: 952,
-    questsCompleted: 2334,
+    activeMembers: 950,
+    questsCompleted: 2330,
     outcomesDelivered: 486,
     knowledgeProduced: 124,
     trustScore: 98
@@ -79,6 +79,7 @@ export default function Impact() {
       {/* Success Stories */}
       <section className="space-y-4">
         <h2 className="text-xl font-bold uppercase tracking-wider">Success Stories</h2>
+        <p className="text-xs text-[var(--text-muted)] italic">Illustrative examples — representative of the types of outcomes Guild enables.</p>
 
         <div className="grid md:grid-cols-2 gap-4">
           {[
@@ -124,7 +125,7 @@ export default function Impact() {
         <div className="panel p-8 rounded-2xl border border-[var(--primary)]/30 bg-[var(--primary)]/5">
           <h2 className="text-2xl font-bold mb-2">Ready to transform your needs?</h2>
           <p className="text-sm text-[var(--text-secondary)] mb-6">Join organizations already benefiting from Guild's community power.</p>
-          <Link to="/org-onboarding" className="primary px-6 py-3 rounded-xl font-bold inline-flex items-center gap-2">
+          <Link to="/org-register" className="primary px-6 py-3 rounded-xl font-bold inline-flex items-center gap-2">
             Register Your Organization <ArrowRight size={16} />
           </Link>
         </div>

@@ -74,11 +74,11 @@ export default function MyQuestWorkspace() {
                 setQuestCreator({ fullName: data.fullName, role: data.role });
               }
             } catch (e) {
-              console.log('[MyQuestWorkspace] Error loading creator:', e);
+              console.warn('[MyQuestWorkspace] Error loading creator:', e);
             }
           }
         } else {
-          console.log('[MyQuestWorkspace] Quest not found:', questId);
+          console.warn('[MyQuestWorkspace] Quest not found:', questId);
         }
       } catch (err) {
         console.error('[MyQuestWorkspace] Error loading:', err);

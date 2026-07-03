@@ -98,7 +98,7 @@ export default function GuildCardPage() {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="eyebrow text-[var(--primary)]">Guild Card</p>
-            <h1 className="mt-1 text-2xl font-black tracking-tight md:text-3xl lg:text-4xl">Adventurer Passport</h1>
+            <h1 className="mt-1 text-2xl font-black tracking-tight md:text-3xl lg:text-4xl">Guild Passport</h1>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-[var(--text-muted)]">
               Your premium digital identity card. Share your verified identity, quest proofs, outcomes, and contribution record with anyone.
             </p>
@@ -150,10 +150,7 @@ export default function GuildCardPage() {
                 <Download size={14} />
                 Download QR Code
               </a>
-              <button type="button" className="btn-outline flex items-center justify-center gap-2">
-                <RefreshCw size={14} />
-                Refresh QR
-              </button>
+
             </div>
           </section>
 
@@ -192,11 +189,9 @@ export default function GuildCardPage() {
               <QrCode size={16} className="text-[var(--primary)]" />
               <h2 className="text-lg font-bold">Analytics</h2>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <StatTile icon={<Eye size={16} />} label="Profile Views" value="0" description="This week" />
-              <StatTile icon={<QrCode size={16} />} label="QR Scans" value="0" description="This week" />
-              <StatTile icon={<Share2 size={16} />} label="Shares" value="0" description="This week" />
-              <StatTile icon={<Users size={16} />} label="Profile Visits" value="0" description="This week" />
+            <div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--card-subtle)] p-6 text-center">
+              <p className="text-xs font-bold text-[var(--text-muted)]">Analytics coming soon</p>
+              <p className="mt-1 text-[10px] text-[var(--text-muted)]">Profile views, QR scans, and share tracking will appear here.</p>
             </div>
           </section>
 
@@ -230,7 +225,7 @@ export default function GuildCardPage() {
                 </li>
               </ul>
             </div>
-            <Link to="/profile/edit" className="btn-primary mt-4 w-full justify-center">
+            <Link to="/settings" className="btn-primary mt-4 w-full justify-center">
               <UserPlus size={14} />
               Complete Profile
             </Link>

@@ -1,11 +1,20 @@
 User-agent: *
 Allow: /
-Allow: /quests
-Allow: /organizations
-Allow: /branches
-Allow: /docs
-Disallow: /onboarding
 Disallow: /settings
+Disallow: /org-onboarding
+Disallow: /org-dashboard
+Disallow: /org-team
+Disallow: /org-outcomes
+Disallow: /my-quests
+Disallow: /my-needs
+Disallow: /quest-center
+Disallow: /quest-applications
+Disallow: /onboarding
+Disallow: /org-messages
+Disallow: /submission-reviews
+Disallow: /need-review
+Disallow: /need-submit
+Disallow: /public-profile-settings
 Disallow: /verification
 
-Sitemap: https://guild-v3.firebaseapp.com/sitemap.xml
+Sitemap: https://guild.com/sitemap.xml

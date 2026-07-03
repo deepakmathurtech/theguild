@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { fetchKnowledgeBase } from '../lib/repository';
 import type { KnowledgeRecord } from '../types/guild';
 import EmptyState from '../components/EmptyState';
-import { Search, BookOpen, Tag, Calendar, FileText, ArrowRight } from 'lucide-react';
+import { Search, BookOpen, Tag, Calendar, FileText, ArrowRight, X } from 'lucide-react';
 import SEO, { PAGE_SEO } from '../components/SEO';
 
 const KNOWLEDGE_TYPES = ['All', 'playbook', 'lesson', 'successStory', 'template', 'organizationInsight'];
@@ -11,10 +11,28 @@ export default function KnowledgeHub() {
   const [docs, setDocs] = useState<KnowledgeRecord[]>([]);
   const [filteredDocs, setFilteredDocs] = useState<KnowledgeRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDoc, setSelectedDoc] = useState<KnowledgeRecord | null>(null);
 
   // Search & Filter state
   const [search, setSearch] = useState('');
   const [docType, setDocType] = useState('All');
+
+  const formatType = (t: string) => {
+    const mapping: Record<string, string> = {
+      All: 'All Docs',
+      playbook: 'Playbook',
+      PLAYBOOK: 'Playbook',
+      lesson: 'Lesson Learned',
+      LESSON: 'Lesson Learned',
+      successStory: 'Success Story',
+      SUCCESSSTORY: 'Success Story',
+      template: 'Template',
+      TEMPLATE: 'Template',
+      organizationInsight: 'Organization Insight',
+      ORGANIZATIONINSIGHT: 'Organization Insight'
+    };
+    return mapping[t] || (t.charAt(0).toUpperCase() + t.slice(1).replace(/([A-Z])/g, ' $1'));
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -80,7 +98,7 @@ export default function KnowledgeHub() {
               onClick={() => setDocType(t)}
               className={`px-3.5 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition-all ${docType === t ? 'bg-[var(--primary)] text-black border-transparent font-bold' : 'border-[var(--border)] hover:border-[var(--border-light)] text-[var(--text-secondary)]'}`}
             >
-              {t === 'All' ? 'All Docs' : t.toUpperCase()}
+              {formatType(t)}
             </button>
           ))}
         </div>
@@ -94,8 +112,8 @@ export default function KnowledgeHub() {
           {filteredDocs.map(d => (
             <div key={d.id} className="panel p-5 bg-[var(--card)] border border-[var(--border)] rounded-xl space-y-4 hover:shadow-md transition-shadow">
               <div className="space-y-1.5">
-                <span className="text-[9px] uppercase font-bold text-[var(--primary)] bg-[var(--primary)]/10 px-2 py-0.5 rounded border border-[var(--primary)]/20">
-                  {d.type}
+                <span className="text-[9px] uppercase font-bold text-[var(--primary)] bg-[var(--primary)]/10 px-2.5 py-0.5 rounded border border-[var(--primary)]/20">
+                  {formatType(d.type)}
                 </span>
                 <h3 className="text-base font-extrabold line-clamp-1">{d.title}</h3>
                 <p className="text-xs text-[var(--text-muted)] leading-relaxed line-clamp-3">
@@ -117,7 +135,7 @@ export default function KnowledgeHub() {
               <div className="border-t border-[var(--border)] pt-3 flex justify-between items-center text-xs">
                 <span className="text-[var(--text-muted)] flex items-center gap-1"><Calendar size={11} /> Updated {new Date(d.createdAt).toLocaleDateString()}</span>
                 <button
-                  onClick={() => alert(`Playbook Detail: ${d.title}\n\nLessons Learned:\n${d.lessonsLearned}\n\nAdvice:\n${d.advice}`)}
+                  onClick={() => setSelectedDoc(d)}
                   className="text-[var(--primary)] font-bold hover:underline flex items-center gap-0.5"
                 >
                   Read Document <ArrowRight size={12} />
@@ -131,13 +149,68 @@ export default function KnowledgeHub() {
           title="No Documents Registered"
           description="We couldn't find any published templates or playbooks matching your query."
           whyItMatters="Playbooks are posted automatically when members submit Quest reports. If no member has published under this tag, the directory remains blank."
-          actionText="Reset Filter Config"
+          actionText="Clear Filters"
           onAction={() => {
             setSearch('');
             setDocType('All');
           }}
           icon={<BookOpen size={22} />}
         />
+      )}
+
+      {selectedDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="panel bg-[var(--card)] border border-[var(--border)] max-w-2xl w-full max-h-[85vh] overflow-y-auto flex flex-col p-6 space-y-4 rounded-2xl animate-fade-up">
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="text-[9px] uppercase font-bold text-[var(--primary)] bg-[var(--primary)]/10 px-2 py-0.5 rounded border border-[var(--primary)]/20">
+                  {formatType(selectedDoc.type)}
+                </span>
+                <h2 className="text-xl font-extrabold text-[var(--text)] mt-1.5">{selectedDoc.title}</h2>
+              </div>
+              <button
+                onClick={() => setSelectedDoc(null)}
+                className="p-1.5 rounded-lg hover:bg-[var(--card-subtle)] text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+                aria-label="Close document"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            <div className="space-y-4 text-xs text-[var(--text-secondary)] leading-relaxed">
+              <div>
+                <strong className="block text-[var(--text)] font-semibold mb-1">Lessons Learned:</strong>
+                <p className="bg-[var(--card-subtle)] p-3.5 rounded-xl border border-[var(--border)] whitespace-pre-wrap">{selectedDoc.lessonsLearned || 'No lessons documented.'}</p>
+              </div>
+
+              {selectedDoc.advice && (
+                <div>
+                  <strong className="block text-[var(--text)] font-semibold mb-1">Advice & Playbook Checklist:</strong>
+                  <p className="bg-[var(--card-subtle)] p-3.5 rounded-xl border border-[var(--border)] whitespace-pre-wrap">{selectedDoc.advice}</p>
+                </div>
+              )}
+
+              {selectedDoc.tags && selectedDoc.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-2">
+                  {selectedDoc.tags.map(tag => (
+                    <span key={tag} className="text-[9px] text-[var(--text-muted)] font-bold flex items-center gap-0.5 bg-[var(--card-subtle)] px-2 py-0.5 rounded border border-[var(--border)]">
+                      <Tag size={8} /> {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-[var(--border)]">
+              <button
+                onClick={() => setSelectedDoc(null)}
+                className="secondary px-4 py-2 rounded-xl text-xs font-bold"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div></>
   );

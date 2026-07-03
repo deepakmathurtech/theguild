@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PAGE_SEO } from '../components/SEO';
+import SEO, { PAGE_SEO } from '../components/SEO';
 import { useAuth } from '../context/AuthContext';
 import { fetchQuests } from '../lib/repository';
 import type { Quest } from '../types/guild';
@@ -19,13 +19,6 @@ export default function QuestBoard() {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [filteredQuests, setFilteredQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // SEO: Set page title
-  useEffect(() => {
-    document.title = PAGE_SEO.quests.title;
-    const descEl = document.querySelector('meta[name="description"]');
-    if (descEl) descEl.setAttribute('content', PAGE_SEO.quests.description);
-  }, []);
 
   // Search & Filter State
   const [search, setSearch] = useState('');
@@ -106,6 +99,7 @@ export default function QuestBoard() {
   );
 
   return (
+    <><SEO {...PAGE_SEO.quests} />
     <div className="space-y-8 py-4 text-left max-w-5xl mx-auto animate-fade-up">
       {/* Header */}
       <div>
@@ -141,7 +135,7 @@ export default function QuestBoard() {
             >
               <option disabled>Category</option>
               {CATEGORIES.map(c => (
-                <option key={c} value={c}>{c === 'All' ? 'All Paths' : c.toUpperCase()}</option>
+                <option key={c} value={c}>{c === 'All' ? 'All Paths' : (c.charAt(0).toUpperCase() + c.slice(1))}</option>
               ))}
             </select>
           </div>
@@ -155,7 +149,7 @@ export default function QuestBoard() {
             >
               <option disabled>Difficulty</option>
               {DIFFICULTIES.map(d => (
-                <option key={d} value={d}>{d === 'All' ? 'All Difficulties' : d.toUpperCase()}</option>
+                <option key={d} value={d}>{d === 'All' ? 'All Difficulties' : (d.charAt(0).toUpperCase() + d.slice(1))}</option>
               ))}
             </select>
           </div>
@@ -195,7 +189,7 @@ export default function QuestBoard() {
       {/* Quest Grid */}
       {loading ? (
         <div className="p-12 text-center text-xs text-[var(--text-muted)] font-semibold">
-          Fetching quests from ledger database...
+          Loading active quests...
         </div>
       ) : filteredQuests.length > 0 ? (
         <div className="grid md:grid-cols-2 gap-6">
@@ -222,17 +216,21 @@ export default function QuestBoard() {
 
                   <div>
                     <h3 className="text-base font-extrabold line-clamp-1">{q.title}</h3>
-                    <p className="text-xs text-[var(--text-muted)] leading-relaxed mt-1 line-clamp-3">{q.description}</p>
+                    <p className="text-xs text-[var(--text-muted)] leading-relaxed line-clamp-3 mt-1.5">{q.description}</p>
                   </div>
 
-                  {/* Skills required */}
                   {q.requiredSkills && q.requiredSkills.length > 0 && (
                     <div className="flex flex-wrap gap-1 pt-1">
-                      {q.requiredSkills.map(skill => (
-                        <span key={skill} className="text-[9px] font-bold text-[var(--text-secondary)] bg-[var(--card-subtle)] px-2 py-0.5 rounded">
-                          {skill}
+                      {q.requiredSkills.slice(0, 3).map(s => (
+                        <span key={s} className="text-[9px] text-[var(--text-muted)] font-semibold bg-[var(--card-subtle)] px-2 py-0.5 rounded border border-[var(--border)]">
+                          {s}
                         </span>
                       ))}
+                      {q.requiredSkills.length > 3 && (
+                        <span className="text-[9px] text-[var(--text-muted)] font-semibold bg-[var(--card-subtle)] px-2 py-0.5 rounded border border-[var(--border)]">
+                          +{q.requiredSkills.length - 3} more
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -254,7 +252,7 @@ export default function QuestBoard() {
                     to={`/quests/${q.id}`}
                     className="btn-premium btn-premium-secondary focus-ring-premium px-4 py-1.5 rounded-lg text-xs font-bold touch-target"
                   >
-                    {hasApplied ? 'Review Application' : 'View Details'}
+                    {hasApplied ? 'View Your Application' : 'View Details'}
                   </Link>
                 </div>
               </div>
@@ -266,7 +264,7 @@ export default function QuestBoard() {
           title="No Quests Found"
           description="We couldn't find any active quests matching your search query or filter selection."
           whyItMatters="The Quest Board updates dynamically as local organizations post operations. If filters are too restrictive, opportunities will be hidden."
-          actionText="Reset Filter Config"
+          actionText="Clear Filters"
           onAction={() => {
             setSearch('');
             setCategory('All');
@@ -312,6 +310,6 @@ export default function QuestBoard() {
           </div>
         </div>
       )}
-    </div>
+    </div></>
   );
 }

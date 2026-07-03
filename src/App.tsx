@@ -138,6 +138,10 @@ function AppShell() {
   // Standalone mode for the landing page when guest is viewing
   const isLandingPageStandalone = location.pathname === '/' && !firebaseUser;
 
+  const visibleNavItems = firebaseUser || profile
+    ? navItems.filter((item) => item.to !== '/org-register')
+    : navItems;
+
   if (isLandingPageStandalone) {
     return (
       <div className="bg-[var(--bg)] text-[var(--text)] min-h-screen">
@@ -156,7 +160,7 @@ function AppShell() {
           </div>
           <div>
             <strong className="block text-sm font-bold tracking-tight">GUILD</strong>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">V3 Platform</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Ecosystem</span>
           </div>
         </div>
 
@@ -193,7 +197,7 @@ function AppShell() {
             <p className="px-4 mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-60">
               Core
             </p>
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const Icon = item.icon;
               return (
                 <NavLink
@@ -287,7 +291,7 @@ function AppShell() {
               </div>
               <div>
                 <strong className="block font-bold">GUILD</strong>
-                <span className="text-xs text-[var(--text-muted)]">V3 Platform</span>
+                <span className="text-xs text-[var(--text-muted)]">Ecosystem</span>
               </div>
             </div>
             <button
@@ -327,7 +331,7 @@ function AppShell() {
               </>
             ) : (
             <>
-              {navItems.map((item) => {
+              {visibleNavItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <NavLink
@@ -403,10 +407,10 @@ function AppShell() {
         <header className="flex items-center justify-between h-16 mb-6 shrink-0">
           {/* Desktop: Just shows content area title */}
           <div className="hidden md:block">
-            <h1 className="text-xl font-bold tracking-tight">GUILD Dashboard</h1>
+            <h1 className="text-xl font-bold tracking-tight">Workspace</h1>
             <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
               <span className="w-2 h-2 rounded-full bg-[var(--success)] animate-pulse" />
-              Ready for Growth
+              Ecosystem Active
             </div>
           </div>
 
@@ -525,16 +529,31 @@ function RoleRoute({ children, requiredRole }: { children: React.ReactNode; requ
   if (!hasAccess) {
     // Generate redirect URL based on whether onboarding is completed
     const redirectPath = !profile.onboardingCompleted ? '/onboarding' : '/';
-    const roleDisplay = profile.role || 'Member';
+    const formatRoleName = (r: string) => {
+      const mapping: Record<string, string> = {
+        member: 'Member',
+        organizationRepresentative: 'Organization Representative',
+        organization: 'Organization Partner',
+        receptionist: 'Branch Receptionist',
+        cityGuildMaster: 'City Guild Master',
+        stateGuildMaster: 'State Guild Master',
+        centralGuildMaster: 'Central Guild Master',
+        guildFounder: 'Guild Founder',
+        founder: 'Founder'
+      };
+      return mapping[r] || (r.charAt(0).toUpperCase() + r.slice(1).replace(/([A-Z])/g, ' $1'));
+    };
+
+    const roleDisplay = formatRoleName(profile.role || 'member');
 
     // Build context-specific guidance based on required role strings (case-insensitive)
     let guidance = 'Return to your dashboard to continue.';
     const requiredRoleStr = requiredRole.join(' ').toLowerCase();
-    const currentRole = roleDisplay.toLowerCase();
+    const currentRole = (profile.role || 'member').toLowerCase();
     if (requiredRoleStr.includes('organizationrepresentative') && currentRole === 'member') {
-      guidance = 'Organization Representative access requires account conversion. Visit /org-landing to start the conversion process.';
+      guidance = 'Organization Representative access requires account registration. Visit the Partner portal to get started.';
     } else if (requiredRoleStr.includes('receptionist') && currentRole === 'member') {
-      guidance = 'Receptionist access requires verification. Contact your local branch for receptionist certification.';
+      guidance = 'Receptionist access requires authorization. Contact your local branch for reception certification.';
     } else if (requiredRoleStr.includes('cityguildmaster') && currentRole === 'receptionist') {
       guidance = 'City Guild Master role required. Progress through the Guild ranks to qualify.';
     }
@@ -543,7 +562,7 @@ function RoleRoute({ children, requiredRole }: { children: React.ReactNode; requ
       <div className="p-12 text-center max-w-md mx-auto">
         <h2 className="text-xl font-bold text-[var(--text)]">Restricted Access</h2>
         <p className="text-xs text-[var(--text-muted)] mt-3">
-          This page requires: <span className="text-[var(--primary)] font-bold">{requiredRole.join(' or ')}</span>
+          This page requires: <span className="text-[var(--primary)] font-bold">{requiredRole.map(formatRoleName).join(' or ')}</span>
         </p>
         <p className="text-xs text-[var(--text-secondary)] mt-2 leading-relaxed">
           Your current access level: <span className="text-[var(--text)] font-semibold">{roleDisplay}</span>

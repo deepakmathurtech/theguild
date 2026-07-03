@@ -3,18 +3,16 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ShieldCheck, ArrowRight, Target, BookOpen, Building, MessageSquare, Clipboard, Award, CheckCircle, Users, Workflow, BadgeCheck } from 'lucide-react';
-import { PAGE_SEO } from '../components/SEO';
+import SEO, { PAGE_SEO } from '../components/SEO';
 
 export default function OrgLanding() {
   const { profile } = useAuth();
-  const registerPath = profile ? '/org-onboarding' : '/org-register';
-
-  // SEO: Set page title
-  useEffect(() => {
-    document.title = PAGE_SEO.orgLanding.title;
-  }, []);
+  const registerPath = profile?.role === 'organizationRepresentative' || profile?.role === 'organization'
+    ? '/org-dashboard'
+    : '/org-register';
 
   return (
+    <><SEO {...PAGE_SEO.orgLanding} />
     <div className="space-y-10 py-4 text-left max-w-6xl mx-auto animate-fade-up">
       <section className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 md:p-10">
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[var(--primary)] via-[var(--accent)] to-emerald-500" />

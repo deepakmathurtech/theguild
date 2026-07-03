@@ -435,14 +435,6 @@ export default function VerifiedGuildCard({ profile, profileUrl, label = 'Guild 
                   <p className="text-xs font-medium text-[var(--text)]">Scan to view verified passport</p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={refreshQr}
-                className="rounded-lg p-2 hover:bg-[var(--card)] transition-colors"
-                aria-label="Refresh QR code"
-              >
-                <RefreshCw size={14} className="text-[var(--text-muted)]" />
-              </button>
             </div>
             <div className="mt-3 flex justify-center">
               <div className="rounded-lg border border-[var(--border)] bg-white p-3">

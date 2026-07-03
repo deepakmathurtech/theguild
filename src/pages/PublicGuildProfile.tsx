@@ -202,7 +202,7 @@ export default function PublicGuildProfile() {
                 <p className="eyebrow">Guild Passport</p>
                 <h1 className="text-3xl font-black tracking-tight sm:text-4xl">{user.fullName}</h1>
                 <p className="mt-1 text-sm font-bold text-[var(--primary)]">
-                  {publicProfile.headline || `Rank ${user.guildRank || 'F'} verified Guild contributor`}
+                  {publicProfile.headline || `Guild Member · Rank ${user.guildRank || 'F'}`}
                 </p>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--text-secondary)]">
                   {visibility.showBio
@@ -285,7 +285,7 @@ export default function PublicGuildProfile() {
             <div className="mt-4 grid gap-3 text-sm">
               <IdentityRow icon={<MapPin size={15} />} label="Branch" value={user.branchName || user.jurisdiction?.cityName || 'Branch pending'} />
               <IdentityRow icon={<Calendar size={15} />} label="Guild Since" value={user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unavailable'} />
-              <IdentityRow icon={<Award size={15} />} label="Current Role" value={user.role || 'member'} />
+              <IdentityRow icon={<Award size={15} />} label="Current Role" value={user.role ? (user.role === 'organizationRepresentative' ? 'Organization Representative' : user.role === 'receptionist' ? 'Branch Receptionist' : user.role === 'cityGuildMaster' ? 'City Guild Master' : user.role === 'stateGuildMaster' ? 'State Guild Master' : user.role === 'centralGuildMaster' ? 'Central Guild Master' : user.role.charAt(0).toUpperCase() + user.role.slice(1).replace(/([A-Z])/g, ' $1')) : 'Member'} />
             </div>
           </div>
         </section>

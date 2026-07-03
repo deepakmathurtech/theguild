@@ -268,7 +268,7 @@ function InteractiveFederationNetwork({ pointer, reducedMotion }: { pointer: { x
           <div className="cg-floating-card cg-card-top-right">
             <div className="cg-card-glow" />
             <div className="cg-card-title">Chapter Hub</div>
-            <div className="cg-card-subtitle">Active nodes in space</div>
+            <div className="cg-card-subtitle">Active branch coordinates</div>
           </div>
           <div className="cg-floating-card cg-card-bottom-left">
             <div className="cg-card-glow" />
@@ -783,7 +783,7 @@ export default function CinematicGuildLanding() {
                 </Link>
                 <Link to="/org-register" className="cg-ctaSecondary">Partner With Us</Link>
               </div>
-              <p className="cg-finalFinePrint">This is a presentation layer experience. Your account, routing, and data remain unchanged.</p>
+              <p className="cg-finalFinePrint">Build verified proof of work, unlock career credentials, and coordinate community outcomes.</p>
             </div>
           </section>
         </main>
@@ -792,7 +792,7 @@ export default function CinematicGuildLanding() {
           <div className="cg-footerInner">
             <span className="cg-footerBrand">The Guild</span>
             <span className="cg-footerSep">•</span>
-            <span className="cg-footerSmall">Operating-system style entry experience</span>
+            <span className="cg-footerSmall">Civilization-oriented work verification platform</span>
             <span className="cg-footerSep">•</span>
             <Link to="/privacy" className="cg-footerLink">Privacy</Link>
             <Link to="/terms" className="cg-footerLink">Terms</Link>
