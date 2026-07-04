@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import SEO, { PAGE_SEO } from '../components/SEO';
+import { Mail, Phone, ArrowRight } from 'lucide-react';
 
 type InfoSection = {
   title: string;
@@ -31,16 +32,28 @@ const pages: Record<string, InfoPageContent> = {
     action: { label: 'Partner With Us', to: '/org-register' }
   },
   contact: {
-    title: 'Contact',
-    summary: 'Reach Guild for organization partnerships, member support, public inquiries, and operational questions.',
+    title: 'Contact Us',
+    summary: 'Connect with The Central Guild for organization partnerships, member support, public inquiries, and operational questions.',
     sections: [
       {
-        title: 'Primary Contact',
-        body: 'For support, email support@guild.example with your account email, organization name if applicable, and a clear description of the issue.'
+        title: 'Get In Touch',
+        body: 'We\'re here to help with your questions and support needs. Reach out via email or phone during business hours.'
+      },
+      {
+        title: 'Email',
+        body: 'thecentralguild@gmail.com - Send us your account email, organization name if applicable, and a clear description of your inquiry.'
+      },
+      {
+        title: 'Phone',
+        body: '+1 (917) 626-9138 - Call us for urgent matters, account support, or partnership opportunities.'
       },
       {
         title: 'Response Standard',
-        body: 'Urgent account and active quest issues are prioritized. General inquiries are reviewed by the appropriate Guild operator.'
+        body: 'Urgent account and active quest issues are prioritized within 24 hours. General inquiries and partnership requests are reviewed by our team and responded to within 2-3 business days.'
+      },
+      {
+        title: 'What to Include',
+        body: 'Please provide screenshots when relevant, the affected quest or need link, the action you were trying to complete, and your preferred contact method for follow-up.'
       }
     ]
   },
@@ -165,6 +178,7 @@ const pages: Record<string, InfoPageContent> = {
 export default function PublicInfoPage() {
   const slug = useLocation().pathname.replace('/', '') || 'about';
   const page = pages[slug] || pages.about;
+  const isContactPage = slug === 'contact';
 
   return (
     <>
@@ -175,6 +189,42 @@ export default function PublicInfoPage() {
           <h1 className="text-3xl font-black tracking-tight">{page.title}</h1>
           <p className="mt-3 text-sm text-[var(--text-secondary)] leading-relaxed max-w-2xl">{page.summary}</p>
         </div>
+
+        {isContactPage && (
+          <div className="grid md:grid-cols-2 gap-4 mb-8">
+            {/* Email Contact Card */}
+            <a href="mailto:thecentralguild@gmail.com" className="group panel p-6 rounded-2xl hover:bg-[var(--card-hover)] transition-colors cursor-pointer border border-[var(--border-subtle)] hover:border-[var(--primary)]">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-xl bg-[var(--primary)]/10 group-hover:bg-[var(--primary)]/20 transition-colors">
+                  <Mail className="w-6 h-6 text-[var(--primary)]" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-base mb-1">Email</h3>
+                  <p className="text-sm text-[var(--text-secondary)] mb-3">thecentralguild@gmail.com</p>
+                  <span className="text-xs font-semibold text-[var(--primary)] flex items-center gap-1 group-hover:gap-2 transition-all">
+                    Send Email <ArrowRight className="w-3 h-3" />
+                  </span>
+                </div>
+              </div>
+            </a>
+
+            {/* Phone Contact Card */}
+            <a href="tel:+19176269138" className="group panel p-6 rounded-2xl hover:bg-[var(--card-hover)] transition-colors cursor-pointer border border-[var(--border-subtle)] hover:border-[var(--primary)]">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-xl bg-[var(--primary)]/10 group-hover:bg-[var(--primary)]/20 transition-colors">
+                  <Phone className="w-6 h-6 text-[var(--primary)]" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-base mb-1">Phone</h3>
+                  <p className="text-sm text-[var(--text-secondary)] mb-3">+1 (917) 626-9138</p>
+                  <span className="text-xs font-semibold text-[var(--primary)] flex items-center gap-1 group-hover:gap-2 transition-all">
+                    Call Us <ArrowRight className="w-3 h-3" />
+                  </span>
+                </div>
+              </div>
+            </a>
+          </div>
+        )}
 
         <div className="grid gap-4">
           {page.sections.map((section) => (

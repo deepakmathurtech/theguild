@@ -53,6 +53,8 @@ const GrowthDashboard = lazy(() => import('./pages/GrowthDashboard'));
 const NeedReviewQueue = lazy(() => import('./pages/NeedReviewQueue'));
 const SubmissionReviewQueue = lazy(() => import('./pages/SubmissionReviewQueue'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const OrganizationsFlyerLanding = lazy(() => import('./landingpage/OrganizationsFlyerLanding'));
+
 
 // Error fallback for failed dynamic imports
 function ErrorFallback({ error, resetError }: { error: Error; resetError: () => void }) {
@@ -680,7 +682,11 @@ const routerConfig = createBrowserRouter([
             { path: '/need-reviews', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><NeedReviewQueue /></RoleRoute> },
       { path: '/org-management', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><SubmissionReviewQueue /></RoleRoute> },
       { path: '/:guildId', element: <PublicGuildProfile /> },
+      { path: '/organizations-flyer-landing', element: <OrganizationsFlyerLanding /> },
+      // Backward-compatible typo route
+      { path: '/organizations-flyer-landig', element: <OrganizationsFlyerLanding /> },
       { path: '*', element: <NotFound /> }
+
     ]
   }
 ]);

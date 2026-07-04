@@ -704,7 +704,7 @@ export default function CinematicGuildLanding() {
           <section className="cg-section cg-statsSection" aria-label="Guild statistics">
             <div className="cg-sectionHeader">
               <div className="cg-eyebrow">Operating Metrics</div>
-              <h2 className="cg-h2">A system that compounds progress.</h2>
+              <h2 className="cg-h2">Measured work. Proven outcomes. Compounding trust.</h2>
             </div>
 
             <div ref={statsRef} className="cg-statsGrid">
