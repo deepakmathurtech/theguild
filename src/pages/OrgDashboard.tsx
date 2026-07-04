@@ -75,7 +75,19 @@ export default function OrgDashboard() {
           // Fetch receptionist for this organization
           if (orgData.assignedReceptionistId) {
             const rec = await fetchReceptionistById(orgData.assignedReceptionistId);
-            setManager(rec);
+            if (rec) {
+              setManager(rec);
+            } else {
+              // Use assigned name when record lookup fails, or fallback to a random receptionist
+              setManager({
+                uid: orgData.assignedReceptionistId,
+                fullName: orgData.assignedReceptionistName || 'Guild Representative',
+                role: 'Guild Representative',
+                email: '',
+                phone: '',
+                photoURL: ''
+              });
+            }
           } else {
             // Fallback to random receptionist
             setManager(getRandomReceptionist());
@@ -520,23 +532,34 @@ export default function OrgDashboard() {
 
           {/* Manager Card - Show if assigned */}
           {org.assignedReceptionistId && manager ? (
-            <div className="flex gap-3.5 items-center bg-[var(--card-subtle)] p-3.5 rounded-xl border border-[var(--border)]">
-              <div className="w-12 h-12 rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--card-subtle)] flex-shrink-0">
-                {manager.photoURL ? (
-
-                  <img src={manager.photoURL} alt={manager.fullName} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-[var(--primary)] font-bold">
-                    {manager.fullName?.charAt(0) || 'R'}
-                  </div>
-                )}
+            <div className="bg-[var(--card-subtle)] p-3.5 rounded-xl border border-[var(--border)]">
+              <div className="flex gap-3.5 items-center">
+                <div className="w-12 h-12 rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--card-subtle)] flex-shrink-0">
+                  {manager.photoURL ? (
+                    <img src={manager.photoURL} alt={manager.fullName} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[var(--primary)] font-bold">
+                      {manager.fullName?.charAt(0) || 'R'}
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <strong className="text-sm font-bold text-[var(--text)] block leading-tight">{manager.fullName}</strong>
+                  <span className="text-[10px] text-[var(--text-muted)] block mt-0.5">{manager.role}</span>
+                  <p className="text-[10px] text-[var(--text-secondary)] mt-1.5">Reach out directly via phone or email.</p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <strong className="text-sm font-bold text-[var(--text)] block leading-tight">{manager.fullName}</strong>
-                <span className="text-[10px] text-[var(--text-muted)] block mt-0.5">{manager.role}</span>
-                <Link to={ecosystemLinks.passport(manager.uid || org.assignedReceptionistId)} className="text-[10px] text-[var(--primary)] font-bold mt-1.5 inline-flex items-center gap-1 hover:underline">
-                  <Calendar size={11} /> Your Guild Representative
-                </Link>
+              <div className="mt-4 grid gap-2 text-[12px] text-[var(--text-secondary)]">
+                {manager.phone && (
+                  <a href={`tel:${manager.phone}`} className="inline-flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--primary)]">
+                    <Phone size={14} /> {manager.phone}
+                  </a>
+                )}
+                {manager.email && (
+                  <a href={`mailto:${manager.email}`} className="inline-flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--primary)]">
+                    <Mail size={14} /> {manager.email}
+                  </a>
+                )}
               </div>
             </div>
           ) : (

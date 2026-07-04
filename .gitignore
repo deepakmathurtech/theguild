@@ -10,8 +10,22 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+.vite
+coverage
+/docs/
 *.local
 .env
+.env.*
+!.env.example
+
+# Local tool config
+.claude/*.local.json
+
+# Temporary files
+tmp
+temp
+.cache
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

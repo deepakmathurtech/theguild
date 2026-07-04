@@ -163,7 +163,22 @@ export async function fetchReceptionists(): Promise<Receptionist[]> {
 
 // Fetch a specific receptionist by ID
 export async function fetchReceptionistById(uid: string): Promise<Receptionist | null> {
+  if (!uid) return null;
   try {
+    // Try direct document fetch first; user docs are keyed by uid.
+    const userSnapshot = await getDoc(doc(db, 'users', uid));
+    if (userSnapshot.exists()) {
+      const data = userSnapshot.data();
+      return {
+        uid: data.uid || uid,
+        fullName: data.fullName || data.displayName || 'Receptionist',
+        role: data.role || 'Receptionist',
+        email: data.email,
+        phone: data.phone,
+        photoURL: data.photoURL
+      } as Receptionist;
+    }
+
     const q = query(collection(db, 'users'), where('uid', '==', uid), limit(1));
     const snapshot = await getDocs(q);
     if (snapshot.empty) {

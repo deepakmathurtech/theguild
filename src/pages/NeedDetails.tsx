@@ -3,9 +3,9 @@ import { useParams, Link } from 'react-router-dom';
 import { db } from '../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
-import { RECEPTIONISTS } from '../lib/repository';
+import { RECEPTIONISTS, fetchReceptionistById } from '../lib/repository';
 import GuildContactCard from '../components/GuildContactCard';
-import type { Need, Quest, Opportunity } from '../types/guild';
+import type { Need, Quest, Opportunity, Receptionist } from '../types/guild';
 import { ArrowLeft, Clock, FileText, ChevronRight, CheckCircle, AlertCircle, Loader, ArrowDown, Briefcase, Target, Award, Circle } from 'lucide-react';
 
 const STATUS_LABELS: Record<string, { label: string; desc: string; color: string }> = {
@@ -32,6 +32,7 @@ export default function NeedDetails() {
   const [need, setNeed] = useState<Need | null>(null);
   const [linkedQuest, setLinkedQuest] = useState<Quest | null>(null);
   const [linkedOpportunity, setLinkedOpportunity] = useState<Opportunity | null>(null);
+  const [receptionist, setReceptionist] = useState<Receptionist | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -58,6 +59,24 @@ export default function NeedDetails() {
               setLinkedOpportunity({ id: oppSnap.id, ...oppSnap.data() } as Opportunity);
             }
           }
+
+          // Load assigned receptionist from the user store if possible
+          let receptionistRecord: Receptionist | null = null;
+          if (needData.assignedReceptionistId) {
+            receptionistRecord = await fetchReceptionistById(needData.assignedReceptionistId);
+          }
+          setReceptionist(
+            receptionistRecord ||
+            RECEPTIONISTS.find(r => r.uid === needData.assignedReceptionistId) ||
+            {
+              uid: needData.assignedReceptionistId || 'unknown',
+              fullName: needData.assignedReceptionistName || 'Guild Representative',
+              role: 'Guild Representative',
+              email: '',
+              phone: '',
+              photoURL: ''
+            }
+          );
         }
       } catch (err) {
         console.error(err);
@@ -86,7 +105,6 @@ export default function NeedDetails() {
   }
 
   const status = STATUS_LABELS[need.status] || STATUS_LABELS.submitted;
-  const receptionist = RECEPTIONISTS.find(r => r.uid === need.assignedReceptionistId) || RECEPTIONISTS[0];
 
   return (
     <div className="max-w-3xl mx-auto py-8 px-4 text-left animate-fade-up">
@@ -261,14 +279,16 @@ export default function NeedDetails() {
           <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">Your Guild Contact</h3>
           <GuildContactCard
             contact={{
-              uid: receptionist.uid,
-              fullName: receptionist.fullName,
-              photoURL: receptionist.photoURL,
-              phone: receptionist.phone,
-              email: receptionist.email,
-              role: receptionist.role
+              uid: receptionist?.uid ?? need.assignedReceptionistId ?? 'unknown',
+              fullName: receptionist?.fullName ?? need.assignedReceptionistName ?? 'Guild Representative',
+              photoURL: receptionist?.photoURL,
+              phone: receptionist?.phone,
+              email: receptionist?.email,
+              role: receptionist?.role ?? 'Guild Representative'
             }}
             roleLabel="Guild Representative"
+            showContactInfo={true}
+            showProfileLink={false}
           />
         </div>
       </div>

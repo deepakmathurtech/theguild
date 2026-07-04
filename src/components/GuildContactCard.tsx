@@ -25,6 +25,8 @@ interface GuildContactCardProps {
   roleLabel?: string;
   /** Show contact information (phone, email) - only show with proper permissions */
   showContactInfo?: boolean;
+  /** Hide the default profile link button */
+  showProfileLink?: boolean;
   /** Compact mode for inline display */
   compact?: boolean;
   /** Callback for additional actions */
@@ -83,6 +85,7 @@ export default function GuildContactCard({
   contact,
   roleLabel = 'Guild Contact',
   showContactInfo = false,
+  showProfileLink = true,
   compact = false
 }: GuildContactCardProps) {
   // Extract common properties from both types
@@ -127,9 +130,11 @@ export default function GuildContactCard({
           <span className="text-xs font-semibold text-[var(--text-secondary)]">{contactAny.fullName}</span>
           <span className="text-[9px] text-[var(--text-muted)]">{getRoleDisplayName(contactAny.role)}</span>
         </div>
-        <Link to={profileUrl} className="text-[var(--primary)] hover:underline text-xs">
-          <ExternalLink size={12} />
-        </Link>
+        {showProfileLink && (
+          <Link to={profileUrl} className="text-[var(--primary)] hover:underline text-xs">
+            <ExternalLink size={12} />
+          </Link>
+        )}
       </div>
     );
   }
@@ -208,13 +213,15 @@ export default function GuildContactCard({
 
       {/* Actions */}
       <div className="mt-3 pt-3 border-t border-[var(--border)] flex gap-2">
-        <Link
-          to={profileUrl}
-          className="flex-1 primary text-xs py-2 px-3 rounded-lg font-semibold text-center hover:bg-[var(--primary-dark)] flex items-center justify-center gap-1"
-        >
-          <User size={12} />
-          View Profile
-        </Link>
+        {showProfileLink && (
+          <Link
+            to={profileUrl}
+            className="flex-1 primary text-xs py-2 px-3 rounded-lg font-semibold text-center hover:bg-[var(--primary-dark)] flex items-center justify-center gap-1"
+          >
+            <User size={12} />
+            View Profile
+          </Link>
+        )}
         {contactAny.branchId && (
           <Link
             to={`/branches/${contactAny.branchId}`}
