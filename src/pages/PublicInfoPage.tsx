@@ -45,7 +45,7 @@ const pages: Record<string, InfoPageContent> = {
       },
       {
         title: 'Phone',
-        body: '+91 7626 9138 - Call us for urgent matters, account support, or partnership opportunities.'
+        body: '+91 7626 913038 - Call us for urgent matters, account support, or partnership opportunities.'
       },
       {
         title: 'Response Standard',
@@ -216,7 +216,7 @@ export default function PublicInfoPage() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-bold text-base mb-1">Phone</h3>
-                  <p className="text-sm text-[var(--text-secondary)] mb-3">+91 7626 9138</p>
+                  <p className="text-sm text-[var(--text-secondary)] mb-3">+91 7626 913038</p>
                   <span className="text-xs font-semibold text-[var(--primary)] flex items-center gap-1 group-hover:gap-2 transition-all">
                     Call Us <ArrowRight className="w-3 h-3" />
                   </span>
