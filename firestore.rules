@@ -1,424 +1,506 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // ============================================================
-    // CORE SECURITY FUNCTIONS
-    // ============================================================
-    function signedIn() { return request.auth != null; }
-    function userDoc() { return get(/databases/$(database)/documents/users/$(request.auth.uid)); }
-    function role() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) ? userDoc().data.role : 'applicant'; }
-
-    // ============================================================
-    // PRIVILEGE LEVELS (Hierarchical)
-    // ============================================================
-    function isFounder() { return signedIn() && (role() == 'guildFounder' || role() == 'founder'); }
-    function isCentralMaster() { return isFounder() || role() == 'centralGuildMaster'; }
-    function isStateMaster() { return isCentralMaster() || (role() == 'stateGuildMaster'); }
-    function isCityMaster() { return isStateMaster() || (role() == 'cityGuildMaster'); }
-    function isReceptionist() { return isCityMaster() || role() == 'receptionist'; }
-    function isMember() { return signedIn() && role() in ['member', 'contributor', 'receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']; }
-    function isOrgRepresentative() { return signedIn() && role() == 'organizationRepresentative'; }
-
-    // ============================================================
-    // JURISDICTION FUNCTIONS
-    // ============================================================
-    function myJuris() { return userDoc().data.jurisdiction; }
-    function targetJuris() { return resource.data.jurisdiction; }
-    function incomingJuris() { return request.resource.data.jurisdiction; }
-
-    function isSameCity() { return targetJuris().cityId == myJuris().cityId; }
-    function isSameState() { return targetJuris().stateId == myJuris().stateId; }
-    function isSameCountry() { return targetJuris().countryId == myJuris().countryId; }
-    function isInMyJuris() { return isSameCountry() && (isSameState() || isSameCity()); }
-    function isBranchScope() { return targetJuris().cityId == myJuris().cityId; }
-    function isStateScope() { return targetJuris().stateId == myJuris().stateId; }
-
-    // ============================================================
-    // OWNERSHIP & PERMISSION FUNCTIONS
-    // ============================================================
-    function owns(uid) { return signedIn() && request.auth.uid == uid; }
-    function ownsDoc(field) { return signedIn() && request.auth.uid == resource.data[field]; }
-    function ownsIncoming(field) { return signedIn() && request.auth.uid == request.resource.data[field]; }
-    function isOwnerOrMaster() { return ownsDoc('ownerId') || isReceptionist(); }
-    function noPermanentDelete() { return false; }
-
-    // ============================================================
-    // ANTI-PRIVILEGE ESCALATION
-    // ============================================================
-    function cannotSelfUpgrade() {
-      return request.auth.uid != resource.data.uid;
-    }
-    function cannotExceedMyLevel() {
-      let newRole = request.resource.data.role;
-      let myLevel = getPrivilegeLevel(role());
-      let newLevel = getPrivilegeLevel(newRole);
-      return newLevel <= myLevel;
-    }
-    function getPrivilegeLevel(r) {
-      return r == 'founder' || r == 'guildFounder' ? 7 :
-             r == 'centralGuildMaster' || r == 'nationalGuildMaster' ? 6 :
-             r == 'stateGuildMaster' ? 5 :
-             r == 'cityGuildMaster' ? 4 :
-             r == 'receptionist' ? 3 :
-             r == 'contributor' ? 2 :
-             r == 'member' ? 1 : 0;
+    function signedIn() {
+      return request.auth != null;
     }
 
-    // ============================================================
-    // JURISDICTION PERMISSION CHECKER
-    // ============================================================
+    function owns(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function userPath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+
+    function hasProfile() {
+      return signedIn() && exists(userPath());
+    }
+
+    function currentUser() {
+      return get(userPath()).data;
+    }
+
+    function role() {
+      return hasProfile() && currentUser().role != null ? currentUser().role : 'applicant';
+    }
+
+    function level(r) {
+      return r in ['founder', 'guildFounder'] ? 7 :
+        r in ['centralGuildMaster', 'nationalGuildMaster'] ? 6 :
+        r == 'stateGuildMaster' ? 5 :
+        r == 'cityGuildMaster' ? 4 :
+        r == 'receptionist' ? 3 :
+        r == 'contributor' ? 2 :
+        r == 'member' ? 1 : 0;
+    }
+
+    function isFounder() {
+      return signedIn() && level(role()) >= 7;
+    }
+
+    function isCentralMaster() {
+      return signedIn() && level(role()) >= 6;
+    }
+
+    function isStateMaster() {
+      return signedIn() && level(role()) >= 5;
+    }
+
+    function isCityMaster() {
+      return signedIn() && level(role()) >= 4;
+    }
+
+    function isReceptionist() {
+      return signedIn() && level(role()) >= 3;
+    }
+
+    function isMember() {
+      return signedIn() && level(role()) >= 1;
+    }
+
+    function isOrgRepresentative() {
+      return signedIn() && role() == 'organizationRepresentative';
+    }
+
+    function isStaff() {
+      return isReceptionist();
+    }
+
+    function isPublicRead(data) {
+      return data.visibility == 'public' || data.isPublic == true || data.public == true;
+    }
+
+    function isActive(data) {
+      return !(data.archiveStatus in ['archived', 'deleted']) && data.status != 'deleted';
+    }
+
+    function publicVisibility(data) {
+      return data.visibility == 'public' || data.isPublic == true || data.public == true;
+    }
+
+    function publicProfile(data) {
+      return isActive(data) && (
+        publicVisibility(data) ||
+        data.publicProfile is map ||
+        data.profileVisibility == 'public' ||
+        data.guildId != null ||
+        data.adventurerId != null
+      );
+    }
+
+    function publicQuest(data) {
+      return isActive(data) && (
+        data.status in ['open', 'underReview'] ||
+        publicVisibility(data)
+      );
+    }
+
+    function publicOrganization(data) {
+      return isActive(data) && (
+        data.visibility == 'public' ||
+        data.visibility == 'guildMembers' ||
+        (data.visibility == null && data.status != 'draft')
+      );
+    }
+
+    function publicOutcome(data) {
+      return isActive(data) && (
+        data.verificationStatus in ['verified', 'approved'] ||
+        publicVisibility(data)
+      );
+    }
+
+    function publicSubmission(data) {
+      return isActive(data) && (
+        data.status in ['approved', 'verified'] ||
+        publicVisibility(data)
+      );
+    }
+
+    function publicBranch(data) {
+      return isActive(data) && (
+        data.status in ['active', 'operational', 'published'] ||
+        publicVisibility(data)
+      );
+    }
+
+    function dataOwner(data) {
+      return signedIn() && (
+        data.userId == request.auth.uid ||
+        data.uid == request.auth.uid ||
+        data.ownerId == request.auth.uid ||
+        data.ownerUid == request.auth.uid ||
+        data.memberId == request.auth.uid ||
+        data.applicantId == request.auth.uid ||
+        data.authorId == request.auth.uid ||
+        data.createdBy == request.auth.uid ||
+        data.payerId == request.auth.uid ||
+        data.receiverId == request.auth.uid
+      );
+    }
+
+    function incomingOwner() {
+      return signedIn() && (
+        request.resource.data.userId == request.auth.uid ||
+        request.resource.data.uid == request.auth.uid ||
+        request.resource.data.ownerId == request.auth.uid ||
+        request.resource.data.ownerUid == request.auth.uid ||
+        request.resource.data.memberId == request.auth.uid ||
+        request.resource.data.applicantId == request.auth.uid ||
+        request.resource.data.authorId == request.auth.uid ||
+        request.resource.data.createdBy == request.auth.uid ||
+        request.resource.data.payerId == request.auth.uid
+      );
+    }
+
+    function canReadScoped(data) {
+      return signedIn() && (isStaff() || dataOwner(data) || isActive(data));
+    }
+
+    function myJuris() {
+      return hasProfile() ? currentUser().jurisdiction : {};
+    }
+
+    function hasJuris(data) {
+      return data.jurisdiction is map;
+    }
+
+    function sameCity(data) {
+      return hasJuris(data) && data.jurisdiction.cityId == myJuris().cityId;
+    }
+
+    function sameState(data) {
+      return hasJuris(data) && data.jurisdiction.stateId == myJuris().stateId;
+    }
+
+    function sameCountry(data) {
+      return hasJuris(data) && data.jurisdiction.countryId == myJuris().countryId;
+    }
+
     function canWriteJuris(data) {
-      return isFounder() || (
-        data.jurisdiction.countryId == myJuris().countryId &&
-        (role() == 'centralGuildMaster' || (
-          data.jurisdiction.stateId == myJuris().stateId && (
-            role() == 'stateGuildMaster' || (
-              data.jurisdiction.cityId == myJuris().cityId && (role() == 'cityGuildMaster' || role() == 'receptionist')
-            )
-          )
-        ))
-      );
+      return isFounder() ||
+        (isCentralMaster() && (!hasJuris(data) || sameCountry(data))) ||
+        (isStateMaster() && (!hasJuris(data) || sameState(data))) ||
+        (isCityMaster() && (!hasJuris(data) || sameCity(data))) ||
+        (role() == 'receptionist' && (!hasJuris(data) || sameCity(data)));
     }
 
-    // ============================================================
-    // QUEST CAPACITY CHECK
-    // ============================================================
-    function hasQuestCapacity(questData) {
-      let currentCount = questData.acceptedMembers.size();
-      let required = questData.membersRequired != null ? questData.membersRequired : 1;
-      return currentCount < required;
+    function protectedRole(r) {
+      return r in ['founder', 'guildFounder', 'centralGuildMaster', 'nationalGuildMaster'];
     }
 
-    // ============================================================
-    // AUDIT LOGGING PROTECTION
-    // ============================================================
-    function isAuditLogValid() {
-      let data = request.resource.data;
-      return data.userId != null && data.action != null && data.time != null;
-    }
-    function canWriteAudit() {
-      return signedIn() && isAuditLogValid();
+    function canAssignRole(newRole) {
+      return isFounder() || (!protectedRole(newRole) && isStaff() && level(newRole) <= level(role()));
     }
 
-    // ============================================================
-    // DATA VALIDATION
-    // ============================================================
-    function hasRequiredFields(data, required) {
-      return required.all(r => data.keys().hasAll([r]));
+    function noRoleEscalation() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
+        canAssignRole(request.resource.data.role);
     }
 
-    // ============================================================
-    // COLLECTION: USERS
-    // ============================================================
+    function selfSafeUserUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'fullName', 'displayName', 'phone', 'photoURL', 'avatarUrl', 'bio', 'skills',
+        'interests', 'availability', 'address', 'updatedAt', 'lastSeenAt', 'onboarding',
+        'preferences', 'settings'
+      ]);
+    }
+
+    function immutableAudit() {
+      return request.resource.data.userId != null &&
+        request.resource.data.action != null &&
+        request.resource.data.time != null;
+    }
+
+    function noDelete() {
+      return false;
+    }
+
     match /users/{userId} {
-      allow read: if signedIn();
-      allow create: if owns(userId) && request.resource.data.keys().hasAll(['email', 'fullName', 'jurisdiction']);
-      allow update: if (
-        owns(userId) || isReceptionist()
-      ) && (
-        owns(userId) || cannotSelfUpgrade()
-      ) && (
-        owns(userId) || cannotExceedMyLevel()
-      );
-      allow delete: if noPermanentDelete();
+      allow get: if signedIn() || publicProfile(resource.data);
+      allow list: if signedIn() || publicProfile(resource.data);
+      allow create: if owns(userId)
+        && request.resource.data.email != null
+        && request.resource.data.fullName != null
+        && (!('role' in request.resource.data) || request.resource.data.role in ['applicant', 'member', 'organizationRepresentative']);
+      allow update: if (owns(userId) && selfSafeUserUpdate()) ||
+        (isStaff() && noRoleEscalation()) ||
+        (isFounder() && noRoleEscalation());
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: ORGANIZATIONS
-    // ============================================================
+    match /members/{id} {
+      allow read: if signedIn() || isPublicRead(resource.data);
+      allow create: if incomingOwner() || isStaff();
+      allow update: if dataOwner(resource.data) || isStaff();
+      allow delete: if noDelete();
+    }
+
     match /organizations/{id} {
-      allow read: if signedIn();
-      allow create: if isMember() && canWriteJuris(request.resource.data);
-      allow update: if isReceptionist() && canWriteJuris(resource.data) || (
-        signedIn() && resource.data.ownerId == request.auth.uid
-      );
-      allow delete: if noPermanentDelete();
+      allow read: if signedIn() || publicOrganization(resource.data);
+      allow create: if signedIn() && (isMember() || isOrgRepresentative() || isStaff());
+      allow update: if dataOwner(resource.data) || isStaff() || (isOrgRepresentative() && incomingOwner());
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: NEEDS
-    // ============================================================
     match /needs/{id} {
       allow read: if signedIn();
-      allow create: if isMember() && canWriteJuris(request.resource.data);
-      allow update: if isReceptionist() && canWriteJuris(resource.data);
-      allow delete: if noPermanentDelete();
+      allow create: if signedIn() && (isMember() || isOrgRepresentative() || isStaff());
+      allow update: if dataOwner(resource.data) || isStaff();
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: OPPORTUNITIES
-    // ============================================================
     match /opportunities/{id} {
-      allow read: if signedIn() && (isBranchScope() || isCentralMaster());
-      allow create: if isMember() && canWriteJuris(request.resource.data);
-      allow update: if signedIn() && (
-        canWriteJuris(resource.data) ||
-        incomingJuris().applicants.hasAny([request.auth.uid])
-      );
-      allow delete: if noPermanentDelete();
+      allow read: if signedIn();
+      allow create: if signedIn() && (isMember() || isOrgRepresentative() || isStaff());
+      allow update: if dataOwner(resource.data) || isStaff() ||
+        (signedIn() && request.auth.uid in request.resource.data.applicants);
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: QUESTS
-    // ============================================================
     match /quests/{id} {
-      allow read: if signedIn();
-      allow create: if isMember() && canWriteJuris(request.resource.data);
-      allow update: if isReceptionist() && canWriteJuris(resource.data) || (
-        // Quest lead can update their quest
-        signedIn() && resource.data.ownerId == request.auth.uid
-      );
-      // Capacity enforcement - prevent over-assignment
-      allow update: if !hasQuestCapacity(resource.data) && request.resource.data.acceptedMembers != resource.data.acceptedMembers
-        ? false
-        : true;
-      allow delete: if noPermanentDelete();
+      allow read: if signedIn() || publicQuest(resource.data);
+      allow create: if signedIn() && (isMember() || isOrgRepresentative() || isStaff());
+      allow update: if dataOwner(resource.data) || isStaff() ||
+        (signedIn() && request.auth.uid in request.resource.data.acceptedMembers);
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: QUEST APPLICATIONS
-    // ============================================================
     match /questApplications/{id} {
-      allow read: if signedIn() && (
-        resource.data.applicantId == request.auth.uid ||
-        isReceptionist()
-      );
+      allow read: if signedIn() && (dataOwner(resource.data) || isStaff());
       allow create: if signedIn() && request.resource.data.applicantId == request.auth.uid;
-      // Applicants can only update their own draft applications
-      allow update: if signedIn() && (
-        resource.data.applicantId == request.auth.uid && resource.data.status == 'draft'
-      ) || isReceptionist();
-      allow delete: if noPermanentDelete();
+      allow update: if isStaff() ||
+        (dataOwner(resource.data) && resource.data.status in ['draft', 'pending']);
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: QUEST PARTICIPATIONS
-    // ============================================================
     match /questParticipations/{id} {
-      allow read: if signedIn() && (
-        resource.data.userId == request.auth.uid ||
-        isReceptionist()
-      );
+      allow read: if signedIn() && (dataOwner(resource.data) || isStaff());
       allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isReceptionist() || (
-        signedIn() && resource.data.userId == request.auth.uid
-      );
-      allow delete: if noPermanentDelete();
+      allow update: if dataOwner(resource.data) || isStaff();
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: QUEST SUBMISSIONS
-    // ============================================================
     match /questSubmissions/{id} {
-      allow read: if signedIn() && (
-        resource.data.memberId == request.auth.uid ||
-        isReceptionist()
-      );
+      allow read: if (signedIn() && (dataOwner(resource.data) || isStaff())) || publicSubmission(resource.data);
       allow create: if signedIn() && request.resource.data.memberId == request.auth.uid;
-      allow update: if isReceptionist() || (
-        signedIn() && resource.data.memberId == request.auth.uid && resource.data.status == 'pending'
-      );
-      allow delete: if noPermanentDelete();
+      allow update: if isStaff() ||
+        (dataOwner(resource.data) && resource.data.status in ['draft', 'pending', 'changesRequested']);
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: OUTCOMES
-    // ============================================================
+    match /submissions/{id} {
+      allow read: if signedIn() && (dataOwner(resource.data) || isStaff());
+      allow create: if signedIn() && incomingOwner();
+      allow update: if dataOwner(resource.data) || isStaff();
+      allow delete: if noDelete();
+    }
+
+    match /applications/{id} {
+      allow read: if signedIn() && (dataOwner(resource.data) || isStaff());
+      allow create: if signedIn() && incomingOwner();
+      allow update: if dataOwner(resource.data) || isStaff();
+      allow delete: if noDelete();
+    }
+
+    match /participations/{id} {
+      allow read: if signedIn() && (dataOwner(resource.data) || isStaff());
+      allow create: if signedIn() && incomingOwner();
+      allow update: if dataOwner(resource.data) || isStaff();
+      allow delete: if noDelete();
+    }
+
     match /outcomes/{id} {
-      allow read: if signedIn();
-      allow create, update: if isMember() && canWriteJuris(request.resource.data);
-      allow delete: if noPermanentDelete();
+      allow read: if signedIn() || publicOutcome(resource.data);
+      allow create: if signedIn() && (isMember() || isStaff());
+      allow update: if dataOwner(resource.data) || isStaff();
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: VERIFICATIONS
-    // ============================================================
-    match /verifications/{id} {
-      allow read: if isReceptionist();
-      allow create, update: if isReceptionist();
-      allow delete: if noPermanentDelete();
-    }
-
-    // ============================================================
-    // COLLECTION: REVENUE EVENTS
-    // ============================================================
-    match /revenueEvents/{id} {
-      allow read: if isReceptionist();
-      allow create: if isReceptionist();
-      allow update: if isReceptionist();
-      allow delete: if noPermanentDelete();
-    }
-
-    // ============================================================
-    // COLLECTION: PAYMENTS (NEW)
-    // ============================================================
     match /payments/{id} {
-      allow read: if signedIn() && (
-        resource.data.payerId == request.auth.uid ||
-        resource.data.receiverId == request.auth.uid ||
-        isReceptionist()
-      );
-      allow create: if signedIn() && request.resource.data.payerId == request.auth.uid;
-      allow update: if isReceptionist() || (
-        signedIn() && resource.data.payerId == request.auth.uid && resource.data.status == 'pending'
-      );
-      allow delete: if noPermanentDelete();
+      allow read: if signedIn() && (dataOwner(resource.data) || isStaff());
+      allow create: if signedIn() && (incomingOwner() || isStaff());
+      allow update: if isStaff() || (dataOwner(resource.data) && resource.data.status == 'pending');
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: RECEIPTS (NEW)
-    // ============================================================
     match /receipts/{id} {
-      allow read: if signedIn();
-      allow create: if isReceptionist();
-      allow update: if isReceptionist();
-      allow delete: if noPermanentDelete();
+      allow read: if signedIn() && (dataOwner(resource.data) || isStaff());
+      allow create, update: if isStaff();
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: KNOWLEDGE BASE
-    // ============================================================
+    match /notifications/{id} {
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || isStaff());
+      allow create: if signedIn();
+      allow update: if isStaff() ||
+        (signedIn()
+          && resource.data.userId == request.auth.uid
+          && request.resource.data.userId == resource.data.userId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'read', 'updatedAt']));
+      allow delete: if noDelete();
+    }
+
     match /knowledgeBase/{id} {
-      allow read: if signedIn();
-      allow create: if isMember();
-      allow update: if isReceptionist();
-      allow delete: if noPermanentDelete();
+      allow read: if signedIn() || resource.data.status == 'published';
+      allow create: if signedIn() && (isMember() || isStaff());
+      allow update: if dataOwner(resource.data) || isStaff();
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: ACTIVITY LOGS
-    // ============================================================
+    match /knowledge/{id} {
+      allow read: if signedIn() || resource.data.status == 'published';
+      allow create: if signedIn() && (isMember() || isStaff());
+      allow update: if dataOwner(resource.data) || isStaff();
+      allow delete: if noDelete();
+    }
+
+    match /knowledgeArchive/{id} {
+      allow read, write: if isStaff();
+    }
+
     match /activityLogs/{id} {
       allow read: if isCityMaster();
-      allow create: if canWriteAudit();
+      allow create: if signedIn() && immutableAudit();
       allow update, delete: if false;
     }
 
-    // ============================================================
-    // COLLECTION: NOTIFICATIONS
-    // ============================================================
-    match /notifications/{id} {
-      allow read: if signedIn() && (
-        resource.data.userId == request.auth.uid ||
-        isReceptionist()
-      );
-      allow create: if isReceptionist();
-      allow update: if signedIn()
-        && resource.data.userId == request.auth.uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'read', 'updatedAt'])
-        && request.resource.data.userId == resource.data.userId
-        && request.resource.data.status in ['unread', 'read', 'dismissed', 'archived'];
-      allow delete: if noPermanentDelete();
+    match /v4AuditLogs/{id} {
+      allow read: if isCityMaster();
+      allow create: if signedIn();
+      allow update, delete: if false;
     }
 
-    // ============================================================
-    // COLLECTION: GUILD REGIONS
-    // ============================================================
+    match /verifications/{id} {
+      allow read: if signedIn() && (dataOwner(resource.data) || isStaff());
+      allow create: if signedIn();
+      allow update: if isStaff();
+      allow delete: if noDelete();
+    }
+
+    match /revenueEvents/{id} {
+      allow read: if isStaff();
+      allow create, update: if isStaff();
+      allow delete: if noDelete();
+    }
+
+    match /ledger/{id} {
+      allow read: if isCentralMaster();
+      allow create, update: if isFounder();
+      allow delete: if noDelete();
+    }
+
     match /guildRegions/{id} {
-      allow read: if signedIn();
-      allow write: if isFounder();
+      allow read: if signedIn() || publicBranch(resource.data);
+      allow create, update: if isFounder();
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: GUILD STATES
-    // ============================================================
     match /guildStates/{id} {
-      allow read: if signedIn();
-      allow create: if isCentralMaster();
-      allow update: if isCentralMaster();
-      allow delete: if noPermanentDelete();
+      allow read: if signedIn() || publicBranch(resource.data);
+      allow create, update: if isCentralMaster();
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: GUILD CITIES
-    // ============================================================
     match /guildCities/{id} {
-      allow read: if signedIn();
+      allow read: if signedIn() || publicBranch(resource.data);
       allow create, update: if isStateMaster();
-      allow delete: if noPermanentDelete();
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: BRANCHES
-    // ============================================================
     match /branches/{id} {
-      allow read: if signedIn();
-      allow create: if isCityMaster();
+      allow read: if signedIn() || publicBranch(resource.data);
+      allow create, update: if isCityMaster();
+      allow delete: if noDelete();
+    }
+
+    match /guildBranches/{id} {
+      allow read: if signedIn() || publicBranch(resource.data);
+      allow create, update: if isCityMaster();
+      allow delete: if noDelete();
+    }
+
+    match /branchRequests/{id} {
+      allow read: if signedIn() && (dataOwner(resource.data) || isCityMaster());
+      allow create: if signedIn() && incomingOwner();
       allow update: if isCityMaster();
-      allow delete: if noPermanentDelete();
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: SUCCESSION PLANS
-    // ============================================================
+    match /branchSummaries/{id} {
+      allow read: if signedIn();
+      allow create, update: if isStaff();
+      allow delete: if noDelete();
+    }
+
+    match /receptionistScorecards/{id} {
+      allow read: if isStaff() || owns(id);
+      allow create, update: if isStaff();
+      allow delete: if noDelete();
+    }
+
     match /successionPlans/{id} {
-      allow read: if isReceptionist();
-      allow write: if isFounder();
+      allow read: if isStaff();
+      allow create, update: if isFounder();
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: LEAVE RECORDS
-    // ============================================================
     match /leaveRecords/{id} {
-      allow read: if signedIn() && (
-        resource.data.userId == request.auth.uid ||
-        isReceptionist()
-      );
-      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isReceptionist();
-      allow delete: if noPermanentDelete();
+      allow read: if signedIn() && (dataOwner(resource.data) || isStaff());
+      allow create: if signedIn() && incomingOwner();
+      allow update: if isStaff();
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: ESCALATION RECORDS
-    // ============================================================
     match /escalationRecords/{id} {
       allow read: if isCityMaster();
       allow create: if signedIn();
-      allow update: if isReceptionist();
-      allow delete: if noPermanentDelete();
+      allow update: if isStaff();
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: DISPUTE RECORDS
-    // ============================================================
     match /disputeRecords/{id} {
-      allow read: if isReceptionist();
+      allow read: if isStaff();
       allow create: if signedIn();
-      allow update: if isReceptionist();
-      allow delete: if noPermanentDelete();
+      allow update: if isStaff();
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: TRANSFER RECORDS
-    // ============================================================
     match /transferRecords/{id} {
       allow read: if isCityMaster();
       allow create, update: if isFounder();
-      allow delete: if noPermanentDelete();
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: RANK REVIEWS
-    // ============================================================
     match /rankReviews/{id} {
-      allow read: if signedIn() && (
-        resource.data.memberId == request.auth.uid ||
-        isReceptionist()
-      );
+      allow read: if signedIn() && (dataOwner(resource.data) || isStaff());
       allow create: if signedIn() && request.resource.data.memberId == request.auth.uid;
-      allow update: if isReceptionist();
-      allow delete: if noPermanentDelete();
+      allow update: if isStaff();
+      allow delete: if noDelete();
     }
 
-    // ============================================================
-    // COLLECTION: ORGANIZATION ACTIVITIES (NEW)
-    // ============================================================
     match /organizationActivities/{id} {
       allow read: if signedIn();
-      allow create: if isMember() && canWriteJuris(request.resource.data);
-      allow update: if isReceptionist();
-      allow delete: if noPermanentDelete();
+      allow create: if signedIn() && (isMember() || isStaff());
+      allow update: if isStaff();
+      allow delete: if noDelete();
+    }
+
+    match /locks/{id} {
+      allow read: if signedIn();
+      allow create, update, delete: if isStaff();
+    }
+
+    match /system/{id} {
+      allow read: if isStaff();
+      allow create, update: if isStaff();
+      allow delete: if isFounder();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
