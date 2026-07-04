@@ -2836,11 +2836,30 @@ nav { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 
 .org-hero {
   padding-top: 64px;
+  position: relative;
+  z-index: 3;
 }
 
 .org-container {
-  max-width: 1400px;
+  max-width: 1100px;
   margin: 0 auto;
+  padding: 0 16px;
+}
+
+@media (min-width: 480px) {
+  .org-container { padding: 0 18px; }
+}
+
+@media (min-width: 768px) {
+  .org-container { padding: 0 24px; max-width: 900px; }
+}
+
+@media (min-width: 1024px) {
+  .org-container { padding: 0 32px; max-width: 1100px; }
+}
+
+@media (min-width: 1440px) {
+  .org-container { padding: 0 40px; max-width: 1300px; }
 }
 
 .org-heroGrid {
