@@ -1,4 +1,3 @@
-import Razorpay from 'razorpay';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
@@ -52,8 +51,6 @@ export default async function handler(req: any, res: any) {
 
 
     const rawBody = getRawBody(req);
-
-    const razorpay = new Razorpay({ key_id: razorpayKeyId, key_secret: razorpaySecret });
 
     // Verify webhook signature (manual, Razorpay SDK utility is not typed consistently)
     const crypto = await import('crypto');

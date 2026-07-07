@@ -41,7 +41,6 @@ export function createVerifyRazorpayPaymentHandler(deps: {
         orderId,
         paymentId,
         razorpaySignature,
-        metadata,
       } = body;
 
       const env = deps.getEnv?.() ?? process.env;

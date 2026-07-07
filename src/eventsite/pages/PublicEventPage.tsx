@@ -5,9 +5,6 @@ import { getEventBySlug, getRegistrationsForEvent, registerForEvent } from '../l
 import type { EventRegistrationField, TicketTier } from '../lib/eventModels';
 
 function getApiBase() {
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return '';
-  }
   return '/api';
 }
 
