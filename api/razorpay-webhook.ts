@@ -1,5 +1,6 @@
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { loadRuntimeEnv } from './lib/runtime-env';
 
 function sendJson(res: any, status: number, payload: any) {
   res.status(status).json(payload);
@@ -36,9 +37,10 @@ export default async function handler(req: any, res: any) {
     }
 
 
-    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
-    const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
-    const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
+    const env = loadRuntimeEnv(process.env);
+    const webhookSecret = env.RAZORPAY_WEBHOOK_SECRET;
+    const razorpayKeyId = env.RAZORPAY_KEY_ID;
+    const razorpaySecret = env.RAZORPAY_KEY_SECRET;
 
     if (!webhookSecret || !razorpayKeyId || !razorpaySecret) {
       return sendJson(res, 500, { success: false, message: 'Razorpay webhook not configured', error: 'WEBHOOK_NOT_CONFIGURED' });
