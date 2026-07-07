@@ -1,25 +1,21 @@
-# TODO - Razorpay Production Fix
+# TODO - Vercel Build Fixes (blackboxai)
 
-## Plan Steps
-- [ ] 1) Add server/Express implementation of Razorpay endpoints:
-  - POST /api/create-razorpay-order
-  - POST /api/razorpay-webhook
-  - (optional) POST /api/verify-razorpay-payment if needed
-- [ ] 2) Add environment variables and document them.
-- [ ] 3) Update frontend fetch error handling:
-  - never call response.json() on empty/non-JSON
-  - meaningful user-facing errors
-  - ensure amount/currency validation
-  - remove Razorpay test-key fallback
-- [ ] 4) Ensure Vite dev-time proxy routes /api/* to the new server port.
-- [ ] 5) Add Firestore writes only after verification:
-  - if using webhook-driven updates, adjust frontend/backend registration flow.
-- [ ] 6) Prevent duplicates (idempotency):
-  - use payment_id / order_id uniqueness
-  - use Firestore transaction or deterministic document IDs.
-- [ ] 7) Update production readiness:
-  - structured responses
-  - status codes
-  - logging
-- [ ] 8) Run typecheck/lint/build and provide checklist.
+## Completed
+- [x] Added/staged missing eventsite lib modules for Vercel deployment:
+  - src/eventsite/lib/firestoreEvents.ts
+  - src/eventsite/lib/eventModels.ts
+- [x] Reset PublicEventPage.tsx to a clean baseline.
+- [x] Typed React onChange for Full name.
+- [x] Typed React onChange for Email.
+
+## In progress / Blocked
+- [ ] Finish TypeScript implicit-any fixes in src/eventsite/pages/PublicEventPage.tsx:
+  - textarea/select/number/email/text onChange handler `e` typing
+  - setAnswers updater callback `p` typing
+  - Quantity input updater callback `p` typing
+- [ ] Run production build parity check:
+  - npm run build (npm ci fails with EPERM on current Windows environment)
+
+## Notes
+- Tooling limitations in this environment prevent reliable automated grep and some ambiguous diff replacements.
 

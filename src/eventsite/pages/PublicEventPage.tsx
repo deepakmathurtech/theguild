@@ -312,7 +312,7 @@ export default function PublicEventPage() {
                       <input
                         className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-3 py-2 text-sm"
                         value={form.fullName}
-                        onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((p: { fullName: string; email: string; qty: number }) => ({ ...p, fullName: e.target.value }))}
                         placeholder="Your name"
                         required
                       />
@@ -322,7 +322,7 @@ export default function PublicEventPage() {
                       <input
                         className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-3 py-2 text-sm"
                         value={form.email}
-                        onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((p: { fullName: string; email: string; qty: number }) => ({ ...p, email: e.target.value }))}
                         placeholder="name@example.com"
                         required
                       />
