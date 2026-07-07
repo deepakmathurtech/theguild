@@ -1,7 +1,6 @@
 import Razorpay from 'razorpay';
-import { getFirestore } from 'firebase-admin/firestore';
-import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { loadRuntimeEnv } from './lib/runtime-env';
+import { getDbOrFallback } from './lib/firebase-admin';
 
 function sendJson(res: any, status: number, payload: any) {
   res.status(status).json(payload);
@@ -17,14 +16,7 @@ function toNumber(v: unknown): number | null {
 }
 
 function ensureAdmin() {
-  if (!getApps().length) {
-    const serviceAccount = process.env.FIREBASE_ADMIN_SA_JSON;
-    if (!serviceAccount) {
-      throw new Error('FIREBASE_ADMIN_SA_JSON not set');
-    }
-    initializeApp({ credential: cert(JSON.parse(serviceAccount)) });
-  }
-  return getFirestore();
+  return getDbOrFallback();
 }
 
 export function createRazorpayOrderHandler(deps: {

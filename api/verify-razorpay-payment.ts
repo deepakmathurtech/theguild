@@ -1,22 +1,14 @@
 import crypto from 'crypto';
 import Razorpay from 'razorpay';
-import { getApps, initializeApp, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
 import { loadRuntimeEnv } from './lib/runtime-env';
+import { getDbOrFallback } from './lib/firebase-admin';
 
 function sendJson(res: any, status: number, payload: any) {
   res.status(status).json(payload);
 }
 
 function ensureAdmin() {
-  if (!getApps().length) {
-    const serviceAccount = process.env.FIREBASE_ADMIN_SA_JSON;
-    if (!serviceAccount) {
-      throw new Error('FIREBASE_ADMIN_SA_JSON not set');
-    }
-    initializeApp({ credential: cert(JSON.parse(serviceAccount)) });
-  }
-  return getFirestore();
+  return getDbOrFallback();
 }
 
 export function createVerifyRazorpayPaymentHandler(deps: {
@@ -47,13 +39,9 @@ export function createVerifyRazorpayPaymentHandler(deps: {
       const env = deps.getEnv?.() ?? loadRuntimeEnv(process.env);
       const razorpayKeyId = env.RAZORPAY_KEY_ID;
       const razorpaySecret = env.RAZORPAY_KEY_SECRET;
-      const webhookSecret = env.RAZORPAY_WEBHOOK_SECRET;
 
       if (!razorpayKeyId || !razorpaySecret) {
         return sendJson(res, 500, { success: false, message: 'Razorpay credentials not configured', error: 'RZP_NOT_CONFIGURED' });
-      }
-      if (!webhookSecret) {
-        return sendJson(res, 500, { success: false, message: 'Razorpay webhook secret not configured', error: 'WEBHOOK_NOT_CONFIGURED' });
       }
 
       if (typeof orderId !== 'string' || !orderId.trim()) {
@@ -82,7 +70,7 @@ export function createVerifyRazorpayPaymentHandler(deps: {
         return crypto.timingSafeEqual(expectedBuffer, signatureBuffer);
       });
 
-      const isValid = verifySignature(payload, razorpaySignature, webhookSecret);
+      const isValid = verifySignature(payload, razorpaySignature, razorpaySecret);
       if (!isValid) {
         return sendJson(res, 400, { success: false, message: 'Invalid Razorpay signature', error: 'INVALID_SIGNATURE' });
       }

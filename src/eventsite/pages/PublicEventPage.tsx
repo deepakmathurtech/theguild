@@ -173,7 +173,16 @@ export default function PublicEventPage() {
         const orderRes = await fetch(`${getApiBase()}/create-razorpay-order`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: amount * 100, currency }),
+          body: JSON.stringify({
+            eventId: event.id,
+            tierId: selectedTierId,
+            fullName: form.fullName.trim(),
+            email: form.email.trim(),
+            qty,
+            amount: amount * 100,
+            currency,
+            metadata: { slug: eventSlug },
+          }),
         });
 
         const text = await orderRes.text();
