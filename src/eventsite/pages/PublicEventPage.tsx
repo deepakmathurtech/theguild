@@ -52,9 +52,10 @@ export default function PublicEventPage() {
     setLoading(true);
     getEventBySlug(eventSlug)
       .then((e) => {
-        setEvent(e);
-        setSelectedTierId((((e as any)?.ticketTiers?.[0]?.id as string) || ''));
-        setTierTiersEnabled(Boolean(e?.ticketTiersEnabled ?? true));
+        const eventData = e as any;
+        setEvent(eventData);
+        setSelectedTierId(((eventData?.ticketTiers?.[0]?.id as string) || ''));
+        setTierTiersEnabled(Boolean(eventData?.ticketTiersEnabled ?? true));
         setAnswers({});
       })
       .finally(() => setLoading(false));
@@ -64,7 +65,7 @@ export default function PublicEventPage() {
     if (!event?.id) return;
     getRegistrationsForEvent(event.id)
       .then(setRegs)
-      .catch((e) => console.error(e));
+      .catch((e: unknown) => console.error(e));
   }, [event?.id]);
 
   const soldByTier = useMemo(() => {
@@ -355,7 +356,7 @@ export default function PublicEventPage() {
                                   required={field.required}
                                 >
                                   <option value="">Select an option</option>
-                                  {field.options?.map((option) => (
+                                  {field.options?.map((option: string) => (
                                     <option key={option} value={option}>{option}</option>
                                   ))}
                                 </select>
