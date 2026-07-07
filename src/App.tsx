@@ -9,7 +9,7 @@ import { useTheme } from './context/ThemeContext';
 import {
   TrendingUp, Compass, Building, Bell, User, Settings as SettingsIcon, LogOut,
   Menu, X, Sun, Moon, Award, Network, FileText, Target,
-  ShieldCheck, Home as HomeIcon, ArrowLeftRight, Handshake, Users
+  ShieldCheck, Home as HomeIcon, ArrowLeftRight, Handshake, Users, CalendarDays
 } from 'lucide-react';
 
 // Pages - Lazy loaded for better bundle size
@@ -23,6 +23,15 @@ const OrgDashboard = lazy(() => import('./pages/OrgDashboard'));
 const OrgTeam = lazy(() => import('./pages/OrgTeam'));
 const OrgOutcomes = lazy(() => import('./pages/OrgOutcomes'));
 const OrgNeedsPage = lazy(() => import('./pages/OrgNeedsPage'));
+const OrgEvents = lazy(() => import('./pages/OrgEvents'));
+const EventPlatformShell = lazy(() => import('./eventsite/EventPlatformShell'));
+const EventLanding = lazy(() => import('./eventsite/pages/EventLanding'));
+const EventMaker = lazy(() => import('./eventsite/pages/EventMaker'));
+const Ticketing = lazy(() => import('./eventsite/pages/Ticketing'));
+const AttendanceManager = lazy(() => import('./eventsite/pages/AttendanceManager'));
+const PromotionChannel = lazy(() => import('./eventsite/pages/PromotionChannel'));
+const Certificates = lazy(() => import('./eventsite/pages/Certificates'));
+const PublicEventPage = lazy(() => import('./eventsite/pages/PublicEventPage'));
 const QuestBoard = lazy(() => import('./pages/QuestBoard'));
 const QuestDetails = lazy(() => import('./pages/QuestDetails'));
 const MyQuests = lazy(() => import('./pages/MyQuests'));
@@ -112,6 +121,7 @@ const memberItems = [
 // Organization Representative navigation - exclusive when logged in as org rep
 const organizationItems = [
   { to: '/org-dashboard', label: 'Dashboard', icon: HomeIcon, end: true },
+  { to: '/org-events', label: 'Events', icon: CalendarDays },
   { to: '/org-outcomes', label: 'Outcomes', icon: Award },
   { to: '/need-submit', label: 'Post Need', icon: Target },
   { to: '/my-needs', label: 'My Needs', icon: FileText },
@@ -648,6 +658,8 @@ const routerConfig = createBrowserRouter([
       { path: '/org-register', element: <PublicOrgRegistration /> },
       { path: '/org-onboarding', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgOnboarding /></RoleRoute> },
       { path: '/org-dashboard', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgDashboard /></RoleRoute> },
+      { path: '/org-events', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgEvents /></RoleRoute> },
+      { path: '/org-events/maker', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><EventMaker /></RoleRoute> },
       { path: '/org-team', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgTeam /></RoleRoute> },
       { path: '/org-outcomes', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgOutcomes /></RoleRoute> },
       { path: '/my-needs', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgNeedsPage /></RoleRoute> },
@@ -677,6 +689,19 @@ const routerConfig = createBrowserRouter([
       { path: '/verification', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><NeedReviewQueue /></RoleRoute> },
       { path: '/notifications', element: <PrivateRoute><NotificationCenter /></PrivateRoute> },
       { path: '/settings', element: <PrivateRoute><Settings /></PrivateRoute> },
+      {
+        path: '/event-platform',
+        element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><EventPlatformShell /></RoleRoute>,
+        children: [
+          { index: true, element: <EventLanding /> },
+          { path: 'maker', element: <EventMaker /> },
+          { path: 'ticketing', element: <Ticketing /> },
+          { path: 'attendance', element: <AttendanceManager /> },
+          { path: 'promotion', element: <PromotionChannel /> },
+          { path: 'certificates', element: <Certificates /> },
+        ],
+      },
+      { path: '/event-platform/e/:slug', element: <PublicEventPage /> },
       { path: '/needs/:id', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedDetails /></RoleRoute> },
       { path: '/need-submit', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedWizard /></RoleRoute> },
             { path: '/need-reviews', element: <RoleRoute requiredRole={['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'guildFounder', 'founder']}><NeedReviewQueue /></RoleRoute> },

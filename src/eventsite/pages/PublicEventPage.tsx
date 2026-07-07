@@ -4,6 +4,13 @@ import { CalendarDays, Clock3, MapPin, Sparkles, Ticket, CheckCircle2 } from 'lu
 import { getEventBySlug, getRegistrationsForEvent, registerForEvent } from '../lib/firestoreEvents';
 import type { EventRegistrationField, TicketTier } from '../lib/eventModels';
 
+function getApiBase() {
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    return '';
+  }
+  return '/api';
+}
+
 declare global {
   interface Window {
     Razorpay?: any;
@@ -27,7 +34,7 @@ export default function PublicEventPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [form, setForm] = useState({ fullName: '', email: '', qty: 1 });
+  const [form, setForm] = useState<{ fullName: string; email: string; qty: number }>({ fullName: '', email: '', qty: 1 });
 
   const customFields = useMemo(() => ((event as any)?.registrationFormFields || []) as EventRegistrationField[], [event]);
 
@@ -35,6 +42,7 @@ export default function PublicEventPage() {
     if (!event) return [];
     return ((event as any).ticketTiers || []) as TicketTier[];
   }, [event]);
+
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -127,6 +135,34 @@ export default function PublicEventPage() {
       );
     };
 
+    const verifyWithServer = async (response: any, resolvedOrderId: string) => {
+      const verifyRes = await fetch(`${getApiBase()}/verify-razorpay-payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId: event.id,
+          tierId: selectedTierId,
+          fullName: form.fullName.trim(),
+          email: form.email.trim(),
+          qty,
+          amount: amount * 100,
+          currency,
+          orderId: response?.razorpay_order_id || resolvedOrderId,
+          paymentId: response?.razorpay_payment_id,
+          razorpaySignature: response?.razorpay_signature,
+          metadata: { slug: eventSlug },
+        }),
+      });
+
+      const verifyText = await verifyRes.text();
+      const verifyData = verifyText ? (() => { try { return JSON.parse(verifyText); } catch { return null; } })() : null;
+      if (!verifyRes.ok || !verifyData?.success) {
+        throw new Error(verifyData?.message || 'Payment verification failed.');
+      }
+
+      await completeRegistration('paid', response?.razorpay_payment_id, response?.razorpay_order_id || resolvedOrderId);
+    };
+
     setSubmitting(true);
     setSubmitError(null);
     setSuccessMessage(null);
@@ -137,15 +173,12 @@ export default function PublicEventPage() {
           throw new Error('Razorpay key is not configured (VITE_RAZORPAY_KEY missing)');
         }
 
-        // IMPORTANT: Razorpay requires a REAL `order_id` created on the server.
-        const orderRes = await fetch('/api/create-razorpay-order', {
-
+        const orderRes = await fetch(`${getApiBase()}/create-razorpay-order`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ amount: amount * 100, currency }),
         });
 
-        // Production-safe JSON handling (handles empty / non-JSON responses)
         const text = await orderRes.text();
         const orderData = text ? (() => {
           try {
@@ -155,24 +188,31 @@ export default function PublicEventPage() {
           }
         })() : null;
 
-        if (!orderRes.ok) {
-          throw new Error(orderData?.message || `Order creation failed (HTTP ${orderRes.status})`);
-        }
-        if (!orderData?.order_id) {
-          throw new Error(orderData?.message || 'Order creation failed: missing order_id');
-        }
+        const resolvedOrderId = orderData?.data?.order_id || orderData?.order_id || orderData?.id;
+        const resolvedAmount = orderData?.data?.amount ?? orderData?.amount ?? amount * 100;
+        const resolvedCurrency = orderData?.data?.currency || orderData?.currency || currency;
 
+        if (!orderRes.ok) {
+          throw new Error(orderData?.message || orderData?.error || `Order creation failed (HTTP ${orderRes.status})`);
+        }
+        if (!resolvedOrderId) {
+          throw new Error(orderData?.message || orderData?.error || 'Order creation failed: missing order_id');
+        }
 
         const options = {
           key: import.meta.env.VITE_RAZORPAY_KEY,
-
-          amount: amount * 100,
-          currency,
+          amount: Number(resolvedAmount),
+          currency: resolvedCurrency,
           name: event.organizationName || event.name,
           description: `${selectedTier?.name || 'Ticket'} for ${event.name}`,
-          order_id: orderData.order_id,
+          order_id: resolvedOrderId,
           handler: async (response: any) => {
-            await completeRegistration('paid', response?.razorpay_payment_id, response?.razorpay_order_id);
+            await verifyWithServer(response, resolvedOrderId);
+          },
+          modal: {
+            ondismiss: async () => {
+              await completeRegistration('pending');
+            },
           },
           prefill: {
             name: form.fullName.trim(),

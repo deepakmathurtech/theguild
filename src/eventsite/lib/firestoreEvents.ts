@@ -88,6 +88,10 @@ export async function registerForEvent(input: {
 }) {
   const qty = Math.max(1, Number(input.qty) || 1);
 
+  if (input.paymentStatus === 'pending') {
+    return null;
+  }
+
   // Validate seat availability before inserting.
   const eventRef = doc(db, EVENTS_COLLECTION, input.eventId);
   const eventSnap = await getDoc(eventRef);
