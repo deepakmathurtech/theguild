@@ -230,8 +230,16 @@ export default function AttendanceManager() {
   }
 
   async function handleScan() {
-    await processScanValue(scanValue);
+    const trimmed = scanValue.trim();
+    if (trimmed) {
+      await processScanValue(trimmed);
+      return;
+    }
+
+    // No text to parse: attempt to open camera scanning
+    await startCamera();
   }
+
 
   function stopCamera() {
     if (scanFrameRef.current && typeof window !== 'undefined') {
@@ -449,15 +457,49 @@ export default function AttendanceManager() {
                   placeholder="/member/user-123 or /g/guild-456"
                   autoComplete="off"
                 />
-                <button type="button" onClick={handleScan} disabled={Boolean(checkingIn) || checkInGuard.isCoolingDown} className="rounded-xl bg-[var(--primary)] px-3 py-2 text-xs font-bold text-black disabled:opacity-50">
+                <button
+                  type="button"
+                  onClick={handleScan}
+                  disabled={Boolean(checkingIn) || checkInGuard.isCoolingDown}
+                  className="rounded-xl bg-[var(--primary)] px-3 py-2 text-xs font-bold text-black disabled:opacity-50"
+                >
                   Scan
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (cameraMode === 'live' || cameraMode === 'starting') {
+                      stopCamera();
+                    } else {
+                      setScanResult(null);
+                      startCamera();
+                    }
+                  }}
+                  className="rounded-xl border border-[var(--border)] bg-[var(--card-subtle)]/40 px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--card-subtle)]"
+                >
+                  {cameraMode === 'live' || cameraMode === 'starting' ? 'Stop' : 'Open camera'}
+                </button>
               </div>
+
+              {cameraMessage ? <p className="mt-2 text-xs text-[var(--text-secondary)]">{cameraMessage}</p> : null}
               {scanResult ? <p className="mt-2 text-xs text-[var(--text-secondary)]">{scanResult}</p> : null}
+
+              {(cameraMode === 'starting' || cameraMode === 'live') && (
+                <div className="mt-3 rounded-xl border border-[var(--border)] bg-black/5 overflow-hidden">
+                  <video
+                    ref={videoRef}
+                    playsInline
+                    muted
+                    className="w-full h-44 object-cover bg-black"
+                  />
+                </div>
+              )}
+
               <div className="mt-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
                 <QrCode className="h-3.5 w-3.5" />
                 Camera-ready scanning is available from your host device when a profile QR is shared.
               </div>
+
             </div>
           </div>
 
