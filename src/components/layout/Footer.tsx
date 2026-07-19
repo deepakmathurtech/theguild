@@ -47,6 +47,7 @@ export default function Footer() {
           <div>
             <h4 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4">Legal</h4>
             <ul className="space-y-2 text-sm">
+              <li><Link to="/legal" className="hover:text-[var(--primary)]">Legal Center</Link></li>
               <li><Link to="/privacy" className="hover:text-[var(--primary)]">Privacy Policy</Link></li>
               <li><Link to="/terms" className="hover:text-[var(--primary)]">Terms of Service</Link></li>
               <li><Link to="/community" className="hover:text-[var(--primary)]">Community Guidelines</Link></li>

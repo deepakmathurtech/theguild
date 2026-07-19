@@ -97,6 +97,7 @@ export default function PublicOrgRegistration() {
   // Determine final state/city for assignment
   const [selectedState, setSelectedState] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
+  const [consentAccepted, setConsentAccepted] = useState(false);
 
   // Load branches and receptionists from Firestore
   useEffect(() => {
@@ -203,8 +204,13 @@ export default function PublicOrgRegistration() {
     return '';
   }
 
+  function validateStep3() {
+    if (!consentAccepted) return 'Please confirm your consent to our terms and privacy notice before completing registration.';
+    return '';
+  }
+
   async function handleNext() {
-    const validationError = step === 1 ? validateStep1() : validateStep2();
+    const validationError = step === 1 ? validateStep1() : step === 2 ? validateStep2() : validateStep3();
     if (validationError) {
       setError(validationError);
       return;
@@ -240,6 +246,12 @@ export default function PublicOrgRegistration() {
   }
 
   async function handleSubmit() {
+    const validationError = validateStep3();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -630,6 +642,13 @@ export default function PublicOrgRegistration() {
                 <strong className="text-sm font-bold text-[var(--text)] block">{assignedReceptionist.fullName}</strong>
                 <span className="text-xs text-[var(--text-muted)]">Relationship Manager</span>
               </div>
+            </div>
+
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--card-subtle)] p-3 text-xs text-[var(--text-secondary)]">
+              <label className="flex items-start gap-2">
+                <input type="checkbox" checked={consentAccepted} onChange={(e) => setConsentAccepted(e.target.checked)} className="mt-0.5" />
+                <span>I consent to Guild processing my account, organization, and participation information for onboarding, trust verification, and service delivery. I have read the <a href="/terms" className="text-[var(--primary)] underline">Terms</a>, <a href="/privacy" className="text-[var(--primary)] underline">Privacy Policy</a>, and <a href="/legal" className="text-[var(--primary)] underline">Legal Center</a>.</span>
+              </label>
             </div>
 
             {/* Services Preview */}

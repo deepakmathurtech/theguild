@@ -37,6 +37,26 @@ export type EventDocument = {
   // ticketing
   ticketTiersEnabled: boolean;
   registrationFormFields?: EventRegistrationField[];
+  hosts?: EventHostAssignment[];
+  payoutStatus?: 'pending' | 'ready' | 'requested' | 'released';
+  payoutRequestedAt?: string;
+  payoutRequestedBy?: string;
+  payoutReadyAt?: string;
+  payoutReleasedAt?: string;
+  payoutReleaseNote?: string;
+
+  // public page
+  heroImageUrl?: string;
+  badgeLabel?: string;
+  venue?: string;
+  location?: string;
+  organizerBio?: string;
+  agenda?: string;
+  highlights?: string[];
+  whatToExpect?: string[];
+  includes?: string[];
+  contactEmail?: string;
+  registrationNote?: string;
 };
 
 export type TicketTier = {
@@ -44,6 +64,17 @@ export type TicketTier = {
   name: string;
   price: number;
   capacity: number;
+};
+
+export type EventHostAssignment = {
+  id?: string;
+  userId: string;
+  displayName?: string;
+  email?: string;
+  publicProfileUrl?: string;
+  role: 'host';
+  grantedAt?: string;
+  grantedBy?: string;
 };
 
 export type TicketRegistration = {
@@ -55,6 +86,8 @@ export type TicketRegistration = {
   qty: number;
   status: 'confirmed' | 'cancelled';
   answers?: Record<string, string>;
+  userId?: string;
+  profileUrl?: string;
   paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded';
   paymentProvider?: PaymentProvider;
   paymentAmount?: number;
@@ -72,6 +105,8 @@ export type AttendanceRecord = {
   fullName: string;
   email: string;
   status: 'checked-in' | 'not-checked-in';
+  checkedInBy?: string;
+  checkedInByName?: string;
   checkInAt?: string;
   updatedAt?: string;
 };

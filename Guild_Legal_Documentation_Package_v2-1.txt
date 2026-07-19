@@ -1,0 +1,2349 @@
+================================================================================
+GUILD — COMPLETE LEGAL DOCUMENTATION PACKAGE (REVISED — VERSION 2)
+================================================================================
+
+This is the revised version of Guild's legal documentation package, updated
+following legal review for MVP launch readiness. It preserves Guild's
+business model, Quest System, Guild Card, Guild Passport, Event system, and
+revenue model exactly as designed. This revision strengthens legal
+enforceability, removes ambiguity, aligns the documents with the DPDP Act
+2023, IT Act 2000, Consumer Protection Act 2019, Consumer Protection
+(E-Commerce) Rules 2020, Indian Contract Act 1872, Copyright Act 1957, and
+the IT (Intermediary Guidelines and Digital Media Ethics Code) Rules 2021,
+and adds startup-appropriate (not enterprise-heavy) clauses covering
+platform operations, security, and data infrastructure.
+
+Documents in this package:
+  1. Terms of Service
+  2. Privacy Policy
+  3. Community Guidelines
+  4. User Agreement
+  5. Organization Agreement
+  6. Refund & Cancellation Policy
+  7. Payment & Commission Policy
+  8. Payout Policy
+  9. Dispute Resolution Policy
+  10. Prohibited Activities Policy
+  11. Intellectual Property Policy
+  12. Grievance Redressal Policy
+  13. Cookie Policy
+  14. Organization Verification Policy
+
+NOTE: This package is a working legal foundation for an early-stage Indian
+startup and must still be reviewed by a licensed Indian advocate before
+public launch. Bracketed placeholders [ ] must be completed with actual
+values before publication — see the Placeholder Checklist at the end of this
+document.
+
+================================================================================
+DOCUMENT 1 OF 14: TERMS OF SERVICE
+================================================================================
+
+GUILD — TERMS OF SERVICE
+
+Effective Date: [EFFECTIVE DATE]
+Last Updated: [LAST UPDATED DATE]
+
+TABLE OF CONTENTS
+1. Definitions
+2. Eligibility
+3. Account Registration
+4. Platform Usage
+5. Quest System
+6. Event System
+7. Payments
+8. User Responsibilities
+9. Organization Responsibilities
+10. Platform Availability, Beta Features & AI Features
+11. Security
+12. Intellectual Property
+13. Termination
+14. Disclaimers
+15. Limitation of Liability
+16. General Provisions
+17. Governing Law
+18. Contact Information
+
+--------------------------------------------------------------------------------
+1. DEFINITIONS
+--------------------------------------------------------------------------------
+1.1 "Guild" refers to [LEGAL ENTITY NAME], a company incorporated under the
+    laws of India, having its registered office at [REGISTERED ADDRESS],
+    operating the Guild platform, website, and mobile application(s)
+    (together, the "Platform").
+1.2 "User" means any individual who creates an account on the Platform to
+    participate in Quests, register for Events, or otherwise use the
+    Platform in an individual capacity.
+1.3 "Organization" means any entity, business, institution, community, or
+    individual that creates an Organization profile on the Platform to
+    publish Quests or create Events.
+1.4 "Quest" means a task, challenge, opportunity, or engagement published by
+    an Organization on the Platform through the Quest System, which a User
+    may undertake or participate in.
+1.5 "Event" means any gathering, session, workshop, competition, or similar
+    activity created by an Organization on the Platform, for which Users may
+    register.
+1.6 "Quest System" means the technology framework operated by Guild that
+    enables Organizations to publish Quests and Users to discover, apply
+    for, and participate in Quests.
+1.7 "Guild Card" means a digital record maintained on the Platform
+    reflecting a User's or Organization's verified participation,
+    achievements, or reputation, where applicable.
+1.8 "Guild Passport" means an aggregated digital profile, where applicable,
+    consolidating a User's verified Quest and Event history across the
+    Platform for the purpose of establishing a professional identity.
+1.9 "Platform Commission" means the fee retained by Guild from payments
+    processed through the Platform, as further described in the Payment &
+    Commission Policy.
+1.10 "Content" means any text, images, documents, data, audio, video, or
+     other material uploaded, submitted, or published on the Platform by a
+     User or Organization.
+1.11 "Beta Feature" means any feature, tool, or functionality of the
+     Platform that is expressly labelled or communicated as "beta,"
+     "experimental," "early access," or "preview."
+1.12 "Applicable Law" means the laws of the Republic of India, including but
+     not limited to the Indian Contract Act, 1872, the Information
+     Technology Act, 2000 and rules made thereunder, the Copyright Act,
+     1957, the Consumer Protection Act, 2019, the Consumer Protection
+     (E-Commerce) Rules, 2020, and the Digital Personal Data Protection
+     Act, 2023.
+
+--------------------------------------------------------------------------------
+2. ELIGIBILITY
+--------------------------------------------------------------------------------
+2.1 To use the Platform, an individual must be at least 18 years of age and
+    competent to contract under the Indian Contract Act, 1872.
+2.2 Individuals below 18 years of age may use the Platform only under the
+    supervision of, and with the verifiable consent of, a parent or legal
+    guardian who agrees to be bound by these Terms on the minor's behalf,
+    where applicable. Guild does not knowingly permit unsupervised use of
+    the Platform by minors.
+2.3 Organizations must be represented by an authorized signatory with legal
+    capacity to bind the Organization to these Terms, and Guild may require
+    proof of such authority.
+2.4 Guild reserves the right to refuse, suspend, or condition registration
+    or access to the Platform to any person or entity where necessary to
+    comply with Applicable Law, prevent fraud, or protect the integrity of
+    the Platform, including Users or Organizations located in jurisdictions
+    where use of the Platform would violate Applicable Law or any
+    applicable export control or sanctions regime.
+
+--------------------------------------------------------------------------------
+3. ACCOUNT REGISTRATION
+--------------------------------------------------------------------------------
+3.1 Users and Organizations must register an account by providing accurate,
+    current, and complete information, and must keep such information
+    updated.
+3.2 Registration and continued use of the Platform may be facilitated
+    through Guild's authentication infrastructure (including third-party
+    identity providers such as Google Sign-In, where applicable, and
+    Firebase Authentication), as further described in the Privacy Policy.
+3.3 Each account holder is solely responsible for maintaining the
+    confidentiality of their login credentials and for all activity
+    conducted through their account, whether or not authorized, except to
+    the extent such activity results from Guild's own negligence or breach
+    of these Terms.
+3.4 Guild may verify account information, where applicable, and may
+    suspend an account pending such verification without liability for any
+    resulting delay.
+3.5 A User or Organization may not maintain multiple accounts for the
+    purpose of circumventing Platform policies, Quest/Event limits,
+    verification requirements, or Trust Score mechanisms.
+
+--------------------------------------------------------------------------------
+4. PLATFORM USAGE
+--------------------------------------------------------------------------------
+4.1 Guild is a technology platform that connects Organizations with Users
+    through its Quest System and Event System. Guild does not itself
+    create, organize, host, or deliver any Quest or Event and is not a
+    party to any agreement formed between an Organization and a User in
+    relation to a specific Quest or Event.
+4.2 Guild facilitates discovery, registration, communication tools, and
+    payment processing (where applicable) between Organizations and Users.
+4.3 Users and Organizations shall use the Platform only for lawful purposes
+    and in accordance with these Terms, the Community Guidelines, and the
+    Prohibited Activities Policy.
+4.4 Guild may introduce, modify, or discontinue features of the Platform,
+    including the Quest System, Event System, Guild Card, and Guild
+    Passport, at its discretion and, where applicable and reasonably
+    practicable, with prior notice.
+
+--------------------------------------------------------------------------------
+5. QUEST SYSTEM
+--------------------------------------------------------------------------------
+5.1 Organizations may publish Quests describing a real-world organizational
+    need, task, or opportunity, along with eligibility criteria,
+    deliverables, timelines, and compensation (if any).
+5.2 Users may apply for or accept Quests in accordance with the criteria set
+    by the publishing Organization.
+5.3 The terms of a specific Quest, including deliverables, deadlines, and
+    compensation, form a direct arrangement between the Organization and
+    the User. Guild's role is limited to providing the technology through
+    which such arrangements are made and, where applicable, facilitating
+    payment.
+5.4 Verified completion of a Quest may be reflected on a User's Guild Card
+    and Guild Passport, where applicable, based on confirmation provided by
+    the Organization. Guild relies on Organization confirmation in good
+    faith and does not independently verify the accuracy of Quest
+    deliverables unless expressly stated otherwise.
+5.5 Guild does not guarantee the availability, quality, legitimacy, or
+    outcome of any Quest published by an Organization, though Guild may
+    apply verification and review processes described in the Organization
+    Verification Policy.
+
+--------------------------------------------------------------------------------
+6. EVENT SYSTEM
+--------------------------------------------------------------------------------
+6.1 Organizations may create Events on the Platform, specifying the date,
+    time, location (physical or virtual), pricing, and terms of
+    participation.
+6.2 Users may register for Events through the Platform, including making
+    payment where the Event requires one.
+6.3 Guild is not the organizer of any Event. The Organization creating the
+    Event is solely responsible for its planning, execution, safety,
+    legality, and quality.
+6.4 Guild provides registration, ticketing, and payment infrastructure
+    (where applicable) to facilitate Events but assumes no responsibility
+    for the conduct, content, or outcome of the Event itself.
+
+--------------------------------------------------------------------------------
+7. PAYMENTS
+--------------------------------------------------------------------------------
+7.1 Where an Event or Quest involves payment, such payment shall be
+    processed through the Platform's designated third-party payment
+    gateway(s).
+7.2 Guild may deduct a Platform Commission from payments collected on
+    behalf of an Organization, as described in the Payment & Commission
+    Policy.
+7.3 Guild may temporarily hold collected funds before settlement to the
+    Organization, depending on the applicable payment workflow, as
+    described in the Payout Policy.
+7.4 Guild is not a bank, lending institution, or payment aggregator in its
+    own right. Payment processing is carried out through licensed
+    third-party payment service providers, and Guild's liability in respect
+    of payment processing failures attributable to such third parties is
+    limited as set out in Section 15 (Limitation of Liability).
+
+--------------------------------------------------------------------------------
+8. USER RESPONSIBILITIES
+--------------------------------------------------------------------------------
+8.1 Provide accurate registration and payment information.
+8.2 Comply with the specific terms of any Quest or Event undertaken.
+8.3 Conduct themselves respectfully and lawfully while using the Platform
+    and while participating in any Quest or Event.
+8.4 Not misrepresent their identity, qualifications, or intentions to any
+    Organization.
+8.5 Bear responsibility for their own conduct, safety, and decisions during
+    in-person or virtual Events and Quests.
+
+--------------------------------------------------------------------------------
+9. ORGANIZATION RESPONSIBILITIES
+--------------------------------------------------------------------------------
+9.1 Provide accurate and complete information about the Organization, its
+    Quests, and its Events.
+9.2 Ensure that all Quests and Events comply with Applicable Law, including
+    health, safety, labour, and consumer protection laws relevant to the
+    nature of the Quest or Event.
+9.3 Honour the terms, pricing, and deliverables described in each Quest and
+    Event listing.
+9.4 Process refunds and cancellations in accordance with the Refund &
+    Cancellation Policy.
+9.5 Maintain any licenses, permits, or approvals required to lawfully
+    conduct the Quest or Event.
+9.6 Not use the Platform to publish fake, misleading, or non-existent
+    Quests or Events.
+
+--------------------------------------------------------------------------------
+10. PLATFORM AVAILABILITY, BETA FEATURES & AI FEATURES
+--------------------------------------------------------------------------------
+10.1 Platform Availability. Guild will use reasonable efforts to keep the
+     Platform available, but does not guarantee uninterrupted, error-free,
+     or continuous access. The Platform may be unavailable from time to
+     time due to scheduled maintenance, updates, or circumstances beyond
+     Guild's reasonable control.
+10.2 Maintenance Windows and Downtime. Guild may carry out scheduled or
+     emergency maintenance that temporarily suspends access to the
+     Platform or specific features. Where practicable, Guild will provide
+     advance notice of scheduled maintenance likely to cause material
+     downtime. Guild is not liable for losses arising from reasonable
+     maintenance or downtime.
+10.3 Beta and Experimental Features. Guild may, from time to time, release
+     Beta Features for testing and feedback purposes. Beta Features are
+     provided "as is," may be incomplete, may contain errors, may be
+     modified or withdrawn at any time without notice, and are used at the
+     User's or Organization's own discretion and risk. Beta Features are
+     not covered by the service expectations applicable to the general
+     Platform.
+10.4 AI Features (Future). Guild may, where applicable, introduce features
+     that use artificial intelligence or machine learning to generate
+     recommendations, summaries, matching suggestions, or other outputs
+     (for example, suggesting relevant Quests or Events to a User, or
+     assisting an Organization in drafting a listing). Any such AI-generated
+     output is provided for informational and convenience purposes only, is
+     not guaranteed to be accurate, complete, or suitable for any particular
+     purpose, and should not be relied upon as professional, legal,
+     financial, or safety advice. Users and Organizations remain solely
+     responsible for reviewing and verifying any AI-generated content or
+     recommendation before acting on it.
+10.5 Third-Party Integrations. The Platform may integrate with third-party
+     services (including, where applicable, payment gateways, cloud
+     hosting, authentication providers, analytics providers, and
+     communication/notification services). Guild is not responsible for
+     the availability, accuracy, or performance of such third-party
+     services, which are governed by their own terms and policies.
+10.6 API Usage (Future). Where Guild makes an application programming
+     interface ("API") available to Organizations or third-party
+     developers, such use shall be subject to separate API terms and any
+     applicable rate limits, authentication requirements, and usage
+     restrictions communicated by Guild at the time of access.
+
+--------------------------------------------------------------------------------
+11. SECURITY
+--------------------------------------------------------------------------------
+11.1 Account Security. Users and Organizations are responsible for
+     maintaining the confidentiality and security of their account
+     credentials, including passwords and any authentication tokens or
+     one-time passwords issued to them.
+11.2 Password Responsibility. Users and Organizations must choose a
+     reasonably secure password, must not share their password with any
+     other person, and are responsible for all activities that occur under
+     their account arising from their failure to safeguard their
+     credentials.
+11.3 Unauthorized Access. If a User or Organization becomes aware of, or
+     suspects, unauthorized access to their account, or any other security
+     incident affecting their account, they must notify Guild promptly at
+     [SECURITY CONTACT EMAIL].
+11.4 Reporting Security Incidents. Guild encourages Users, Organizations,
+     and independent security researchers to report suspected
+     vulnerabilities or security incidents to [SECURITY CONTACT EMAIL].
+     Guild will acknowledge and assess such reports in good faith.
+11.5 Data Breach Response. In the event of a personal data breach that is
+     likely to affect Users or Organizations, Guild will take reasonable
+     steps to contain and assess the breach, and will notify affected
+     individuals and the relevant regulatory authority (Data Protection
+     Board of India, where applicable) as required under the Digital
+     Personal Data Protection Act, 2023 and rules made thereunder.
+11.6 Backup Disclaimer. While Guild takes reasonable measures to protect
+     Platform data, Guild does not guarantee that Content or data will be
+     free from loss, and Users and Organizations are encouraged to
+     independently retain copies of important Content (such as Quest
+     deliverables) that they upload to or generate through the Platform.
+
+--------------------------------------------------------------------------------
+12. INTELLECTUAL PROPERTY
+--------------------------------------------------------------------------------
+12.1 The Platform, including its name, logo, brand assets, design,
+     software, and underlying technology, is the exclusive property of
+     Guild and is protected under Applicable Law, including the Copyright
+     Act, 1957 and the Trade Marks Act, 1999.
+12.2 Users and Organizations retain ownership of Content they upload,
+     subject to the license granted to Guild under the Intellectual
+     Property Policy.
+12.3 Nothing in these Terms transfers ownership of Guild's intellectual
+     property, including the Guild name, logo, or brand assets, to any
+     User or Organization.
+
+--------------------------------------------------------------------------------
+13. TERMINATION
+--------------------------------------------------------------------------------
+13.1 Guild may suspend or terminate an account for violation of these
+     Terms, the Community Guidelines, or the Prohibited Activities Policy,
+     or where required by Applicable Law, with notice where reasonably
+     practicable.
+13.2 Users and Organizations may close their accounts at any time, subject
+     to settlement of any pending payments or obligations.
+13.3 Termination does not relieve a User or Organization of obligations
+     accrued prior to termination, including payment obligations, nor does
+     it affect any rights or liabilities that accrued prior to termination.
+
+--------------------------------------------------------------------------------
+14. DISCLAIMERS
+--------------------------------------------------------------------------------
+14.1 The Platform is provided on an "as is" and "as available" basis, without
+     warranties of any kind, whether express or implied, except as required
+     under Applicable Law.
+14.2 Guild does not guarantee the accuracy, quality, safety, or legality of
+     any Quest or Event listed by an Organization, or the accuracy of any
+     AI-generated recommendation, and does not warrant that verification or
+     Trust Score indicators guarantee future conduct (see the Organization
+     Verification Policy).
+14.3 Guild is not responsible for the conduct of Users or Organizations,
+     whether on or off the Platform.
+14.4 Guild does not guarantee uninterrupted or error-free operation of the
+     Platform.
+
+--------------------------------------------------------------------------------
+15. LIMITATION OF LIABILITY
+--------------------------------------------------------------------------------
+15.1 To the maximum extent permitted under Applicable Law, Guild shall not
+     be liable for any indirect, incidental, special, or consequential
+     damages arising out of use of the Platform, participation in any Quest
+     or Event, reliance on any AI-generated recommendation, or any dispute
+     between a User and an Organization.
+15.2 Guild's aggregate liability, where any liability is established,
+     shall not exceed the Platform Commission actually received by Guild in
+     relation to the specific transaction giving rise to the claim, or
+     [AMOUNT] INR, whichever is lower.
+15.3 Nothing in these Terms shall exclude or limit liability that cannot be
+     excluded or limited under Applicable Law, including liability for
+     fraud or wilful misconduct.
+
+--------------------------------------------------------------------------------
+16. GENERAL PROVISIONS
+--------------------------------------------------------------------------------
+16.1 Force Majeure. Guild shall not be liable for any delay or failure to
+     perform its obligations under these Terms resulting from causes
+     beyond its reasonable control, including natural disasters, pandemics,
+     government action, internet or telecommunications failures, or
+     third-party service outages.
+16.2 Severability. If any provision of these Terms is held invalid or
+     unenforceable by a court or authority of competent jurisdiction, the
+     remaining provisions shall continue in full force and effect, and the
+     invalid provision shall be deemed modified to the minimum extent
+     necessary to make it enforceable.
+16.3 Entire Agreement. These Terms, together with the other policies
+     referenced herein (including the Privacy Policy, Community
+     Guidelines, User Agreement, Organization Agreement, and other Guild
+     policies), constitute the entire agreement between the parties
+     regarding use of the Platform and supersede any prior agreements or
+     understandings on the subject.
+16.4 Assignment. Users and Organizations may not assign or transfer their
+     rights or obligations under these Terms without Guild's prior written
+     consent. Guild may assign these Terms, in whole or in part, in
+     connection with a merger, acquisition, corporate reorganization, or
+     sale of assets, with notice to Users and Organizations where required
+     under Applicable Law.
+16.5 Waiver. No failure or delay by Guild in exercising any right under
+     these Terms shall operate as a waiver of that right, nor shall any
+     single or partial exercise of a right preclude any other or further
+     exercise of that right.
+16.6 Survival. Provisions that by their nature are intended to survive
+     termination (including Intellectual Property, Disclaimers, Limitation
+     of Liability, Governing Law, and General Provisions) shall survive
+     termination of an account or these Terms.
+16.7 Electronic Acceptance. By creating an account, checking a
+     confirmation box, or otherwise using the Platform, a User or
+     Organization agrees to be bound by these Terms electronically, which
+     constitutes valid acceptance under the Information Technology Act,
+     2000 and the Indian Contract Act, 1872.
+16.8 Electronic Communications. Users and Organizations consent to receive
+     communications from Guild electronically, including via email, SMS,
+     push notification, or in-Platform notice, and agree that such
+     electronic communications satisfy any legal requirement that such
+     communication be in writing.
+16.9 Notices. Any formal notice to Guild under these Terms must be sent in
+     writing to [REGISTERED ADDRESS] or [SUPPORT EMAIL]. Guild may send
+     notices to Users and Organizations using the contact information
+     provided in their account.
+16.10 Language. These Terms are drafted in English. Any translated version
+      provided for convenience shall not override the English version in
+      case of conflict.
+16.11 Export Control. Users and Organizations agree not to use the
+      Platform in violation of any applicable trade control, export
+      control, or sanctions law, to the extent such laws apply to their
+      use of the Platform.
+
+--------------------------------------------------------------------------------
+17. GOVERNING LAW
+--------------------------------------------------------------------------------
+17.1 These Terms shall be governed by and construed in accordance with the
+     laws of India.
+17.2 Subject to the Dispute Resolution Policy, the courts at [CITY], India
+     shall have exclusive jurisdiction over any disputes arising out of or
+     in connection with these Terms.
+
+--------------------------------------------------------------------------------
+18. CONTACT INFORMATION
+--------------------------------------------------------------------------------
+For questions regarding these Terms, please contact:
+Email: [SUPPORT EMAIL]
+Registered Address: [REGISTERED ADDRESS]
+
+================================================================================
+DOCUMENT 2 OF 14: PRIVACY POLICY
+================================================================================
+
+GUILD — PRIVACY POLICY
+
+Effective Date: [EFFECTIVE DATE]
+Last Updated: [LAST UPDATED DATE]
+
+TABLE OF CONTENTS
+1. Information Collected
+2. Why Information is Collected
+3. Cookies
+4. Third Party Services & Sub-Processors
+5. Cross-Border Data Transfers
+6. Data Storage
+7. Data Retention
+8. Data Security
+9. User Rights, Account Deletion & Data Portability
+10. Children's Privacy
+11. Contact Details
+
+--------------------------------------------------------------------------------
+1. INFORMATION COLLECTED
+--------------------------------------------------------------------------------
+1.1 Account Information: name, email address, phone number, date of birth,
+    and password (stored in encrypted/hashed form via our authentication
+    provider).
+1.2 Organization Information: business/entity name, registration details,
+    authorized signatory information, and contact details, where
+    applicable.
+1.3 Quest and Event Information: registrations, applications, participation
+    records, and completion status.
+1.4 Payment Information: transaction identifiers and payment status. Full
+    card, UPI, or bank details are collected and stored directly by Guild's
+    third-party payment gateway partners, not by Guild, where applicable.
+1.5 Usage Information: device type, IP address, browser type, log data,
+    crash reports, and interactions with the Platform, collected via
+    analytics tools where applicable.
+1.6 Device Permissions: where a User grants permission (e.g., camera,
+    location, storage, or notifications) through their device's operating
+    system, Guild may access such data only for the specific purpose for
+    which permission was granted, and only while such permission remains
+    active.
+1.7 Push Notification Data: device tokens used to deliver push
+    notifications regarding Quest and Event updates, where applicable.
+1.8 Guild Card and Guild Passport Information: verified participation
+    history and reputation indicators, where applicable.
+
+--------------------------------------------------------------------------------
+2. WHY INFORMATION IS COLLECTED
+--------------------------------------------------------------------------------
+2.1 To create and manage User and Organization accounts.
+2.2 To facilitate Quest applications, Event registrations, and payments.
+2.3 To verify Organizations and maintain the integrity of the Quest System,
+    where applicable.
+2.4 To communicate updates, confirmations, and support responses, including
+    via email and push notification.
+2.5 To improve, secure, and maintain the Platform, including through
+    analytics and crash reporting.
+2.6 To comply with Applicable Law, including tax and financial reporting
+    obligations.
+
+--------------------------------------------------------------------------------
+3. COOKIES
+--------------------------------------------------------------------------------
+3.1 Guild uses cookies and similar technologies to operate and improve the
+    Platform. Details are set out in the separate Cookie Policy.
+
+--------------------------------------------------------------------------------
+4. THIRD PARTY SERVICES & SUB-PROCESSORS
+--------------------------------------------------------------------------------
+4.1 Guild relies on the following categories of third-party
+    infrastructure and service providers ("Sub-Processors") to operate the
+    Platform, where applicable:
+    (a) Authentication: Firebase Authentication (Google LLC), and, where
+        enabled, Google Sign-In, to manage secure account login and
+        identity verification.
+    (b) Database and Storage: Firebase Firestore and Firebase Storage
+        (Google LLC), for storing account, Quest, Event, and Content data.
+    (c) Cloud Infrastructure: Google Cloud Platform, for hosting and
+        operating Platform infrastructure.
+    (d) Payment Processing: [PAYMENT GATEWAY PROVIDER NAME(S)], for
+        processing payments, refunds, and settlements.
+    (e) Email Communications: [EMAIL SERVICE PROVIDER NAME], for
+        transactional and account-related emails.
+    (f) Analytics: [ANALYTICS PROVIDER NAME, e.g., Firebase/Google
+        Analytics], for understanding Platform usage and performance.
+    (g) Push Notifications: Firebase Cloud Messaging (Google LLC), for
+        delivering in-app and push notifications.
+4.2 Each Sub-Processor receives only the information reasonably necessary
+    to perform its function and is bound by its own data processing terms
+    and applicable data protection obligations.
+4.3 Guild does not sell User or Organization personal information to third
+    parties.
+4.4 Guild will update this list of Sub-Processors as the Platform evolves
+    and will reflect material changes in the "Last Updated" date of this
+    Policy.
+
+--------------------------------------------------------------------------------
+5. CROSS-BORDER DATA TRANSFERS
+--------------------------------------------------------------------------------
+5.1 Because Guild uses global cloud infrastructure providers (including
+    Google Cloud Platform and Firebase), personal information may be
+    stored or processed on servers located outside India.
+5.2 Guild will only transfer personal information outside India in a
+    manner consistent with the Digital Personal Data Protection Act, 2023,
+    including with respect to any list of restricted countries that may be
+    notified by the Central Government from time to time.
+5.3 Where cross-border transfer occurs, Guild relies on the contractual
+    and technical safeguards provided by its Sub-Processors to protect
+    such information to a standard consistent with Indian data protection
+    requirements.
+
+--------------------------------------------------------------------------------
+6. DATA STORAGE
+--------------------------------------------------------------------------------
+6.1 Data is stored on secure servers operated by Guild's cloud
+    infrastructure providers (including Google Cloud Platform and
+    Firebase), which may be located within or outside India, subject to
+    Section 5 above.
+
+--------------------------------------------------------------------------------
+7. DATA RETENTION
+--------------------------------------------------------------------------------
+7.1 Guild retains personal information for as long as the User's or
+    Organization's account remains active, and thereafter for such
+    additional period as is reasonably necessary to:
+    (a) comply with tax, accounting, and other legal or regulatory
+        retention requirements;
+    (b) resolve disputes, enforce agreements, and defend or pursue legal
+        claims;
+    (c) maintain records of verified Quest and Event history for Guild
+        Card and Guild Passport purposes, where applicable and where the
+        User has not requested deletion.
+7.2 Where personal information is no longer necessary for the purposes
+    described above, Guild will delete or anonymize such information.
+
+--------------------------------------------------------------------------------
+8. DATA SECURITY
+--------------------------------------------------------------------------------
+8.1 Guild implements reasonable technical and organizational security
+    measures, including encryption in transit, access controls, and
+    reliance on the security infrastructure of its cloud and
+    authentication providers (including Firebase Authentication and Google
+    Cloud Platform), to protect personal information against unauthorized
+    access, alteration, or disclosure.
+8.2 No method of electronic storage or transmission is completely secure,
+    and Guild cannot guarantee absolute security. Guild's data breach
+    response process is described in the Terms of Service (Section 11).
+
+--------------------------------------------------------------------------------
+9. USER RIGHTS, ACCOUNT DELETION & DATA PORTABILITY
+--------------------------------------------------------------------------------
+9.1 Users and Organizations may, subject to verification of identity:
+    (a) access the personal information Guild holds about them;
+    (b) request correction of inaccurate information;
+    (c) request deletion of their account and associated personal
+        information, subject to the retention grounds described in
+        Section 7;
+    (d) withdraw consent to certain processing, where consent is the basis
+        for such processing;
+    (e) request a copy of their personal information in a structured,
+        commonly used format, where applicable and technically feasible
+        ("data portability");
+    (f) raise a grievance regarding the handling of their personal
+        information, as described in the Grievance Redressal Policy.
+9.2 Account Deletion. A User or Organization may request deletion of their
+    account by writing to [PRIVACY CONTACT EMAIL]. Guild will process
+    verified deletion requests within [NUMBER] days, subject to retention
+    obligations described in Section 7. Deletion of an Organization's
+    account does not extinguish obligations owed to Users arising from
+    Quests or Events already published or completed.
+9.3 Requests under this Section may be sent to [PRIVACY CONTACT EMAIL].
+
+--------------------------------------------------------------------------------
+10. CHILDREN'S PRIVACY
+--------------------------------------------------------------------------------
+10.1 The Platform is not directed at individuals under the age of 18
+     without verifiable parental or guardian consent, where applicable.
+10.2 Guild does not knowingly collect personal information from children in
+     violation of Applicable Law. If Guild becomes aware that it has done
+     so, it will take steps to delete such information promptly.
+
+--------------------------------------------------------------------------------
+11. CONTACT DETAILS
+--------------------------------------------------------------------------------
+For privacy-related queries, please contact:
+Email: [PRIVACY CONTACT EMAIL]
+Grievance Officer: [GRIEVANCE OFFICER NAME AND CONTACT]
+
+================================================================================
+DOCUMENT 3 OF 14: COMMUNITY GUIDELINES
+================================================================================
+
+GUILD — COMMUNITY GUIDELINES
+
+Effective Date: [EFFECTIVE DATE]
+Last Updated: [LAST UPDATED DATE]
+
+TABLE OF CONTENTS
+1. Purpose
+2. Respectful Behaviour
+3. Fraud
+4. Spam
+5. Fake Events
+6. Fake Organizations
+7. Harassment
+8. Illegal Activities
+9. Misuse of Guild
+10. Reporting Violations
+11. Enforcement
+
+--------------------------------------------------------------------------------
+1. PURPOSE
+--------------------------------------------------------------------------------
+1.1 These Community Guidelines describe the standards of conduct expected of
+    all Users and Organizations on the Platform. They apply in addition to,
+    and do not limit, the Terms of Service, the User Agreement, the
+    Organization Agreement, and the Prohibited Activities Policy.
+
+--------------------------------------------------------------------------------
+2. RESPECTFUL BEHAVIOUR
+--------------------------------------------------------------------------------
+2.1 Users and Organizations must treat one another with courtesy and
+    respect during all interactions on the Platform and during Quests and
+    Events facilitated through it.
+2.2 Discriminatory, abusive, or demeaning conduct on the basis of religion,
+    race, caste, gender, sexual orientation, disability, or any other
+    protected characteristic is not permitted.
+
+--------------------------------------------------------------------------------
+3. FRAUD
+--------------------------------------------------------------------------------
+3.1 Users and Organizations must not engage in any deceptive practice,
+    including misrepresenting identity, qualifications, payment details, or
+    the nature of a Quest or Event.
+3.2 Attempting to obtain payment, personal information, or services through
+    deception is strictly prohibited and may be reported to Guild and, where
+    required by Applicable Law, to law enforcement authorities.
+
+--------------------------------------------------------------------------------
+4. SPAM
+--------------------------------------------------------------------------------
+4.1 Users and Organizations must not use the Platform to send unsolicited
+    bulk communications, repetitive irrelevant postings, or promotional
+    content unrelated to a genuine Quest or Event.
+
+--------------------------------------------------------------------------------
+5. FAKE EVENTS
+--------------------------------------------------------------------------------
+5.1 Organizations must not create Events that do not genuinely exist, will
+    not genuinely take place, or misrepresent material details such as
+    date, venue, pricing, or content.
+
+--------------------------------------------------------------------------------
+6. FAKE ORGANIZATIONS
+--------------------------------------------------------------------------------
+6.1 Entities must not create Organization profiles using false identity,
+    forged documents, or impersonation of a real organization.
+6.2 Guild may apply verification checks described in the Organization
+    Verification Policy to reduce the risk of fake Organizations, but such
+    checks are not a guarantee against misrepresentation (see Section 9 of
+    the Organization Verification Policy).
+
+--------------------------------------------------------------------------------
+7. HARASSMENT
+--------------------------------------------------------------------------------
+7.1 Any form of stalking, threats, unwanted contact, intimidation, or
+    sexual harassment directed at another User, Organization
+    representative, or Guild personnel is strictly prohibited and may be
+    reported immediately through the process in Section 10.
+
+--------------------------------------------------------------------------------
+8. ILLEGAL ACTIVITIES
+--------------------------------------------------------------------------------
+8.1 The Platform must not be used to plan, promote, or facilitate any
+    activity that is unlawful under Applicable Law, as further detailed in
+    the Prohibited Activities Policy.
+
+--------------------------------------------------------------------------------
+9. MISUSE OF GUILD
+--------------------------------------------------------------------------------
+9.1 Users and Organizations must not attempt to circumvent Platform
+    payment systems, manipulate the Quest System, Trust Score, or
+    verification mechanisms, or use automated tools (including bots or
+    scrapers) to interact with the Platform without Guild's prior written
+    authorization.
+
+--------------------------------------------------------------------------------
+10. REPORTING VIOLATIONS
+--------------------------------------------------------------------------------
+10.1 Users and Organizations may report a suspected violation of these
+     Guidelines through the in-Platform reporting feature, where
+     applicable, or by writing to [SUPPORT EMAIL], describing the nature of
+     the violation and the relevant account, Quest, or Event.
+
+--------------------------------------------------------------------------------
+11. ENFORCEMENT
+--------------------------------------------------------------------------------
+11.1 Violations of these Guidelines may result in content removal, warning,
+     temporary suspension, or termination of an account, in accordance
+     with the Terms of Service.
+11.2 Users and Organizations may also pursue the process described in the
+     Grievance Redressal Policy and the Dispute Resolution Policy.
+
+================================================================================
+DOCUMENT 4 OF 14: USER AGREEMENT
+================================================================================
+
+GUILD — USER AGREEMENT
+
+Effective Date: [EFFECTIVE DATE]
+Last Updated: [LAST UPDATED DATE]
+
+TABLE OF CONTENTS
+1. Scope of this Agreement
+2. User Obligations
+3. Quest Participation
+4. Event Participation
+5. Payments
+6. Tickets
+7. Content Ownership
+8. Account Misuse
+9. Suspension
+
+--------------------------------------------------------------------------------
+1. SCOPE OF THIS AGREEMENT
+--------------------------------------------------------------------------------
+1.1 This User Agreement applies to every individual who registers as a User
+    on the Platform and supplements the Terms of Service. In the event of
+    any conflict between this Agreement and the Terms of Service on a
+    matter specifically addressed by the Terms of Service, the Terms of
+    Service shall prevail unless this Agreement expressly states otherwise.
+
+--------------------------------------------------------------------------------
+2. USER OBLIGATIONS
+--------------------------------------------------------------------------------
+2.1 Provide truthful and accurate registration and profile information.
+2.2 Use the Platform only for lawful and legitimate purposes.
+2.3 Honour commitments made when applying for a Quest or registering for an
+    Event.
+2.4 Comply with the Community Guidelines and Prohibited Activities Policy.
+
+--------------------------------------------------------------------------------
+3. QUEST PARTICIPATION
+--------------------------------------------------------------------------------
+3.1 A User who applies for or accepts a Quest agrees to complete the
+    deliverables described by the publishing Organization within the
+    agreed timeline, to the extent reasonably possible.
+3.2 A User is responsible for assessing the legitimacy and suitability of a
+    Quest before accepting it.
+3.3 Verified Quest completion may be reflected on the User's Guild Card and
+    Guild Passport, where applicable, based on confirmation from the
+    Organization.
+3.4 Guild is not a party to, and does not guarantee performance of, the
+    arrangement between the User and the Organization in relation to any
+    Quest.
+
+--------------------------------------------------------------------------------
+4. EVENT PARTICIPATION
+--------------------------------------------------------------------------------
+4.1 A User who registers for an Event agrees to comply with the rules,
+    codes of conduct, and safety guidelines set by the hosting
+    Organization.
+4.2 Users are responsible for their own conduct, safety, and belongings
+    during any Event.
+4.3 Guild is not the organizer of any Event and is not responsible for the
+    conduct, quality, or safety of the Event.
+
+--------------------------------------------------------------------------------
+5. PAYMENTS
+--------------------------------------------------------------------------------
+5.1 Where an Event or Quest requires payment, the User authorizes the
+    Platform's designated payment gateway to process such payment, subject
+    to the Payment & Commission Policy.
+5.2 Users are responsible for ensuring their payment details are accurate
+    and for any charges incurred due to failed or disputed payments.
+
+--------------------------------------------------------------------------------
+6. TICKETS
+--------------------------------------------------------------------------------
+6.1 Upon successful registration and payment (where applicable), a User
+    will receive a ticket or confirmation, which serves as proof of
+    registration for the Event.
+6.2 Tickets are non-transferable unless expressly permitted by the hosting
+    Organization.
+6.3 Users must comply with any entry conditions specified by the
+    Organization, including identification checks, where applicable.
+
+--------------------------------------------------------------------------------
+7. CONTENT OWNERSHIP
+--------------------------------------------------------------------------------
+7.1 Users retain ownership of Content they submit on the Platform (such as
+    profile information, Quest deliverables, or reviews), subject to the
+    license granted to Guild under the Intellectual Property Policy.
+7.2 Users are responsible for ensuring they have the right to submit any
+    Content they upload.
+
+--------------------------------------------------------------------------------
+8. ACCOUNT MISUSE
+--------------------------------------------------------------------------------
+8.1 Users must not share, sell, or transfer their account to another
+    person.
+8.2 Users must not create multiple accounts to manipulate Quests, Events,
+    reviews, Trust Score, or verification outcomes.
+8.3 Users must not use the Platform to harass, defraud, or mislead
+    Organizations or other Users.
+
+--------------------------------------------------------------------------------
+9. SUSPENSION
+--------------------------------------------------------------------------------
+9.1 Guild may suspend or terminate a User's account for violation of this
+    Agreement, the Terms of Service, the Community Guidelines, or the
+    Prohibited Activities Policy.
+9.2 Where reasonably possible, Guild will notify the User of the reason for
+    suspension and provide an opportunity to respond, except where
+    immediate suspension is necessary to protect the Platform, other
+    Users, or Organizations, or to comply with Applicable Law.
+
+================================================================================
+DOCUMENT 5 OF 14: ORGANIZATION AGREEMENT
+================================================================================
+
+GUILD — ORGANIZATION AGREEMENT
+
+Effective Date: [EFFECTIVE DATE]
+Last Updated: [LAST UPDATED DATE]
+
+TABLE OF CONTENTS
+1. Scope of this Agreement
+2. Organization Obligations
+3. Event Creation
+4. Quest Creation
+5. Accurate Information
+6. Payments
+7. Refund Responsibilities
+8. Compliance with Applicable Law
+9. Ownership of Listings
+10. Platform Commission
+11. Indemnification
+
+--------------------------------------------------------------------------------
+1. SCOPE OF THIS AGREEMENT
+--------------------------------------------------------------------------------
+1.1 This Organization Agreement applies to every entity or individual that
+    registers an Organization profile on the Platform and supplements the
+    Terms of Service. In the event of any conflict between this Agreement
+    and the Terms of Service on a matter specifically addressed by the
+    Terms of Service, the Terms of Service shall prevail unless this
+    Agreement expressly states otherwise.
+
+--------------------------------------------------------------------------------
+2. ORGANIZATION OBLIGATIONS
+--------------------------------------------------------------------------------
+2.1 Maintain accurate and up-to-date Organization information.
+2.2 Honour the terms of every published Quest and Event.
+2.3 Respond to User queries and disputes in good faith and within
+    reasonable timelines.
+2.4 Cooperate with Guild's verification and review processes described in
+    the Organization Verification Policy.
+
+--------------------------------------------------------------------------------
+3. EVENT CREATION
+--------------------------------------------------------------------------------
+3.1 An Organization creating an Event is solely responsible for its
+    planning, execution, safety, and legality, including obtaining any
+    permits, licenses, or insurance required under Applicable Law.
+3.2 The Organization must accurately describe the Event's date, time,
+    location, pricing, and terms of participation.
+3.3 The Organization, and not Guild, is the organizer of the Event for all
+    legal purposes.
+
+--------------------------------------------------------------------------------
+4. QUEST CREATION
+--------------------------------------------------------------------------------
+4.1 An Organization publishing a Quest must accurately describe the task,
+    eligibility criteria, deliverables, timeline, and compensation (if
+    any).
+4.2 The Organization is responsible for evaluating Quest submissions and
+    confirming completion for the purposes of the Guild Card and Guild
+    Passport, where applicable, and for doing so honestly and in good
+    faith.
+4.3 The Organization must not publish Quests that are illegal, deceptive,
+    or that do not reflect a genuine organizational need.
+
+--------------------------------------------------------------------------------
+5. ACCURATE INFORMATION
+--------------------------------------------------------------------------------
+5.1 All information provided by the Organization, including registration
+    documents, contact details, Quest listings, and Event listings, must be
+    true, accurate, and not misleading.
+5.2 Guild may request supporting documentation to verify an Organization's
+    identity and legitimacy, where applicable, in accordance with the
+    Organization Verification Policy.
+
+--------------------------------------------------------------------------------
+6. PAYMENTS
+--------------------------------------------------------------------------------
+6.1 Where an Organization collects payment for an Event or Quest through
+    the Platform, such payment shall be processed via Guild's designated
+    payment gateway(s).
+6.2 Guild may deduct the Platform Commission and applicable processing fees
+    from such payments prior to settlement, as described in the Payment &
+    Commission Policy.
+
+--------------------------------------------------------------------------------
+7. REFUND RESPONSIBILITIES
+--------------------------------------------------------------------------------
+7.1 The Organization is responsible for setting and honouring a refund and
+    cancellation policy for its Events and Quests, consistent with the
+    Refund & Cancellation Policy and Applicable Law.
+7.2 The Organization shall bear responsibility for refunds arising from
+    cancellation, misrepresentation, or non-performance of an Event or
+    Quest that it created.
+
+--------------------------------------------------------------------------------
+8. COMPLIANCE WITH APPLICABLE LAW
+--------------------------------------------------------------------------------
+8.1 The Organization is solely responsible for ensuring that its Quests and
+    Events comply with all Applicable Law, including consumer protection,
+    taxation, labour, health and safety, and sector-specific regulations.
+8.2 The Organization is solely responsible for determining and discharging
+    its own GST and other tax obligations arising from amounts received
+    through the Platform, as further described in the Payment & Commission
+    Policy.
+
+--------------------------------------------------------------------------------
+9. OWNERSHIP OF LISTINGS
+--------------------------------------------------------------------------------
+9.1 The Organization retains ownership of the content of its Quest and
+    Event listings, subject to the license granted to Guild under the
+    Intellectual Property Policy for the purpose of displaying and
+    promoting such listings on the Platform.
+
+--------------------------------------------------------------------------------
+10. PLATFORM COMMISSION
+--------------------------------------------------------------------------------
+10.1 Guild charges a Platform Commission on eligible transactions, as
+     described in the Payment & Commission Policy, in consideration for the
+     technology, discovery, and payment infrastructure provided by Guild.
+10.2 The applicable Platform Commission rate will be disclosed to the
+     Organization prior to publishing a paid Quest or Event and may be
+     updated with prior notice, but will not be applied retroactively to
+     amounts already collected.
+
+--------------------------------------------------------------------------------
+11. INDEMNIFICATION
+--------------------------------------------------------------------------------
+11.1 The Organization shall indemnify and hold Guild harmless against any
+     claims, losses, damages, or expenses (including reasonable legal
+     costs) arising from: (a) the Organization's breach of this Agreement
+     or Applicable Law; (b) the Organization's Quests or Events; or (c) any
+     misrepresentation made by the Organization on the Platform, to the
+     extent permitted under Applicable Law.
+
+================================================================================
+DOCUMENT 6 OF 14: REFUND & CANCELLATION POLICY
+================================================================================
+
+GUILD — REFUND & CANCELLATION POLICY
+
+Effective Date: [EFFECTIVE DATE]
+Last Updated: [LAST UPDATED DATE]
+
+TABLE OF CONTENTS
+1. General Principles
+2. Event Refunds
+3. Quest Refunds
+4. Organization Responsibility
+5. Platform Fees
+6. Cancellation Timelines
+7. Refund Processing Timelines
+8. Exceptional Situations
+
+--------------------------------------------------------------------------------
+1. GENERAL PRINCIPLES
+--------------------------------------------------------------------------------
+1.1 Refunds and cancellations for Events and Quests are primarily governed
+    by the specific refund terms set by the Organization at the time of
+    listing, which must be disclosed to Users prior to registration or
+    payment, and which must not be less protective of Users than the
+    default timelines in this Policy unless expressly permitted by
+    Applicable Law.
+1.2 Where an Organization does not specify refund terms, the default
+    timelines in Section 6 shall apply.
+
+--------------------------------------------------------------------------------
+2. EVENT REFUNDS
+--------------------------------------------------------------------------------
+2.1 If an Organization cancels an Event, Users who paid for registration
+    are entitled to a full refund of the amount paid, excluding
+    non-recoverable payment gateway processing fees where permitted under
+    Applicable Law.
+2.2 If a User cancels their registration, refund eligibility shall follow
+    the cancellation window and terms specified by the Organization for
+    that Event.
+2.3 In case of a material change to the Event (such as change of date or
+    venue) that the User did not agree to, the User may request a refund
+    within [NUMBER] days of the change being communicated.
+
+--------------------------------------------------------------------------------
+3. QUEST REFUNDS
+--------------------------------------------------------------------------------
+3.1 Where a Quest involves payment by a User (such as a participation fee),
+    refund eligibility shall be governed by the terms disclosed by the
+    Organization at the time of publishing the Quest.
+3.2 Where a Quest involves payment to a User upon completion, disputes
+    regarding non-payment or incomplete payment shall be handled under the
+    Dispute Resolution Policy.
+
+--------------------------------------------------------------------------------
+4. ORGANIZATION RESPONSIBILITY
+--------------------------------------------------------------------------------
+4.1 The Organization is responsible for approving and processing eligible
+    refunds in a timely manner and for the accuracy of any refund terms it
+    publishes.
+4.2 Where an Organization fails to process an eligible refund within the
+    timelines in Section 7, Guild may, where applicable and where Guild
+    holds the relevant funds, facilitate the refund directly from funds
+    held prior to settlement, subject to investigation under the Dispute
+    Resolution Policy.
+
+--------------------------------------------------------------------------------
+5. PLATFORM FEES
+--------------------------------------------------------------------------------
+5.1 The Platform Commission and payment gateway processing fees may be
+    non-refundable, except where required under Applicable Law or where
+    the cancellation is directly attributable to a verified Platform error.
+
+--------------------------------------------------------------------------------
+6. CANCELLATION TIMELINES
+--------------------------------------------------------------------------------
+6.1 Unless otherwise specified by the Organization and disclosed to the
+    User at the time of registration, the following default timelines
+    apply:
+    (a) Cancellation more than [NUMBER] days before the Event/Quest start
+        date: full refund, excluding non-recoverable processing fees.
+    (b) Cancellation between [NUMBER] and [NUMBER] days before the start
+        date: partial refund of [PERCENTAGE]%.
+    (c) Cancellation less than [NUMBER] days before the start date: no
+        refund, unless required under Applicable Law.
+
+--------------------------------------------------------------------------------
+7. REFUND PROCESSING TIMELINES
+--------------------------------------------------------------------------------
+7.1 Once a refund is approved (whether by the Organization or, where
+    applicable, by Guild following an investigation), Guild will
+    initiate the refund to the User's original payment method within
+    [NUMBER] business days.
+7.2 The User's bank or payment provider may take an additional [NUMBER]
+    business days to reflect the refunded amount, which is outside Guild's
+    control.
+7.3 Refunds will be processed to the original payment method used for the
+    transaction, except where this is not possible, in which case Guild
+    may offer an alternative refund mechanism where applicable.
+
+--------------------------------------------------------------------------------
+8. EXCEPTIONAL SITUATIONS
+--------------------------------------------------------------------------------
+8.1 In cases of force majeure (natural disaster, government restriction,
+    public health emergency, or similar event beyond the reasonable control
+    of the Organization), refund terms may be adjusted, and Guild may
+    facilitate communication of alternative arrangements (such as
+    rescheduling) between the Organization and Users.
+8.2 Refund requests arising from fraud, misrepresentation, or fake listings
+    shall be handled on a priority basis under the Dispute Resolution
+    Policy.
+
+================================================================================
+DOCUMENT 7 OF 14: PAYMENT & COMMISSION POLICY
+================================================================================
+
+GUILD — PAYMENT & COMMISSION POLICY
+
+Effective Date: [EFFECTIVE DATE]
+Last Updated: [LAST UPDATED DATE]
+
+TABLE OF CONTENTS
+1. Supported Payment Methods
+2. Platform Commission & Calculation
+3. Processing Fees
+4. Taxes & GST Responsibility
+5. Invoice Generation
+6. Failed Payments
+7. Chargebacks
+8. Payment Confirmation
+9. Payment Gateway Responsibility
+
+--------------------------------------------------------------------------------
+1. SUPPORTED PAYMENT METHODS
+--------------------------------------------------------------------------------
+1.1 Guild supports payment methods made available through its designated
+    third-party payment gateway(s), which may include, where applicable,
+    UPI, debit/credit cards, net banking, and digital wallets.
+1.2 Supported payment methods may vary and may be updated by Guild from
+    time to time.
+
+--------------------------------------------------------------------------------
+2. PLATFORM COMMISSION & CALCULATION
+--------------------------------------------------------------------------------
+2.1 Guild may deduct a Platform Commission from payments collected on
+    behalf of an Organization for a paid Event or Quest.
+2.2 The Platform Commission is calculated as [PERCENTAGE]% of the gross
+    transaction amount (i.e., the amount paid by the User, before deduction
+    of payment gateway processing fees), unless a different basis is
+    disclosed to the Organization prior to publishing the relevant listing.
+2.3 The applicable Platform Commission rate will be disclosed to the
+    Organization before the relevant Quest or Event is published, and shall
+    not be altered retroactively for listings already published without
+    prior notice.
+2.4 Platform Commission rates may differ based on the type of Event, Quest,
+    or Organization verification level, where applicable, and any such
+    differential structure will be disclosed to the Organization in
+    advance.
+
+--------------------------------------------------------------------------------
+3. PROCESSING FEES
+--------------------------------------------------------------------------------
+3.1 In addition to the Platform Commission, third-party payment gateway
+    processing fees may apply and will be disclosed at the time of
+    transaction, where applicable. These fees are set by the payment
+    gateway and are not retained by Guild.
+
+--------------------------------------------------------------------------------
+4. TAXES & GST RESPONSIBILITY
+--------------------------------------------------------------------------------
+4.1 Organizations are solely responsible for determining and discharging
+    their tax obligations, including Goods and Services Tax ("GST"),
+    income tax, and any other applicable levies arising from amounts
+    received through the Platform, and for obtaining any GST registration
+    required for their activities.
+4.2 Guild's Platform Commission is charged exclusive of applicable GST,
+    which shall be added to the Platform Commission at the rate prescribed
+    under Applicable Law and reflected in the invoice issued to the
+    Organization under Section 5.
+4.3 Guild may issue transaction statements to assist Organizations with
+    their tax compliance but does not provide tax advice, and Organizations
+    should consult their own tax advisors.
+4.4 Where required under Applicable Law, Guild may deduct tax at source
+    (TDS) or report transactions to tax authorities.
+
+--------------------------------------------------------------------------------
+5. INVOICE GENERATION
+--------------------------------------------------------------------------------
+5.1 Guild will generate and make available to each Organization an invoice
+    for the Platform Commission (and applicable GST) charged on each
+    settled transaction, accessible through the Organization's account
+    dashboard, where applicable.
+5.2 Organizations are responsible for independently generating any invoice
+    owed to a User for a paid Quest or Event, as required under Applicable
+    Law.
+
+--------------------------------------------------------------------------------
+6. FAILED PAYMENTS
+--------------------------------------------------------------------------------
+6.1 If a payment fails due to technical error, insufficient funds, or
+    payment gateway issues, the corresponding registration or Quest
+    acceptance shall not be considered confirmed until payment is
+    successfully completed.
+6.2 Guild is not responsible for failures caused by third-party payment
+    gateways, banks, or the User's or Organization's payment instruments.
+
+--------------------------------------------------------------------------------
+7. CHARGEBACKS
+--------------------------------------------------------------------------------
+7.1 If a User initiates a chargeback with their bank or card issuer, Guild
+    may temporarily withhold the corresponding amount from settlement to
+    the Organization pending resolution of the chargeback.
+7.2 The Organization shall reasonably cooperate with Guild and the payment
+    gateway in responding to a chargeback, including by providing evidence
+    of the Quest or Event's genuineness and delivery.
+7.3 Where a chargeback is upheld against the Organization, Guild may debit
+    the disputed amount, together with any chargeback fee levied by the
+    payment gateway, from the Organization's future settlements or
+    outstanding balance.
+7.4 Repeated or unresolved chargebacks against an Organization may result
+    in suspension of the Organization's ability to collect payments through
+    the Platform, pending investigation under the Dispute Resolution
+    Policy.
+
+--------------------------------------------------------------------------------
+8. PAYMENT CONFIRMATION
+--------------------------------------------------------------------------------
+8.1 Upon successful payment, the User or Organization will receive a
+    confirmation via the Platform and/or email, which serves as proof of
+    the transaction.
+8.2 In case of discrepancy between a payment confirmation and actual funds
+    received, Guild's transaction records shall be treated as the primary
+    reference, subject to reconciliation with the payment gateway.
+
+--------------------------------------------------------------------------------
+9. PAYMENT GATEWAY RESPONSIBILITY
+--------------------------------------------------------------------------------
+9.1 Payment processing is performed by Guild's third-party payment gateway
+    partner(s), who are independently responsible for compliance with
+    payment aggregator/payment gateway regulations issued by the Reserve
+    Bank of India, where applicable to their operations.
+9.2 Guild is not liable for errors, delays, security incidents, or
+    non-compliance attributable solely to a third-party payment gateway,
+    without prejudice to Guild's own obligations under Applicable Law.
+
+================================================================================
+DOCUMENT 8 OF 14: PAYOUT POLICY
+================================================================================
+
+GUILD — PAYOUT POLICY
+
+Effective Date: [EFFECTIVE DATE]
+Last Updated: [LAST UPDATED DATE]
+
+TABLE OF CONTENTS
+1. Settlement Process
+2. Release Conditions
+3. Settlement Timelines
+4. Failed Payouts
+5. Bank Details
+6. Chargebacks & Withheld Funds
+7. Payment Disputes
+
+--------------------------------------------------------------------------------
+1. SETTLEMENT PROCESS
+--------------------------------------------------------------------------------
+1.1 Amounts collected by Guild on behalf of an Organization for a paid
+    Event or Quest shall, after deduction of the Platform Commission,
+    applicable GST, and applicable payment gateway processing fees, be
+    settled to the Organization's designated bank account or payment
+    instrument, where applicable.
+1.2 Depending on the payment workflow selected or applicable to a given
+    Event or Quest, Guild may hold collected funds temporarily before
+    settlement, including holding funds until the Event or Quest has
+    concluded and the applicable refund window (see the Refund &
+    Cancellation Policy) has expired, where applicable.
+
+--------------------------------------------------------------------------------
+2. RELEASE CONDITIONS
+--------------------------------------------------------------------------------
+2.1 Funds shall generally be released to an Organization upon satisfaction
+    of applicable conditions, which may include, where applicable:
+    (a) completion or occurrence of the Event or Quest;
+    (b) expiry of the applicable refund/cancellation window;
+    (c) absence of an open or unresolved dispute or chargeback relating to
+        the transaction;
+    (d) successful completion of Organization verification, where
+        required.
+2.2 Guild may withhold settlement, in whole or in part, where a payment is
+    subject to an active dispute, suspected fraud, or a chargeback, until
+    the matter is resolved under the Dispute Resolution Policy.
+
+--------------------------------------------------------------------------------
+3. SETTLEMENT TIMELINES
+--------------------------------------------------------------------------------
+3.1 Subject to Section 2, settlements will generally be processed within
+    [NUMBER] business days of the funds becoming eligible for release,
+    excluding delays caused by banking systems, payment gateway processing,
+    or public holidays.
+3.2 Guild will make settlement timelines and any applicable minimum payout
+    threshold visible to Organizations through their account dashboard,
+    where applicable.
+
+--------------------------------------------------------------------------------
+4. FAILED PAYOUTS
+--------------------------------------------------------------------------------
+4.1 If a payout fails due to incorrect bank details, a closed account, or
+    similar reasons attributable to the Organization, Guild will notify the
+    Organization to provide corrected details within [NUMBER] days.
+4.2 Guild is not liable for delays or failures in settlement caused by
+    inaccurate information provided by the Organization or by the failure
+    of third-party banking or payment gateway systems.
+4.3 A failed payout will be re-attempted once corrected details are
+    provided; Guild reserves the right to charge back any re-attempt
+    processing fee levied by its payment gateway, where applicable.
+
+--------------------------------------------------------------------------------
+5. BANK DETAILS
+--------------------------------------------------------------------------------
+5.1 Organizations must provide accurate bank account or payment instrument
+    details and promptly update Guild of any changes.
+5.2 Guild may require verification of bank account ownership (such as
+    penny-drop verification) before processing settlements, where
+    applicable.
+
+--------------------------------------------------------------------------------
+6. CHARGEBACKS & WITHHELD FUNDS
+--------------------------------------------------------------------------------
+6.1 Where a chargeback, refund request, or dispute is pending in relation to
+    a transaction, Guild may withhold the corresponding amount from
+    settlement until the matter is resolved, as described in the Payment &
+    Commission Policy and the Dispute Resolution Policy.
+
+--------------------------------------------------------------------------------
+7. PAYMENT DISPUTES
+--------------------------------------------------------------------------------
+7.1 Disputes concerning settlement amount, timing, or eligibility shall be
+    addressed in accordance with the Dispute Resolution Policy.
+7.2 Organizations may raise a payout-related query at [PAYOUTS SUPPORT
+    EMAIL].
+
+================================================================================
+DOCUMENT 9 OF 14: DISPUTE RESOLUTION POLICY
+================================================================================
+
+GUILD — DISPUTE RESOLUTION POLICY
+
+Effective Date: [EFFECTIVE DATE]
+Last Updated: [LAST UPDATED DATE]
+
+TABLE OF CONTENTS
+1. Scope
+2. Event Disputes
+3. Quest Disputes
+4. Payment Disputes & Chargebacks
+5. Reporting Process
+6. Investigation
+7. Resolution Process
+8. Escalation
+
+--------------------------------------------------------------------------------
+1. SCOPE
+--------------------------------------------------------------------------------
+1.1 This Policy describes the process for raising and resolving disputes
+    between Users and Organizations, and between either party and Guild,
+    arising out of use of the Platform.
+1.2 Guild acts as a neutral facilitator in disputes between Users and
+    Organizations and does not act as an arbitrator or adjudicator, except
+    to the extent expressly stated in this Policy.
+
+--------------------------------------------------------------------------------
+2. EVENT DISPUTES
+--------------------------------------------------------------------------------
+2.1 Disputes relating to an Event (such as non-occurrence, material
+    misrepresentation, or safety concerns) should first be raised with the
+    hosting Organization directly through the Platform.
+2.2 If unresolved within [NUMBER] days, the User may escalate the dispute
+    to Guild for review.
+
+--------------------------------------------------------------------------------
+3. QUEST DISPUTES
+--------------------------------------------------------------------------------
+3.1 Disputes relating to a Quest (such as non-payment, rejection of
+    deliverables, or non-performance) should first be raised with the
+    counterparty through the Platform.
+3.2 If unresolved within [NUMBER] days, either party may escalate the
+    dispute to Guild for review.
+
+--------------------------------------------------------------------------------
+4. PAYMENT DISPUTES & CHARGEBACKS
+--------------------------------------------------------------------------------
+4.1 Disputes relating to payment processing, refunds, or settlement should
+    be reported to Guild promptly, and in any case before initiating a
+    chargeback with the User's bank or card issuer, where possible.
+4.2 Guild will investigate payment disputes and chargebacks in coordination
+    with its payment gateway partners, where applicable, and may request
+    supporting evidence from the Organization as described in the Payment
+    & Commission Policy.
+
+--------------------------------------------------------------------------------
+5. REPORTING PROCESS
+--------------------------------------------------------------------------------
+5.1 A dispute may be reported through the in-Platform reporting feature,
+    where applicable, or by writing to [DISPUTES SUPPORT EMAIL], including:
+    (a) the names of the parties involved;
+    (b) the relevant Quest or Event identifier;
+    (c) a description of the issue and supporting evidence, if any.
+
+--------------------------------------------------------------------------------
+6. INVESTIGATION
+--------------------------------------------------------------------------------
+6.1 Upon receiving a report, Guild will acknowledge receipt within
+    [NUMBER] business days and may request additional information from
+    either party.
+6.2 Guild may temporarily withhold settlement of disputed funds pending the
+    outcome of an investigation, as described in the Payout Policy.
+
+--------------------------------------------------------------------------------
+7. RESOLUTION PROCESS
+--------------------------------------------------------------------------------
+7.1 Guild will endeavour to resolve disputes within [NUMBER] business days
+    of completing its investigation, and will communicate its findings and
+    any resulting action (such as refund facilitation, warning, or account
+    action) to the parties involved.
+7.2 Guild's decision in facilitating a resolution is based on the
+    information available to it and does not constitute a legal
+    adjudication of the parties' rights.
+
+--------------------------------------------------------------------------------
+8. ESCALATION
+--------------------------------------------------------------------------------
+8.1 If a party is not satisfied with the outcome, they may escalate the
+    matter to the Grievance Officer under the Grievance Redressal Policy.
+8.2 Nothing in this Policy prevents a User or Organization from pursuing
+    remedies available under Applicable Law, including before a consumer
+    forum or court of competent jurisdiction.
+
+================================================================================
+DOCUMENT 10 OF 14: PROHIBITED ACTIVITIES POLICY
+================================================================================
+
+GUILD — PROHIBITED ACTIVITIES POLICY
+
+Effective Date: [EFFECTIVE DATE]
+Last Updated: [LAST UPDATED DATE]
+
+TABLE OF CONTENTS
+1. Purpose
+2. Illegal Activities
+3. Fraud
+4. Money Laundering
+5. Gambling
+6. Adult Content
+7. Academic Cheating
+8. Fake Reviews
+9. Fake Organizations
+10. Fake Events
+11. Malware
+12. Copyright Violations
+13. Consequences
+
+--------------------------------------------------------------------------------
+1. PURPOSE
+--------------------------------------------------------------------------------
+1.1 This Policy sets out activities that are strictly prohibited on the
+    Platform. This list is illustrative and not exhaustive; Guild may take
+    action against any activity that violates Applicable Law or undermines
+    the integrity of the Platform, whether or not expressly listed here.
+
+--------------------------------------------------------------------------------
+2. ILLEGAL ACTIVITIES
+--------------------------------------------------------------------------------
+2.1 Using the Platform to plan, promote, or conduct any activity that is
+    unlawful under Applicable Law is strictly prohibited.
+
+--------------------------------------------------------------------------------
+3. FRAUD
+--------------------------------------------------------------------------------
+3.1 Misrepresenting identity, credentials, payment information, or the
+    nature of a Quest or Event, for the purpose of obtaining money, data, or
+    services, is strictly prohibited.
+
+--------------------------------------------------------------------------------
+4. MONEY LAUNDERING
+--------------------------------------------------------------------------------
+4.1 Using the Platform, including its payment or Quest System, to disguise
+    the origin of unlawfully obtained funds, or to structure transactions
+    to evade reporting requirements, is strictly prohibited and may be
+    reported to the appropriate authorities under Applicable Law.
+
+--------------------------------------------------------------------------------
+5. GAMBLING
+--------------------------------------------------------------------------------
+5.1 Creating or publishing Quests or Events that constitute betting,
+    wagering, or games of chance for money, where prohibited under
+    Applicable Law, is strictly prohibited.
+
+--------------------------------------------------------------------------------
+6. ADULT CONTENT
+--------------------------------------------------------------------------------
+6.1 Publishing, promoting, or facilitating sexually explicit content,
+    services, or Events through the Platform is strictly prohibited.
+
+--------------------------------------------------------------------------------
+7. ACADEMIC CHEATING
+--------------------------------------------------------------------------------
+7.1 Using the Quest System to solicit or provide services that facilitate
+    academic dishonesty, including ghostwriting of assignments,
+    examinations, or theses for submission as a User's own work, is
+    strictly prohibited.
+
+--------------------------------------------------------------------------------
+8. FAKE REVIEWS
+--------------------------------------------------------------------------------
+8.1 Posting reviews or feedback that are false, paid for without
+    disclosure, or intended to manipulate an Organization's or User's
+    reputation, Trust Score, or verification status is strictly prohibited.
+
+--------------------------------------------------------------------------------
+9. FAKE ORGANIZATIONS
+--------------------------------------------------------------------------------
+9.1 Registering an Organization profile using a false identity, forged
+    documents, or without authorization to represent the named entity is
+    strictly prohibited.
+
+--------------------------------------------------------------------------------
+10. FAKE EVENTS
+--------------------------------------------------------------------------------
+10.1 Publishing Events that do not genuinely exist or that materially
+     misrepresent essential details (date, venue, pricing, content) is
+     strictly prohibited.
+
+--------------------------------------------------------------------------------
+11. MALWARE
+--------------------------------------------------------------------------------
+11.1 Uploading, transmitting, or distributing viruses, malware, or any code
+     designed to disrupt, damage, or gain unauthorized access to the
+     Platform or any User's or Organization's systems is strictly
+     prohibited.
+
+--------------------------------------------------------------------------------
+12. COPYRIGHT VIOLATIONS
+--------------------------------------------------------------------------------
+12.1 Uploading or distributing Content that infringes the intellectual
+     property rights of any third party is strictly prohibited. See the
+     Intellectual Property Policy for the copyright complaint process.
+
+--------------------------------------------------------------------------------
+13. CONSEQUENCES
+--------------------------------------------------------------------------------
+13.1 Violation of this Policy may result in immediate suspension or
+     termination of an account, withholding of funds pending investigation,
+     removal of Content, and, where required by Applicable Law, reporting
+     to relevant authorities.
+
+================================================================================
+DOCUMENT 11 OF 14: INTELLECTUAL PROPERTY POLICY
+================================================================================
+
+GUILD — INTELLECTUAL PROPERTY POLICY
+
+Effective Date: [EFFECTIVE DATE]
+Last Updated: [LAST UPDATED DATE]
+
+TABLE OF CONTENTS
+1. Guild IP
+2. User Content
+3. Organization Content
+4. Quest Deliverables
+5. Event Materials
+6. Uploaded Media
+7. AI-Generated Content (Future)
+8. Licenses
+9. Copyright Complaints
+
+--------------------------------------------------------------------------------
+1. GUILD IP
+--------------------------------------------------------------------------------
+1.1 The Guild name, logo, brand assets, Quest System, Guild Card, Guild
+    Passport, and all associated software, design elements, and
+    documentation are the exclusive intellectual property of Guild.
+1.2 No User or Organization may use Guild's trademarks, logos, brand
+    assets, or proprietary technology without prior written consent, except
+    as reasonably necessary to use the Platform as intended (for example,
+    displaying a "Verified on Guild" badge as provided by Guild).
+
+--------------------------------------------------------------------------------
+2. USER CONTENT
+--------------------------------------------------------------------------------
+2.1 Users retain ownership of Content they create and upload to the
+    Platform, including profile information, reviews, and Quest
+    deliverables submitted as part of a Quest, subject to Section 4 below.
+2.2 By uploading Content, a User grants Guild a non-exclusive, worldwide,
+    royalty-free license to host, display, reproduce, and distribute such
+    Content solely for the purpose of operating, promoting, and improving
+    the Platform.
+
+--------------------------------------------------------------------------------
+3. ORGANIZATION CONTENT
+--------------------------------------------------------------------------------
+3.1 Organizations retain ownership of Content they create, including Quest
+    and Event listings, descriptions, and promotional materials.
+3.2 By publishing Content, an Organization grants Guild a non-exclusive,
+    worldwide, royalty-free license to host, display, and distribute such
+    Content for the purpose of operating and promoting the Platform,
+    including through marketing channels.
+
+--------------------------------------------------------------------------------
+4. QUEST DELIVERABLES
+--------------------------------------------------------------------------------
+4.1 Ownership of deliverables created by a User in the course of completing
+    a Quest shall be governed by the specific terms agreed between the User
+    and the Organization for that Quest, which the parties are encouraged
+    to state explicitly in the Quest listing or a separate agreement.
+4.2 In the absence of an express agreement, and subject to full payment of
+    any agreed compensation, ownership of Quest deliverables shall be
+    presumed to transfer to the commissioning Organization upon full
+    payment, consistent with standard principles of Indian contract and
+    copyright law, without prejudice to the User's moral rights under
+    Section 57 of the Copyright Act, 1957. Guild is not a party to, and
+    assumes no responsibility for enforcing, this presumption between the
+    User and the Organization.
+
+--------------------------------------------------------------------------------
+5. EVENT MATERIALS
+--------------------------------------------------------------------------------
+5.1 Materials created or presented by an Organization for an Event
+    (presentations, recordings, session content) remain the property of the
+    Organization or its licensors, unless otherwise agreed.
+5.2 Users must not reproduce or redistribute Event materials without the
+    Organization's consent, except for personal, non-commercial use.
+
+--------------------------------------------------------------------------------
+6. UPLOADED MEDIA
+--------------------------------------------------------------------------------
+6.1 Users and Organizations are solely responsible for ensuring they hold
+    the necessary rights, licenses, or consents (including consent of any
+    identifiable individuals) for any photograph, video, document, or other
+    media they upload to the Platform.
+6.2 Guild may remove uploaded media that it reasonably believes infringes
+    third-party rights or violates the Prohibited Activities Policy.
+
+--------------------------------------------------------------------------------
+7. AI-GENERATED CONTENT (FUTURE)
+--------------------------------------------------------------------------------
+7.1 Where the Platform offers features that generate suggestions,
+    summaries, or draft content using artificial intelligence (see Section
+    10.4 of the Terms of Service), such AI-generated output is provided as
+    a starting point or aid only.
+7.2 As between Guild, the User, and the Organization, a User or
+    Organization that adopts, edits, or publishes AI-generated output as
+    part of their own Content or listing is responsible for that output as
+    if it were their own Content, including for its accuracy and for
+    ensuring it does not infringe any third-party rights.
+7.3 Guild does not claim ownership of AI-generated output provided to a
+    User or Organization through the Platform, but Guild's underlying
+    AI models, prompts, and systems remain Guild's intellectual property
+    under Section 1.
+
+--------------------------------------------------------------------------------
+8. LICENSES
+--------------------------------------------------------------------------------
+8.1 All licenses granted under this Policy are limited to the purposes
+    described herein and do not transfer ownership of the underlying
+    intellectual property.
+8.2 Licenses granted to Guild survive termination of an account solely to
+    the extent necessary for Guild to maintain records, comply with
+    Applicable Law, or resolve disputes.
+
+--------------------------------------------------------------------------------
+9. COPYRIGHT COMPLAINTS
+--------------------------------------------------------------------------------
+9.1 Any person who believes that Content on the Platform infringes their
+    intellectual property rights may submit a complaint to [IP COMPLAINTS
+    EMAIL], including:
+    (a) identification of the copyrighted work claimed to be infringed;
+    (b) identification of the allegedly infringing Content and its
+        location on the Platform;
+    (c) contact information of the complainant;
+    (d) a statement of good-faith belief that the use is unauthorized;
+    (e) a statement, under penalty of perjury, that the information in the
+        complaint is accurate.
+9.2 Guild will review such complaints and may remove or disable access to
+    the allegedly infringing Content, in accordance with the Information
+    Technology Act, 2000 and rules made thereunder, including the IT
+    (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021.
+
+================================================================================
+DOCUMENT 12 OF 14: GRIEVANCE REDRESSAL POLICY
+================================================================================
+
+GUILD — GRIEVANCE REDRESSAL POLICY
+
+Effective Date: [EFFECTIVE DATE]
+Last Updated: [LAST UPDATED DATE]
+
+TABLE OF CONTENTS
+1. Purpose
+2. Grievance Officer
+3. Contact Process
+4. Resolution Timelines
+5. Escalation Process
+
+--------------------------------------------------------------------------------
+1. PURPOSE
+--------------------------------------------------------------------------------
+1.1 This Policy is published in accordance with the Information Technology
+    Act, 2000, the Information Technology (Intermediary Guidelines and
+    Digital Media Ethics Code) Rules, 2021, and the Consumer Protection
+    (E-Commerce) Rules, 2020, to establish a mechanism for redressal of
+    grievances raised by Users and Organizations.
+
+--------------------------------------------------------------------------------
+2. GRIEVANCE OFFICER
+--------------------------------------------------------------------------------
+2.1 Guild has appointed a Grievance Officer to address complaints
+    regarding the Platform, in accordance with Applicable Law.
+
+    Grievance Officer: [GRIEVANCE OFFICER NAME]
+    Designation: [DESIGNATION]
+    Email: [GRIEVANCE OFFICER EMAIL]
+    Address: [GRIEVANCE OFFICER ADDRESS]
+    Working Hours: [WORKING HOURS, e.g., Monday-Friday, 10:00 AM - 6:00 PM IST]
+
+--------------------------------------------------------------------------------
+3. CONTACT PROCESS
+--------------------------------------------------------------------------------
+3.1 A User or Organization may submit a grievance by writing to the
+    Grievance Officer with the following details:
+    (a) full name and contact information;
+    (b) account details (registered email/User ID/Organization ID);
+    (c) description of the grievance;
+    (d) relevant Quest, Event, or transaction identifier, if applicable;
+    (e) supporting documents or screenshots, where available.
+3.2 Guild will acknowledge receipt of the grievance within [NUMBER] hours.
+
+--------------------------------------------------------------------------------
+4. RESOLUTION TIMELINES
+--------------------------------------------------------------------------------
+4.1 The Grievance Officer will endeavour to resolve the grievance within
+    [NUMBER] days from the date of acknowledgment, consistent with the
+    timelines prescribed under Applicable Law.
+4.2 Where a grievance requires further investigation or coordination with a
+    third party (such as a payment gateway), the Grievance Officer will
+    provide the complainant with a status update and an estimated
+    resolution timeline.
+
+--------------------------------------------------------------------------------
+5. ESCALATION PROCESS
+--------------------------------------------------------------------------------
+5.1 If a complainant is not satisfied with the resolution provided by the
+    Grievance Officer, they may escalate the matter to [ESCALATION
+    CONTACT/DESIGNATION], where applicable.
+5.2 Nothing in this Policy limits a complainant's right to approach a
+    consumer forum, regulatory authority (including the Data Protection
+    Board of India under the Digital Personal Data Protection Act, 2023),
+    or court of competent jurisdiction under Applicable Law.
+
+================================================================================
+DOCUMENT 13 OF 14: COOKIE POLICY
+================================================================================
+
+GUILD — COOKIE POLICY
+
+Effective Date: [EFFECTIVE DATE]
+Last Updated: [LAST UPDATED DATE]
+
+TABLE OF CONTENTS
+1. What Are Cookies
+2. Essential Cookies
+3. Analytics Cookies
+4. Preference Cookies
+5. Third-Party Cookies
+6. Push Notifications & Device Permissions
+7. User Controls
+
+--------------------------------------------------------------------------------
+1. WHAT ARE COOKIES
+--------------------------------------------------------------------------------
+1.1 Cookies are small text files stored on a User's or Organization
+    representative's device when they visit the Platform, used to enable
+    core functionality, remember preferences, and understand usage
+    patterns. Where the Platform is accessed through a mobile application,
+    equivalent device-level technologies (such as mobile identifiers and
+    SDKs) may be used for similar purposes.
+
+--------------------------------------------------------------------------------
+2. ESSENTIAL COOKIES
+--------------------------------------------------------------------------------
+2.1 These cookies are necessary for the Platform to function, including
+    maintaining login sessions (via our authentication provider), enabling
+    secure transactions, and supporting basic navigation. Essential
+    cookies cannot be disabled without affecting core functionality of the
+    Platform.
+
+--------------------------------------------------------------------------------
+3. ANALYTICS COOKIES
+--------------------------------------------------------------------------------
+3.1 These cookies, including those set by our analytics provider (where
+    applicable), help Guild understand how Users and Organizations
+    interact with the Platform, enabling Guild to improve performance,
+    identify errors, and enhance user experience.
+
+--------------------------------------------------------------------------------
+4. PREFERENCE COOKIES
+--------------------------------------------------------------------------------
+4.1 These cookies remember choices made by a User or Organization, such as
+    language preference or display settings, to provide a more
+    personalized experience.
+
+--------------------------------------------------------------------------------
+5. THIRD-PARTY COOKIES
+--------------------------------------------------------------------------------
+5.1 The Platform may use cookies or similar technologies placed by
+    third-party service providers, such as payment gateways or analytics
+    providers (including Google/Firebase Analytics, where applicable). Such
+    cookies are governed by the respective third party's own privacy and
+    cookie practices.
+
+--------------------------------------------------------------------------------
+6. PUSH NOTIFICATIONS & DEVICE PERMISSIONS
+--------------------------------------------------------------------------------
+6.1 Where a User enables push notifications, Guild (via Firebase Cloud
+    Messaging or a similar service) may send notifications regarding
+    Quest updates, Event reminders, and account activity.
+6.2 Users may disable push notifications at any time through their device
+    or app settings. Disabling notifications does not affect other Platform
+    functionality.
+6.3 Device-level permissions (such as camera, location, or storage access)
+    are governed by the User's device operating system settings and may be
+    withdrawn at any time; doing so may limit certain Platform features
+    that depend on such permissions.
+
+--------------------------------------------------------------------------------
+7. USER CONTROLS
+--------------------------------------------------------------------------------
+7.1 Users and Organization representatives may manage or disable
+    non-essential cookies through their browser settings or, where
+    applicable, through a cookie consent/preference tool provided on the
+    Platform.
+7.2 Disabling certain cookies may affect the functionality or performance
+    of the Platform.
+
+================================================================================
+DOCUMENT 14 OF 14: ORGANIZATION VERIFICATION POLICY
+================================================================================
+
+GUILD — ORGANIZATION VERIFICATION POLICY
+
+Effective Date: [EFFECTIVE DATE]
+Last Updated: [LAST UPDATED DATE]
+
+TABLE OF CONTENTS
+1. Purpose
+2. Eligibility
+3. Verification Levels
+4. Verification Badges & Revocation
+5. Fraud Detection & Manual Review
+6. Trust Score Concept
+7. Verification Review
+8. Suspension of Verification
+9. Verification Appeal Process
+10. Misrepresentation
+11. No Guarantee of Future Conduct
+
+--------------------------------------------------------------------------------
+1. PURPOSE
+--------------------------------------------------------------------------------
+1.1 This Policy describes Guild's process, where applicable, for verifying
+    the identity and legitimacy of Organizations on the Platform, in
+    furtherance of Guild's goal of becoming a trusted professional
+    identity ecosystem.
+1.2 Verification is intended to reduce the risk of fake or fraudulent
+    Organizations and to support informed decision-making by Users; it is
+    not, and shall not be represented as, a certification of ongoing
+    quality or conduct.
+
+--------------------------------------------------------------------------------
+2. ELIGIBILITY
+--------------------------------------------------------------------------------
+2.1 Any Organization may apply for verification, where applicable, by
+    submitting the documentation and information requested by Guild, which
+    may include:
+    (a) proof of legal registration or existence of the entity;
+    (b) identity proof of the authorized representative;
+    (c) contact and address details;
+    (d) any sector-specific licenses relevant to the Organization's
+        activities.
+
+--------------------------------------------------------------------------------
+3. VERIFICATION LEVELS
+--------------------------------------------------------------------------------
+3.1 Guild may, where applicable, offer tiered verification levels
+    reflecting the extent of checks completed, such as:
+    (a) Basic Verification: automated or semi-automated confirmation of
+        registration details and contact information.
+    (b) Enhanced Verification: additional manual confirmation of legal
+        status, authorized signatory identity, and relevant licenses.
+3.2 The specific criteria, process, and number of verification levels may
+    evolve as the Platform develops, and will be described in the
+    Platform's help resources where applicable. A higher verification
+    level reflects a more thorough check at the time of verification; it
+    does not represent a higher degree of certainty about future conduct.
+
+--------------------------------------------------------------------------------
+4. VERIFICATION BADGES & REVOCATION
+--------------------------------------------------------------------------------
+4.1 Verified Organizations may be displayed with a verification badge on
+    their profile, Quests, and Events, where applicable, to indicate the
+    verification level attained.
+4.2 A verification badge reflects the outcome of Guild's verification
+    checks as of the date of verification and does not constitute an
+    endorsement or ongoing guarantee by Guild.
+4.3 Guild may revoke a verification badge at any time, with or without
+    prior notice where necessary to protect Users, where:
+    (a) the underlying documentation is found to be false, expired, or no
+        longer valid;
+    (b) the Organization fails to respond to a re-verification request
+        within the timeline specified by Guild;
+    (c) the Organization is found to have violated the Terms of Service,
+        Community Guidelines, or Prohibited Activities Policy; or
+    (d) Guild reasonably suspects the Organization no longer meets the
+        eligibility criteria for the badge held.
+
+--------------------------------------------------------------------------------
+5. FRAUD DETECTION & MANUAL REVIEW
+--------------------------------------------------------------------------------
+5.1 Guild may use a combination of automated checks (such as document
+    validation and pattern-based fraud signals) and manual human review to
+    assess an Organization's verification application and ongoing
+    compliance.
+5.2 Automated fraud detection signals are indicative, not conclusive,
+    and Guild may request additional information or conduct manual review
+    before making a final verification decision.
+5.3 Guild may take interim action (such as limiting a listing's visibility
+    or placing a hold on payouts) while a manual review is in progress,
+    where Guild reasonably suspects fraud or misrepresentation.
+
+--------------------------------------------------------------------------------
+6. TRUST SCORE CONCEPT
+--------------------------------------------------------------------------------
+6.1 Guild may, where applicable, develop a Trust Score for Organizations
+    and/or Users, derived from factors such as verified participation
+    history, completion rates, dispute history, and feedback, for the
+    purpose of supporting the Guild Card and Guild Passport ecosystem.
+6.2 The specific methodology for calculating a Trust Score, if and when
+    implemented, will be described separately and may be updated as the
+    feature evolves.
+6.3 A Trust Score is a relative, point-in-time indicator based on
+    available data. It is not a guarantee, warranty, or prediction of
+    future performance, conduct, or reliability, and must not be relied
+    upon as the sole basis for any decision to engage with an Organization
+    or User.
+
+--------------------------------------------------------------------------------
+7. VERIFICATION REVIEW
+--------------------------------------------------------------------------------
+7.1 Guild may periodically review an Organization's verification status,
+    including in response to User complaints, disputes, or changes in the
+    Organization's circumstances.
+7.2 Guild may request updated documentation at any time to maintain
+    verification status, and may set a reasonable deadline for the
+    Organization to respond.
+
+--------------------------------------------------------------------------------
+8. SUSPENSION OF VERIFICATION
+--------------------------------------------------------------------------------
+8.1 Guild may suspend or revoke an Organization's verification status,
+    including removal of its verification badge, where:
+    (a) the Organization fails to respond to a documentation request;
+    (b) Guild identifies false or misleading information provided during
+        verification;
+    (c) the Organization is subject to a substantiated pattern of
+        complaints or disputes;
+    (d) the Organization violates the Terms of Service, Community
+        Guidelines, or Prohibited Activities Policy.
+
+--------------------------------------------------------------------------------
+9. VERIFICATION APPEAL PROCESS
+--------------------------------------------------------------------------------
+9.1 An Organization whose verification application is rejected, or whose
+    verification badge is suspended or revoked, may submit an appeal to
+    [VERIFICATION APPEALS EMAIL] within [NUMBER] days of the decision,
+    providing any additional evidence or clarification.
+9.2 Guild will review the appeal and communicate its decision within
+    [NUMBER] days. Guild's decision on appeal is final, without prejudice
+    to the Organization's right to pursue remedies available under the
+    Grievance Redressal Policy or Applicable Law.
+
+--------------------------------------------------------------------------------
+10. MISREPRESENTATION
+--------------------------------------------------------------------------------
+10.1 Any Organization that provides false documents or information for the
+     purpose of obtaining verification shall be subject to immediate
+     suspension of its account, in addition to any other remedies
+     available to Guild under the Terms of Service and Applicable Law.
+
+--------------------------------------------------------------------------------
+11. NO GUARANTEE OF FUTURE CONDUCT
+--------------------------------------------------------------------------------
+11.1 Verification, verification badges, and any Trust Score reflect an
+     assessment based on information available to Guild at a given point
+     in time. They do not guarantee, warrant, or predict the future
+     conduct, performance, reliability, or legitimacy of any Organization
+     or the outcome of any Quest or Event.
+11.2 Users are encouraged to exercise their own judgment when engaging with
+     any Organization, verified or otherwise, and Guild's verification
+     process does not shift responsibility for an Organization's conduct
+     away from that Organization.
+
+================================================================================
+END OF GUILD LEGAL DOCUMENTATION PACKAGE (REVISED — VERSION 2)
+================================================================================
+
+================================================================================
+APPENDIX A: PLACEHOLDER CHECKLIST (VALUES TO BE COMPLETED)
+================================================================================
+
+The following placeholders appear throughout this package and must be
+completed with actual values before publication. No values have been
+invented — each must be filled in by Guild/counsel.
+
+GENERAL
+- [EFFECTIVE DATE] — appears in every document
+- [LAST UPDATED DATE] — appears in every document
+- [LEGAL ENTITY NAME] — Terms of Service, Section 1.1
+- [REGISTERED ADDRESS] — Terms of Service (Sec 1.1, 16.9, 18)
+- [CITY] — Terms of Service, Section 17.2 (jurisdiction)
+- [AMOUNT] — Terms of Service, Section 15.2 (liability cap in INR)
+
+CONTACT EMAILS
+- [SUPPORT EMAIL] — Terms of Service (Sec 16.9, 18); Community Guidelines
+- [PRIVACY CONTACT EMAIL] — Privacy Policy (Sec 9.1, 9.2, 9.3, 11)
+- [SECURITY CONTACT EMAIL] — Terms of Service, Section 11.3, 11.4
+- [DISPUTES SUPPORT EMAIL] — Dispute Resolution Policy, Section 5.1
+- [PAYOUTS SUPPORT EMAIL] — Payout Policy, Section 7.2
+- [IP COMPLAINTS EMAIL] — Intellectual Property Policy, Section 9.1
+- [VERIFICATION APPEALS EMAIL] — Organization Verification Policy, Sec 9.1
+
+GRIEVANCE OFFICER (Grievance Redressal Policy, Section 2.1; also referenced
+in Privacy Policy Section 11)
+- [GRIEVANCE OFFICER NAME]
+- [DESIGNATION]
+- [GRIEVANCE OFFICER EMAIL]
+- [GRIEVANCE OFFICER ADDRESS]
+- [WORKING HOURS]
+- [ESCALATION CONTACT/DESIGNATION] — Grievance Redressal Policy, Section 5.1
+
+THIRD-PARTY PROVIDER NAMES (Privacy Policy, Section 4.1)
+- [PAYMENT GATEWAY PROVIDER NAME(S)]
+- [EMAIL SERVICE PROVIDER NAME]
+- [ANALYTICS PROVIDER NAME]
+(Firebase Authentication, Firestore, Storage, Cloud Messaging, and Google
+Cloud Platform have been named directly as these are stated to be in use;
+confirm and update if the underlying stack changes.)
+
+FINANCIAL / COMMERCIAL TERMS
+- [PERCENTAGE]% — Platform Commission rate (Payment & Commission Policy,
+  Section 2.2; Organization Agreement references same rate)
+- [PERCENTAGE]% — Partial refund percentage tier (Refund & Cancellation
+  Policy, Section 6.1(b))
+
+TIMELINES (business days / days — confirm consistent internal SLAs)
+- Refund & Cancellation Policy: Section 2.3 (change-of-Event refund window),
+  6.1(a)/(b)/(c) (cancellation windows), 7.1 & 7.2 (refund processing days)
+- Payment & Commission Policy: no additional day-based placeholders beyond
+  those above
+- Payout Policy: Section 3.1 (settlement days), 4.1 (correction deadline)
+- Dispute Resolution Policy: Sections 2.2, 3.2 (escalation windows), 6.1
+  (acknowledgment), 7.1 (resolution)
+- Grievance Redressal Policy: Section 3.2 (acknowledgment hours), 4.1
+  (resolution days)
+- Privacy Policy: Section 9.2 (account deletion processing days)
+- Organization Verification Policy: Section 9.1, 9.2 (appeal windows)
+
+Note: Several of these timelines currently repeat the token [NUMBER] in
+multiple places. Guild should assign specific, internally consistent day
+counts (e.g., decide once whether "resolution" means 7, 10, or 15 business
+days) and apply the same figure everywhere the same concept recurs, so the
+published documents do not contain conflicting timelines.
+
+================================================================================
+APPENDIX B: SUMMARY OF CHANGES MADE IN THIS REVISION
+================================================================================
+
+TERMS OF SERVICE
+- Added a new Section 10 (Platform Availability, Beta Features & AI
+  Features): platform uptime disclaimer, maintenance windows, Beta Feature
+  disclaimer, AI-generated recommendation disclaimer, third-party
+  integration disclaimer, and future API terms placeholder.
+- Added a new Section 11 (Security): account security, password
+  responsibility, unauthorized access reporting, data breach response
+  aligned to DPDP Act 2023, and a backup disclaimer.
+- Added a new Section 16 (General Provisions): Force Majeure, Severability,
+  Entire Agreement, Assignment, Waiver, Survival, Electronic Acceptance,
+  Electronic Communications, Notices, Language, and Export Control.
+- Added "Beta Feature" to Definitions.
+- Strengthened eligibility, account registration, disclaimers, and
+  limitation of liability language for enforceability; clarified Guild is
+  not liable for Beta Feature or AI-output reliance.
+- Renumbered downstream sections (IP, Termination, Disclaimers, Limitation
+  of Liability, Governing Law, Contact) to accommodate new sections.
+
+PRIVACY POLICY
+- Replaced generic "Third Party Services" with a named Sub-Processor list
+  reflecting Guild's actual stack: Firebase Authentication, Firestore,
+  Storage, Cloud Messaging, Google Cloud Platform, Google Sign-In (where
+  enabled), plus placeholders for payment gateway/email/analytics
+  providers.
+- Added a standalone Cross-Border Data Transfers section addressing DPDP
+  Act 2023 requirements for transfers via global cloud infrastructure.
+- Added a standalone Data Retention section with concrete retention
+  triggers (legal/tax, dispute defense, Guild Card/Passport history).
+- Expanded User Rights into "User Rights, Account Deletion & Data
+  Portability," adding an explicit account-deletion process and a data
+  portability right.
+- Added device permissions and push notification data as collected
+  categories.
+
+COMMUNITY GUIDELINES
+- Added a "Reporting Violations" section describing how to report, closing
+  a gap where the document described prohibited conduct but not how to
+  report it.
+- Cross-referenced Trust Score/verification manipulation under "Misuse of
+  Guild" and "Fake Reviews" for consistency with the revised Verification
+  Policy.
+
+USER AGREEMENT / ORGANIZATION AGREEMENT
+- Added an express precedence clause (Terms of Service prevails on
+  conflicts) to remove ambiguity about which document governs.
+- Added a new Indemnification section to the Organization Agreement,
+  protecting Guild against claims arising from an Organization's breach,
+  Quests/Events, or misrepresentation — this was a gap in the original
+  draft.
+- Clarified GST/tax responsibility sits with the Organization, cross-
+  referenced to the revised Payment & Commission Policy.
+
+REFUND & CANCELLATION POLICY
+- Added a new "Refund Processing Timelines" section separating "refund
+  approved" from "refund actually received," clarifying Guild-side vs.
+  bank-side timing and removing a common source of User complaints.
+- Clarified that Organization-set refund terms cannot be less protective
+  than the default timelines without legal basis.
+
+PAYMENT & COMMISSION POLICY
+- Added explicit Platform Commission calculation basis (gross transaction
+  amount) — previously undefined, a material ambiguity.
+- Added GST treatment: Commission stated exclusive of GST, GST added per
+  Applicable Law.
+- Added Invoice Generation section (Guild invoices Organization for
+  Commission + GST; Organization responsible for its own User-facing
+  invoices).
+- Added a full Chargebacks section (reporting, cooperation duty, debiting
+  disputed amounts from future settlements, suspension for repeated
+  chargebacks) — this was entirely missing before and is a major
+  commercial risk area.
+- Added Payment Gateway Responsibility section clarifying RBI PA/PG
+  compliance sits with the gateway partner, not Guild, while preserving
+  Guild's own obligations.
+
+PAYOUT POLICY
+- Split "Processing Time" into a clearer "Settlement Timelines" section and
+  added a Chargebacks & Withheld Funds section cross-referenced to the
+  Payment & Commission Policy.
+- Clarified failed-payout re-attempt process and possible fee pass-through.
+
+DISPUTE RESOLUTION POLICY
+- Retitled Section 4 to "Payment Disputes & Chargebacks" and cross-
+  referenced the new Chargebacks section in the Payment & Commission
+  Policy for consistency.
+
+PROHIBITED ACTIVITIES POLICY
+- Clarified the list is illustrative, not exhaustive, and that Guild may
+  act on undisclosed but analogous conduct — closes a loophole where novel
+  misconduct might otherwise fall outside the literal list.
+
+INTELLECTUAL PROPERTY POLICY
+- Added a new "Uploaded Media" section addressing rights/consent
+  responsibility for photos, videos, and documents.
+- Added a new "AI-Generated Content (Future)" section clarifying that
+  Guild does not claim ownership of AI outputs given to Users/
+  Organizations, that adopting AI output makes it the adopter's
+  responsibility, and that Guild's underlying AI systems remain its IP.
+- Clarified moral rights language and Guild's non-involvement in enforcing
+  the deliverable-ownership presumption between User and Organization.
+
+GRIEVANCE REDRESSAL POLICY
+- Added explicit reference to the Data Protection Board of India as an
+  escalation path under the DPDP Act 2023.
+
+COOKIE POLICY
+- Added a "Push Notifications & Device Permissions" section reflecting
+  Guild's actual (Firebase-based) notification infrastructure and mobile
+  device permission handling, since the original Cookie Policy only
+  addressed browser cookies and did not reflect a mobile app context.
+
+ORGANIZATION VERIFICATION POLICY
+- Split "Verification Review" content into a dedicated "Fraud Detection &
+  Manual Review" section clarifying automated signals are indicative, not
+  conclusive, and that interim action (visibility limits, payout holds) may
+  be taken during review.
+- Expanded "Verification Badges" into "Verification Badges & Revocation"
+  with explicit revocation grounds.
+- Added a new "Verification Appeal Process" section — previously missing
+  entirely, meaning a rejected/suspended Organization had no stated
+  recourse.
+- Strengthened the Trust Score disclaimer language (already present) to
+  explicitly state it must not be relied upon as the sole basis for a
+  decision.
+
+CROSS-DOCUMENT CONSISTENCY FIXES
+- Standardized references to "Applicable Law" definition (Terms of
+  Service) across all documents.
+- Standardized cross-references between Payment & Commission Policy,
+  Payout Policy, Refund & Cancellation Policy, and Dispute Resolution
+  Policy so chargeback and fund-withholding language does not contradict
+  across documents.
+- Ensured every document that mentions "Trust Score" or "verification"
+  points back to the same disclaimer language in the Organization
+  Verification Policy.
+
+WHAT WAS DELIBERATELY NOT CHANGED
+- Guild's business model, Quest System mechanics, Guild Card/Guild
+  Passport concept, Event system, and revenue model (Platform Commission +
+  temporary fund holding) are unchanged.
+- No enterprise-heavy frameworks were added (no SOC 2, ISO 27001, GDPR
+  mandate, HIPAA, or PCI-DSS certification language), consistent with an
+  MVP-stage Indian startup.
+
+================================================================================
+APPENDIX C: RECOMMENDED FUTURE LEGAL DOCUMENTS
+================================================================================
+
+As Guild scales beyond MVP, the following additional documents are
+recommended (not included in this package, as they were outside the
+original 14-document scope and/or depend on features not yet built):
+
+1. API Terms of Use — once Guild opens an API to Organizations/developers
+   (referenced but not drafted in ToS Section 10.6).
+2. Data Processing Agreement (DPA) template — for Organizations that
+   qualify as data fiduciaries in their own right under the DPDP Act 2023,
+   or for any B2B/enterprise Organization customers.
+3. Vendor / Sub-Processor Agreement templates — formal contracts with
+   Firebase/Google Cloud, payment gateway, email, and analytics providers
+   (as opposed to the disclosures already made to Users in the Privacy
+   Policy).
+4. Employee/Contractor IP Assignment & Confidentiality Agreement — internal
+   document, not user-facing, to ensure Guild owns IP created by its own
+   team and contractors.
+5. Investor-facing documents (Term Sheet, SHA/SSA, ESOP Policy) — separate
+   corporate/fundraising track, unrelated to this platform legal package.
+6. Insurance & Liability Advisory — a short memo (from an insurance
+   broker/advocate) on whether Guild should carry cyber liability or
+   platform/marketplace liability insurance, given it facilitates
+   third-party Events.
+7. Advertising/Sponsorship Terms — if Guild later monetizes through
+   sponsored Quest/Event placements.
+8. Guild Card / Guild Passport Standalone Policy — once these features
+   mature beyond "where applicable," a dedicated policy describing exactly
+   what data appears on them, portability, and third-party sharing (e.g.,
+   if a User shares their Passport with a prospective employer).
+
+================================================================================
+APPENDIX D: LEGAL READINESS SCORE FOR MVP LAUNCH
+================================================================================
+
+Legal Readiness Score: 7.5 / 10
+
+Rationale:
+- The package is now substantively complete, internally consistent, and
+  covers the standard startup/marketplace risk areas (payments, refunds,
+  disputes, IP, verification, grievance redressal) with startup-appropriate
+  (not over-engineered) language.
+- Score is not higher because: (a) every document still contains
+  unresolved [NUMBER]/[PERCENTAGE]/[NAME] placeholders that must be filled
+  before publication; (b) the package has not yet been reviewed by a
+  licensed Indian advocate, which is a prerequisite the user has already
+  acknowledged; (c) certain regulatory classifications (see Appendix E)
+  remain open questions that could change specific clauses once resolved.
+
+================================================================================
+APPENDIX E: LEGAL RISKS REQUIRING ADVOCATE REVIEW BEFORE LAUNCH
+================================================================================
+
+1. Payment Aggregator / Payment Gateway (PA/PG) Classification (RBI) —
+   Depending on how Guild's payment flow is structured (e.g., whether funds
+   ever touch a Guild-controlled account versus passing directly through a
+   licensed PA/PG), Guild itself may be treated as a payment aggregator
+   under RBI's PA/PG guidelines, triggering separate licensing
+   requirements. This must be reviewed against Guild's actual technical
+   payment architecture.
+2. Nodal / Escrow Account Requirements — The "temporarily hold funds before
+   settlement" model (Payout Policy) may require use of a nodal or escrow
+   account under RBI rules; counsel should confirm the payment gateway
+   partner's arrangement satisfies this.
+3. GST Registration & Place of Supply — Guild's own GST treatment of the
+   Platform Commission (especially for pan-India Organizations and any
+   international Users/Organizations) should be reviewed with a tax
+   advisor, particularly place-of-supply rules for online marketplace
+   services.
+4. TDS Obligations under Section 194-O / Section 194C — If Guild is
+   treated as an "e-commerce operator" facilitating payments for
+   Organizations, Section 194-O TDS obligations under the Income Tax Act
+   may apply and should be confirmed with a tax advisor.
+5. Consumer Protection (E-Commerce) Rules, 2020 Applicability — Whether
+   Guild qualifies as a "marketplace e-commerce entity" under these Rules
+   (with attendant disclosure obligations) should be formally confirmed,
+   since the Rules were originally drafted with goods/services e-commerce
+   in mind and Guild's Quest/Event model is somewhat novel.
+6. DPDP Act 2023 Rules Notification Timeline — The DPDP Act's substantive
+   compliance obligations (consent manager framework, data breach
+   notification timelines, cross-border transfer restrictions) depend on
+   rules that may be notified in phases; this package should be revisited
+   once the rules are finalized.
+7. Guild Card / Guild Passport as a "Credential" — If a Guild Card or Guild
+   Passport is ever presented to third parties (e.g., employers) as a
+   professional credential, Guild should assess whether this creates
+   representations/liability akin to a certifying body, and whether
+   additional disclaimers or a standalone policy (see Appendix C, item 8)
+   are needed before that feature is promoted externally.
+8. Liability Cap Enforceability — The liability cap in Terms of Service
+   Section 15.2 (limited to Platform Commission received or a fixed INR
+   amount) should be reviewed against Indian Contract Act principles on
+   unconscionable/one-sided terms, especially since Guild is dealing with
+   individual consumers (Users) who may benefit from consumer-protection
+   scrutiny of exclusion clauses.
+9. Cross-Border Users/Organizations — If Guild permits sign-ups from
+   outside India, export control language (ToS Section 16.11) is a
+   placeholder only; actual applicability of foreign sanctions/export
+   control regimes should be assessed if this is a real use case.
+

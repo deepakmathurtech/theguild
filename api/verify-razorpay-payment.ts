@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import Razorpay from 'razorpay';
 import { loadRuntimeEnv } from './lib/runtime-env';
 import { getDbOrFallback } from './lib/firebase-admin';
+import { applyRateLimitOrRespond, getClientIp, isTrustedOrigin, isValidEmail, sanitizePlainText, setSecurityHeaders } from './lib/request-security';
 
 function sendJson(res: any, status: number, payload: any) {
   res.status(status).json(payload);
@@ -15,9 +16,12 @@ export function createVerifyRazorpayPaymentHandler(deps: {
   getDb?: () => any;
   getEnv?: () => NodeJS.ProcessEnv;
   verifySignature?: (params: string, signature: string, secret: string) => boolean;
+  createRazorpayClient?: (config: { key_id: string; key_secret: string }) => any;
 } = {}) {
   return async function handler(req: any, res: any) {
     try {
+      setSecurityHeaders(res);
+
       if (req.method !== 'POST') {
         return sendJson(res, 405, { success: false, message: 'Method not allowed', error: 'METHOD_NOT_ALLOWED' });
       }
@@ -39,6 +43,20 @@ export function createVerifyRazorpayPaymentHandler(deps: {
       const env = deps.getEnv?.() ?? loadRuntimeEnv(process.env);
       const razorpayKeyId = env.RAZORPAY_KEY_ID;
       const razorpaySecret = env.RAZORPAY_KEY_SECRET;
+
+      if (!isTrustedOrigin(req, env)) {
+        return sendJson(res, 403, { success: false, message: 'Untrusted request origin', error: 'UNTRUSTED_ORIGIN' });
+      }
+
+      const ip = getClientIp(req);
+      if (!applyRateLimitOrRespond(res, {
+        key: `verify-payment:${ip}`,
+        max: 30,
+        windowMs: 5 * 60 * 1000,
+        message: 'Too many verification attempts from this network. Please wait before retrying.',
+      })) {
+        return;
+      }
 
       if (!razorpayKeyId || !razorpaySecret) {
         return sendJson(res, 500, { success: false, message: 'Razorpay credentials not configured', error: 'RZP_NOT_CONFIGURED' });
@@ -87,7 +105,7 @@ export function createVerifyRazorpayPaymentHandler(deps: {
         return sendJson(res, 200, { success: true, data: { duplicate: true } });
       }
 
-      const client = new Razorpay({ key_id: razorpayKeyId, key_secret: razorpaySecret });
+      const client = deps.createRazorpayClient?.({ key_id: razorpayKeyId, key_secret: razorpaySecret }) ?? new Razorpay({ key_id: razorpayKeyId, key_secret: razorpaySecret });
       const payment = await (client.payments.fetch as any)(paymentId);
       const paymentAmount = Number(payment?.amount || 0);
       const paymentStatus = String(payment?.status || '').toLowerCase();
@@ -99,11 +117,20 @@ export function createVerifyRazorpayPaymentHandler(deps: {
       }
 
       const registrationRef = db.collection('events').doc(String(eventId)).collection('registrations').doc(`${orderId}_${paymentId}`);
+      const normalizedName = sanitizePlainText(fullName || pendingData.fullName || '', 120);
+      const normalizedEmail = sanitizePlainText(email || pendingData.email || '', 160).toLowerCase();
+      if (!normalizedName) {
+        return sendJson(res, 400, { success: false, message: 'Registration name is missing', error: 'INVALID_FULL_NAME' });
+      }
+      if (!isValidEmail(normalizedEmail)) {
+        return sendJson(res, 400, { success: false, message: 'Registration email is invalid', error: 'INVALID_EMAIL' });
+      }
+
       await registrationRef.set({
         eventId,
         tierId,
-        fullName: String(fullName || pendingData.fullName || '').trim(),
-        email: String(email || pendingData.email || '').trim(),
+        fullName: normalizedName,
+        email: normalizedEmail,
         qty: Number(qty || pendingData.qty || 1),
         status: 'confirmed',
         paymentStatus: 'paid',

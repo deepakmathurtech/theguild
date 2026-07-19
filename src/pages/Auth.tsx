@@ -9,14 +9,14 @@ type AuthMode = 'login' | 'register' | 'forgot-password' | 'verify-email' | 'pas
 
 export default function Auth() {
   const { firebaseUser, profile } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectPath = searchParams.get('redirect') || '/';
 
   // Set page title on mount
   useEffect(() => {
     document.title = PAGE_SEO.auth.title;
   }, []);
-
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [mode, setMode] = useState<AuthMode>('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -105,7 +105,7 @@ export default function Auth() {
           setLoading(false);
           return;
         }
-        navigate('/');
+        navigate(redirectPath);
       }
     } catch (err: any) {
       setError(mapFirebaseError(err));
@@ -133,7 +133,7 @@ export default function Auth() {
 
   // If already logged in, redirect to home
   if (firebaseUser && profile) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={redirectPath} replace />;
   }
 
   // Password Reset Form
@@ -318,12 +318,18 @@ export default function Auth() {
 
         {/* Legal disclaimer for register */}
         {mode === 'register' && (
-          <p className="text-xs text-[var(--text-muted)] text-center mt-4">
-            By registering, you agree to our{' '}
-            <Link to="/terms" className="text-[var(--primary)] hover:underline font-medium">Terms of Service</Link>
-            {' '}and{' '}
-            <Link to="/privacy" className="text-[var(--primary)] hover:underline font-medium">Privacy Policy</Link>
-          </p>
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--card-subtle)] p-3 text-xs text-[var(--text-secondary)] mt-4">
+            <p className="mb-2">
+              By registering, you agree to our{' '}
+              <Link to="/terms" className="text-[var(--primary)] hover:underline font-medium">Terms of Service</Link>
+              {' '}and{' '}
+              <Link to="/privacy" className="text-[var(--primary)] hover:underline font-medium">Privacy Policy</Link>.
+            </p>
+            <label className="flex items-start gap-2">
+              <input type="checkbox" required className="mt-0.5" />
+              <span>I consent to Guild processing my account and participation data for authentication, trust verification, and service delivery.</span>
+            </label>
+          </div>
         )}
 
         {/* OAuth Section */}

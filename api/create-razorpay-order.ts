@@ -1,6 +1,7 @@
 import Razorpay from 'razorpay';
 import { loadRuntimeEnv } from './lib/runtime-env';
 import { getDbOrFallback } from './lib/firebase-admin';
+import { applyRateLimitOrRespond, getClientIp, isTrustedOrigin, isValidEmail, sanitizePlainText, setSecurityHeaders } from './lib/request-security';
 
 function sendJson(res: any, status: number, payload: any) {
   res.status(status).json(payload);
@@ -27,6 +28,8 @@ export function createRazorpayOrderHandler(deps: {
 } = {}) {
   return async function handler(req: any, res: any) {
     try {
+      setSecurityHeaders(res);
+
       if (req.method !== 'POST') {
         return sendJson(res, 405, { success: false, message: 'Method not allowed', error: 'METHOD_NOT_ALLOWED' });
       }
@@ -47,6 +50,20 @@ export function createRazorpayOrderHandler(deps: {
       const razorpayKeyId = env.RAZORPAY_KEY_ID;
       const razorpaySecret = env.RAZORPAY_KEY_SECRET;
       const expectedCurrency = env.RAZORPAY_CURRENCY || 'INR';
+
+      if (!isTrustedOrigin(req, env)) {
+        return sendJson(res, 403, { success: false, message: 'Untrusted request origin', error: 'UNTRUSTED_ORIGIN' });
+      }
+
+      const ip = getClientIp(req);
+      if (!applyRateLimitOrRespond(res, {
+        key: `create-order:${ip}`,
+        max: 20,
+        windowMs: 5 * 60 * 1000,
+        message: 'Too many payment attempts from this network. Please wait a few minutes and try again.',
+      })) {
+        return;
+      }
 
       if (!razorpayKeyId || !razorpaySecret) {
         return sendJson(res, 500, { success: false, message: 'Razorpay credentials not configured', error: 'RZP_NOT_CONFIGURED' });
@@ -74,11 +91,23 @@ export function createRazorpayOrderHandler(deps: {
       if (typeof fullName !== 'string' || !fullName.trim()) {
         return sendJson(res, 400, { success: false, message: 'Full name is required', error: 'FULL_NAME_REQUIRED' });
       }
+      const normalizedName = sanitizePlainText(fullName, 120);
+      if (normalizedName.length < 2) {
+        return sendJson(res, 400, { success: false, message: 'Enter a valid full name', error: 'INVALID_FULL_NAME' });
+      }
       if (typeof email !== 'string' || !email.trim()) {
         return sendJson(res, 400, { success: false, message: 'Email is required', error: 'EMAIL_REQUIRED' });
       }
+      const normalizedEmail = sanitizePlainText(email, 160).toLowerCase();
+      if (!isValidEmail(normalizedEmail)) {
+        return sendJson(res, 400, { success: false, message: 'Enter a valid email address', error: 'INVALID_EMAIL' });
+      }
 
-      const parsedQty = Math.max(1, Number(qty) || 1);
+      const parsedQty = Math.min(10, Math.max(1, Number(qty) || 1));
+      const serializedMetadata = typeof metadata === 'string' ? metadata : JSON.stringify(metadata ?? {});
+      if (serializedMetadata.length > 2000) {
+        return sendJson(res, 400, { success: false, message: 'Metadata is too large', error: 'METADATA_TOO_LARGE' });
+      }
       const event = deps.loadEventForValidation ? await deps.loadEventForValidation(eventId) : null;
       if (event?.ticketTiers) {
         const tier = event.ticketTiers.find((candidate: any) => candidate.id === tierId);
@@ -99,10 +128,10 @@ export function createRazorpayOrderHandler(deps: {
         notes: {
           eventId,
           tierId,
-          fullName: String(fullName).trim(),
-          email: String(email).trim(),
+          fullName: normalizedName,
+          email: normalizedEmail,
           qty: String(parsedQty),
-          metadata: typeof metadata === 'string' ? metadata : JSON.stringify(metadata ?? {}),
+          metadata: serializedMetadata,
         },
       });
 
@@ -119,8 +148,8 @@ export function createRazorpayOrderHandler(deps: {
       await pendingOrderRef.set({
         eventId,
         tierId,
-        fullName: String(fullName).trim(),
-        email: String(email).trim(),
+        fullName: normalizedName,
+        email: normalizedEmail,
         qty: parsedQty,
         amount: Number(parsedAmountPaise),
         currency: parsedCurrency,

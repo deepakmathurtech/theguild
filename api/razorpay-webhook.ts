@@ -1,5 +1,6 @@
 import { loadRuntimeEnv } from './lib/runtime-env';
 import { getDbOrFallback } from './lib/firebase-admin';
+import { applyRateLimitOrRespond, getClientIp, setSecurityHeaders } from './lib/request-security';
 
 function sendJson(res: any, status: number, payload: any) {
   res.status(status).json(payload);
@@ -22,8 +23,20 @@ function getRawBody(req: any): Buffer {
 
 export default async function handler(req: any, res: any) {
   try {
+    setSecurityHeaders(res);
+
     if (req.method !== 'POST') {
       return sendJson(res, 405, { success: false, message: 'Method not allowed', error: 'METHOD_NOT_ALLOWED' });
+    }
+
+    const ip = getClientIp(req);
+    if (!applyRateLimitOrRespond(res, {
+      key: `razorpay-webhook:${ip}`,
+      max: 120,
+      windowMs: 5 * 60 * 1000,
+      message: 'Webhook rate limit exceeded',
+    })) {
+      return;
     }
 
 

@@ -1,15 +1,19 @@
-import { useState, lazy, Suspense } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { createBrowserRouter, RouterProvider, Outlet, Navigate, useNavigate, NavLink, isRouteErrorResponse, useRouteError, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { EventPlatformSelectionProvider } from './context/EventPlatformSelectionContext';
+
 import { logout } from './lib/auth';
 import { useTheme } from './context/ThemeContext';
+import { getEventsForHost } from './eventsite/lib/firestoreEvents';
+import { isStandaloneEventRoute } from './eventsite/lib/eventRoutes';
 
 // Icons
 import {
   TrendingUp, Compass, Building, Bell, User, Settings as SettingsIcon, LogOut,
   Menu, X, Sun, Moon, Award, Network, FileText, Target,
-  ShieldCheck, Home as HomeIcon, ArrowLeftRight, Handshake, Users, CalendarDays
+  ShieldCheck, Home as HomeIcon, ArrowLeftRight, Handshake, Users, CalendarDays, QrCode
 } from 'lucide-react';
 
 // Pages - Lazy loaded for better bundle size
@@ -27,6 +31,8 @@ const OrgEvents = lazy(() => import('./pages/OrgEvents'));
 const EventPlatformShell = lazy(() => import('./eventsite/EventPlatformShell'));
 const EventLanding = lazy(() => import('./eventsite/pages/EventLanding'));
 const EventMaker = lazy(() => import('./eventsite/pages/EventMaker'));
+const HistoricalEvents = lazy(() => import('./eventsite/pages/HistoricalEvents'));
+const EventBuyerAuth = lazy(() => import('./eventsite/pages/EventBuyerAuth'));
 const Ticketing = lazy(() => import('./eventsite/pages/Ticketing'));
 const AttendanceManager = lazy(() => import('./eventsite/pages/AttendanceManager'));
 const PromotionChannel = lazy(() => import('./eventsite/pages/PromotionChannel'));
@@ -51,10 +57,21 @@ const VerificationCenter = lazy(() => import('./pages/VerificationCenter'));
 const NotificationCenter = lazy(() => import('./pages/NotificationCenter'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Impact = lazy(() => import('./pages/Impact'));
-const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
-const TermsOfService = lazy(() => import('./pages/TermsOfService'));
-const CommunityGuidelines = lazy(() => import('./pages/CommunityGuidelines'));
+const LegalCenter = lazy(() => import('./pages/LegalCenter'));
+const TermsPage = lazy(() => import('./pages/LegalPolicyPages').then((m) => ({ default: m.TermsPage })));
+const PrivacyPage = lazy(() => import('./pages/LegalPolicyPages').then((m) => ({ default: m.PrivacyPage })));
+const CommunityPage = lazy(() => import('./pages/LegalPolicyPages').then((m) => ({ default: m.CommunityPage })));
+const RefundPage = lazy(() => import('./pages/LegalPolicyPages').then((m) => ({ default: m.RefundPage })));
+const PaymentCommissionPage = lazy(() => import('./pages/LegalPolicyPages').then((m) => ({ default: m.PaymentCommissionPage })));
+const PayoutPage = lazy(() => import('./pages/LegalPolicyPages').then((m) => ({ default: m.PayoutPage })));
+const DisputeResolutionPage = lazy(() => import('./pages/LegalPolicyPages').then((m) => ({ default: m.DisputeResolutionPage })));
+const ProhibitedActivitiesPage = lazy(() => import('./pages/LegalPolicyPages').then((m) => ({ default: m.ProhibitedActivitiesPage })));
+const IntellectualPropertyPage = lazy(() => import('./pages/LegalPolicyPages').then((m) => ({ default: m.IntellectualPropertyPage })));
+const GrievancePage = lazy(() => import('./pages/LegalPolicyPages').then((m) => ({ default: m.GrievancePage })));
+const CookiePage = lazy(() => import('./pages/LegalPolicyPages').then((m) => ({ default: m.CookiePage })));
+const VerificationPolicyPage = lazy(() => import('./pages/LegalPolicyPages').then((m) => ({ default: m.VerificationPolicyPage })));
 const PublicInfoPage = lazy(() => import('./pages/PublicInfoPage'));
+const GrievanceForm = lazy(() => import('./pages/GrievanceForm'));
 const Footer = lazy(() => import('./components/layout/Footer'));
 const NeedDetails = lazy(() => import('./pages/NeedDetails'));
 const NeedWizard = lazy(() => import('./pages/NeedWizard'));
@@ -98,6 +115,7 @@ function PageLoader() {
 }
 
 import './styles.css';
+import CookieConsentBanner from './components/legal/CookieConsentBanner';
 
 // Navigation items
 const navItems = [
@@ -133,6 +151,8 @@ const organizationItems = [
 // Layout Shell - Same as guild-auth
 function AppShell() {
   const { profile, firebaseUser } = useAuth();
+  const [hasHostAccess, setHasHostAccess] = useState(false);
+  const [checkingHostAccess, setCheckingHostAccess] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { resolvedTheme, setTheme } = useTheme();
@@ -147,14 +167,77 @@ function AppShell() {
     navigate('/auth');
   }
 
-  // Standalone mode for the landing page when guest is viewing
+  useEffect(() => {
+    let cancelled = false;
+    async function resolveHostAccess() {
+      if (!profile?.uid) {
+        if (!cancelled) {
+          setHasHostAccess(false);
+          setCheckingHostAccess(false);
+        }
+        return;
+      }
+
+      if (!cancelled) {
+        setCheckingHostAccess(true);
+      }
+
+      try {
+        const events = await getEventsForHost(profile.uid, `/member/${profile.uid}`);
+        if (!cancelled && events.length > 0) {
+          setHasHostAccess(true);
+        }
+      } catch {
+        if (!cancelled) {
+          // Keep the current state so event-route host tools stay visible.
+          setHasHostAccess((previous) => previous);
+        }
+      } finally {
+        if (!cancelled) setCheckingHostAccess(false);
+      }
+    }
+
+    resolveHostAccess();
+    return () => { cancelled = true; };
+  }, [profile?.uid]);
+
+  // Standalone mode for the landing page when guest is viewing or for public event pages
   const isLandingPageStandalone = location.pathname === '/' && !firebaseUser;
+  const shouldRenderStandalonePage = isLandingPageStandalone || isStandaloneEventRoute(location.pathname);
 
   const visibleNavItems = firebaseUser || profile
     ? navItems.filter((item) => item.to !== '/org-register')
     : navItems;
 
-  if (isLandingPageStandalone) {
+  const isEventContext = location.pathname.startsWith('/event-platform') || location.pathname.startsWith('/org-events');
+  const isOrganizerMode = profile?.role === 'organizationRepresentative' || profile?.role === 'organization';
+  const isHostOnlyMode = Boolean(firebaseUser && profile && !isOrganizerMode && hasHostAccess);
+  const shouldShowHostNav = Boolean(
+    firebaseUser &&
+    profile &&
+    (
+      isOrganizerMode ||
+      hasHostAccess ||
+      isEventContext ||
+      profile.role !== 'applicant'
+    )
+  );
+  const hostNavItems = shouldShowHostNav
+    ? (
+      isHostOnlyMode
+        ? [
+            { to: '/event-platform/attendance', label: 'Host Check-in', icon: QrCode },
+          ]
+        : [
+            { to: '/event-platform', label: 'Event Center', icon: CalendarDays },
+            { to: '/event-platform/attendance', label: 'Host Check-in', icon: QrCode },
+            { to: '/event-platform/ticketing', label: 'Ticketing', icon: CalendarDays },
+            { to: '/event-platform/certificates', label: 'Certificates', icon: Award },
+          ]
+    )
+    : [];
+
+  if (shouldRenderStandalonePage) {
     return (
       <div className="bg-[var(--bg)] text-[var(--text)] min-h-screen">
         <Outlet />
@@ -230,6 +313,38 @@ function AppShell() {
             })}
           </div>
           )}
+
+          {hostNavItems.length ? (
+            <div className="mt-4">
+              <p className="px-4 mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-60">
+                {isHostOnlyMode ? 'Host Mode' : 'Host'}
+              </p>
+              {isHostOnlyMode ? (
+                <div className="mx-3 mb-3 rounded-xl border border-[var(--primary)]/20 bg-[var(--primary)]/10 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--primary)]">Live event access</p>
+                  <p className="mt-1 text-xs text-[var(--text-secondary)]">Jump straight into check-in, arrivals, and certificate handoff for your assigned events.</p>
+                </div>
+              ) : null}
+              {hostNavItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={({ isActive }) => `
+                      relative flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all
+                      ${isActive
+                        ? 'bg-[var(--primary)]/20 text-[var(--primary)] ring-1 ring-[var(--primary)]/30'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--card-subtle)]/50'}
+                    `}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {item.label}
+                  </NavLink>
+                );
+              })}
+            </div>
+          ) : null}
 
           {/* Show member/admin items only for NON-org-rep users */}
       {profile && profile.role !== 'organizationRepresentative' && profile.role !== 'organization' && (
@@ -399,6 +514,37 @@ function AppShell() {
             </>
           )}
 
+          {hostNavItems.length ? (
+            <div className="mt-4">
+              <p className="px-4 mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-60">
+                {isHostOnlyMode ? 'Host Mode' : 'Host'}
+              </p>
+              {isHostOnlyMode ? (
+                <div className="mx-1 mb-3 rounded-2xl border border-[var(--primary)]/20 bg-[var(--primary)]/10 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--primary)]">Live event access</p>
+                  <p className="mt-1 text-xs text-[var(--text-secondary)]">Open your assigned events, move arrivals through the door, and issue certificates faster.</p>
+                </div>
+              ) : null}
+              {hostNavItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={({ isActive }) => `
+                      flex gap-3 items-center px-4 py-3.5 rounded-2xl font-semibold text-sm transition-all
+                      ${isActive ? 'bg-[var(--primary)] text-black shadow-lg' : 'bg-[var(--card-subtle)] text-[var(--text-secondary)] border border-[var(--border)]'}
+                    `}
+                  >
+                    <Icon className="w-5 h-5" />
+                    {item.label}
+                  </NavLink>
+                );
+              })}
+            </div>
+          ) : null}
+
           </nav>
 
           <button
@@ -494,6 +640,61 @@ function AppShell() {
 
 // Role check types
 type RequiredRole = 'applicant' | 'member' | 'receptionist' | 'cityGuildMaster' | 'stateGuildMaster' | 'centralGuildMaster' | 'guildFounder' | 'founder' | 'organizationRepresentative' | 'organization';
+
+function EventHostRoute({ children }: { children: React.ReactNode }) {
+  const { firebaseUser, profile, loading } = useAuth();
+  const [hasHostAccess, setHasHostAccess] = useState(false);
+  const [checkingHostAccess, setCheckingHostAccess] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function resolveAccess() {
+      if (!firebaseUser || !profile?.uid) {
+        if (!cancelled) {
+          setHasHostAccess(false);
+          setCheckingHostAccess(false);
+        }
+        return;
+      }
+
+      try {
+        const events = await getEventsForHost(profile.uid, profile.uid ? `/member/${profile.uid}` : undefined);
+        if (!cancelled) {
+          setHasHostAccess(events.length > 0);
+        }
+      } catch {
+        if (!cancelled) {
+          setHasHostAccess(false);
+        }
+      } finally {
+        if (!cancelled) {
+          setCheckingHostAccess(false);
+        }
+      }
+    }
+
+    resolveAccess();
+    return () => { cancelled = true; };
+  }, [firebaseUser, profile?.uid]);
+
+  if (loading || checkingHostAccess) {
+    return <div className="p-12 text-center text-xs text-[var(--text-muted)] font-semibold">Checking host access...</div>;
+  }
+
+  if (!firebaseUser) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (!profile) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  if (hasHostAccess || profile.role === 'organizationRepresentative' || profile.role === 'organization') {
+    return <>{children}</>;
+  }
+
+  return <Navigate to="/" replace />;
+}
 
 // Protected Route Guard
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -645,6 +846,7 @@ const routerConfig = createBrowserRouter([
     children: [
       { path: '/', element: <DynamicHomeRoute /> },
       { path: '/auth', element: <Auth /> },
+      { path: '/event-buyer-auth', element: <EventBuyerAuth /> },
       { path: '/onboarding', element: <PrivateRoute><MemberOnboarding /></PrivateRoute> },
       { path: '/quests', element: <QuestBoard /> },
       { path: '/quests/:id', element: <QuestDetails /> },
@@ -659,7 +861,7 @@ const routerConfig = createBrowserRouter([
       { path: '/org-onboarding', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgOnboarding /></RoleRoute> },
       { path: '/org-dashboard', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgDashboard /></RoleRoute> },
       { path: '/org-events', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgEvents /></RoleRoute> },
-      { path: '/org-events/maker', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><EventMaker /></RoleRoute> },
+      { path: '/org-events/maker', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><Navigate to="/event-platform/maker" replace /></RoleRoute> },
       { path: '/org-team', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgTeam /></RoleRoute> },
       { path: '/org-outcomes', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgOutcomes /></RoleRoute> },
       { path: '/my-needs', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><OrgNeedsPage /></RoleRoute> },
@@ -668,15 +870,24 @@ const routerConfig = createBrowserRouter([
       { path: '/network', element: <Navigate to="/impact" replace /> },
       { path: '/docs', element: <PrivateRoute><KnowledgeHub /></PrivateRoute> },
       { path: '/impact', element: <Impact /> },
-      { path: '/privacy', element: <PrivacyPolicy /> },
-      { path: '/terms', element: <TermsOfService /> },
-      { path: '/community', element: <CommunityGuidelines /> },
+      { path: '/legal', element: <LegalCenter /> },
+      { path: '/privacy', element: <PrivacyPage /> },
+      { path: '/terms', element: <TermsPage /> },
+      { path: '/community', element: <CommunityPage /> },
+      { path: '/refund', element: <RefundPage /> },
+      { path: '/payment-commission', element: <PaymentCommissionPage /> },
+      { path: '/payout', element: <PayoutPage /> },
+      { path: '/dispute-resolution', element: <DisputeResolutionPage /> },
+      { path: '/prohibited-activities', element: <ProhibitedActivitiesPage /> },
+      { path: '/intellectual-property', element: <IntellectualPropertyPage /> },
+      { path: '/grievance', element: <GrievancePage /> },
+      { path: '/grievance-form', element: <GrievanceForm /> },
+      { path: '/cookies', element: <CookiePage /> },
+      { path: '/verification-policy', element: <VerificationPolicyPage /> },
       { path: '/about', element: <PublicInfoPage /> },
       { path: '/contact', element: <PublicInfoPage /> },
       { path: '/support', element: <PublicInfoPage /> },
       { path: '/faq', element: <PublicInfoPage /> },
-      { path: '/refund', element: <PublicInfoPage /> },
-      { path: '/cookies', element: <PublicInfoPage /> },
       { path: '/disclaimer', element: <PublicInfoPage /> },
       { path: '/careers', element: <PublicInfoPage /> },
       { path: '/press', element: <PublicInfoPage /> },
@@ -691,10 +902,11 @@ const routerConfig = createBrowserRouter([
       { path: '/settings', element: <PrivateRoute><Settings /></PrivateRoute> },
       {
         path: '/event-platform',
-        element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><EventPlatformShell /></RoleRoute>,
+        element: <EventHostRoute><EventPlatformShell /></EventHostRoute>,
         children: [
           { index: true, element: <EventLanding /> },
           { path: 'maker', element: <EventMaker /> },
+          { path: 'history', element: <HistoricalEvents /> },
           { path: 'ticketing', element: <Ticketing /> },
           { path: 'attendance', element: <AttendanceManager /> },
           { path: 'promotion', element: <PromotionChannel /> },
@@ -722,9 +934,12 @@ export default function App() {
     <Suspense fallback={<PageLoader />}>
       <ThemeProvider>
         <AuthProvider>
-          <RouterProvider router={routerConfig} />
+          <EventPlatformSelectionProvider>
+            <RouterProvider router={routerConfig} />
+          </EventPlatformSelectionProvider>
         </AuthProvider>
       </ThemeProvider>
     </Suspense>
   );
 }
+

@@ -57,7 +57,7 @@ export function nowIso() {
 // Send notification to user (used for acceptance, completion, etc.)
 export async function notifyUser(
   userId: string,
-  type: 'quest_accepted' | 'quest_rejected' | 'submission_approved' | 'submission_rejected' | 'quest_completed' | 'application_submitted' | 'quest_withdrawn',
+  type: 'quest_accepted' | 'quest_rejected' | 'submission_approved' | 'submission_rejected' | 'quest_completed' | 'application_submitted' | 'quest_withdrawn' | 'general_alert',
   title: string,
   body: string,
   actionUrl?: string,

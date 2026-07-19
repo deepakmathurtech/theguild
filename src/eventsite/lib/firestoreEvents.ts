@@ -1,15 +1,19 @@
 import { addDoc, collection, doc, getDoc, getDocs, limit, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
+import { notifyUser } from '../../lib/repository';
+import { normalizePublicProfileUrl } from './attendanceUtils';
 import type {
   AttendanceRecord,
   CertificateIssue,
   EventDocument,
+  EventHostAssignment,
   PromotionCampaign,
   TicketRegistration,
   TicketTier,
 } from './eventModels';
 
 const EVENTS_COLLECTION = 'events';
+const STAFF_ROLES = ['receptionist', 'cityGuildMaster', 'stateGuildMaster', 'centralGuildMaster', 'nationalGuildMaster', 'guildFounder', 'founder'] as const;
 
 function nowIso() {
   return new Date().toISOString();
@@ -59,6 +63,69 @@ export async function getEventsForOwner(ownerUid: string) {
   return snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as (EventDocument & { id: string })[];
 }
 
+export async function getEventsForHost(hostUid: string, profileUrl?: string) {
+  const ownedEvents = await getEventsForOwner(hostUid);
+  const normalizedProfileUrl = normalizePublicProfileUrl(profileUrl);
+
+  // Always include the /member/<uid> form in case host identifiers are saved that way.
+  const hostUidVariants = new Set<string>([hostUid, `/member/${hostUid}`]);
+
+  const allEventsQuery = query(collection(db, EVENTS_COLLECTION), limit(500));
+  const allEventsSnap = await getDocs(allEventsQuery);
+  const assignedEvents = allEventsSnap.docs
+    .map((d) => ({ id: d.id, ...(d.data() as any) }) as EventDocument & { id: string })
+    .filter((event) => {
+      const hosts = Array.isArray(event.hosts) ? event.hosts : [];
+      const isHostMatch = hosts.some((host: any) => {
+        // Support multiple possible host identifier shapes because the UI may store different keys.
+        const rawHostIdentifiers = [
+          host.userId,
+          host.hostUid,
+          host.uid,
+          host.profileUrl,
+          host.publicProfileUrl,
+          host.displayName,
+          host.name,
+          host.email,
+        ];
+
+        const hostIdentifiers = rawHostIdentifiers
+          .filter((value): value is string => Boolean(value))
+          .map((value) => normalizePublicProfileUrl(value) ?? value);
+
+        const sameUser = hostIdentifiers.some((identifier) => {
+          if (!identifier) return false;
+          const normalizedIdentifier = normalizePublicProfileUrl(identifier) ?? identifier;
+          return (
+            normalizedIdentifier === hostUid ||
+            normalizedIdentifier === `/member/${hostUid}` ||
+            normalizedIdentifier === `/g/${hostUid}` ||
+            normalizedIdentifier === hostUid.replace(/^\/member\//, '')
+          );
+        });
+
+        const sameVariant = hostIdentifiers.some((identifier) => hostUidVariants.has(identifier));
+
+        const sameProfile = normalizedProfileUrl
+          ? hostIdentifiers.some((identifier) => identifier === normalizedProfileUrl)
+          : false;
+
+        const sameDisplayName = typeof host.displayName === 'string' && typeof profileUrl === 'string' && host.displayName === profileUrl;
+
+        return sameUser || sameVariant || sameProfile || sameDisplayName;
+      });
+
+      return isHostMatch || Boolean(event.createdBy && event.createdBy === hostUid);
+    });
+
+  const merged = [...ownedEvents, ...assignedEvents];
+  const uniqueById = new Map<string, EventDocument & { id: string }>();
+  merged.forEach((event) => {
+    if (event.id) uniqueById.set(event.id, event);
+  });
+
+  return Array.from(uniqueById.values());
+}
 
 export async function upsertTicketTiers(eventId: string, tiers: TicketTier[]) {
   // Stored inside the event doc for simplicity in this prototype.
@@ -70,6 +137,78 @@ export async function upsertTicketTiers(eventId: string, tiers: TicketTier[]) {
   } as any);
 }
 
+export async function updateEventDetails(eventId: string, updates: Partial<EventDocument> & { ticketTiers?: TicketTier[]; registrationFormFields?: any[] }) {
+  const ref = doc(db, EVENTS_COLLECTION, eventId);
+  await setDoc(ref, {
+    ...updates,
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
+  return updates;
+}
+
+async function notifyStaffOfEventAction(eventName: string, eventId: string, actorUid: string | undefined, title: string, body: string, source: string) {
+  const usersSnap = await getDocs(query(
+    collection(db, 'users'),
+    where('role', 'in', STAFF_ROLES as unknown as string[]),
+    where('archiveStatus', '==', 'active')
+  ));
+
+  const recipients = usersSnap.docs.map((d) => d.id).filter((uid) => uid !== actorUid);
+  await Promise.all(recipients.map((uid) => notifyUser(uid, 'general_alert', title, body, '/event-platform/ticketing', 'high')));
+
+  if (actorUid) {
+    await notifyUser(actorUid, 'general_alert', 'Event update received', `${eventName} has been updated and the staff team has been notified.`, '/event-platform/ticketing', 'medium');
+  }
+}
+
+export async function updateEventStatus(eventId: string, status: EventDocument['status'], actorUid?: string) {
+  const ref = doc(db, EVENTS_COLLECTION, eventId);
+  const payoutMeta = status === 'completed'
+    ? {
+        payoutStatus: 'ready' as const,
+        payoutReadyAt: nowIso(),
+        payoutReleaseNote: 'Event marked completed. Organizer payout is now eligible for release.',
+      }
+    : {};
+  await setDoc(ref, { status, updatedAt: serverTimestamp(), ...payoutMeta }, { merge: true });
+
+  if (status === 'completed') {
+    const eventSnap = await getDoc(ref);
+    const eventName = (eventSnap.data() as any)?.name || 'An event';
+    await notifyStaffOfEventAction(eventName, eventId, actorUid, 'Event completed', `${eventName} is now marked completed and payout review is ready.`, 'event-completion');
+  }
+
+  return status;
+}
+
+export async function requestEventPayout(input: {
+  eventId: string;
+  eventName: string;
+  actorUid?: string;
+  receptionistUid?: string;
+  note?: string;
+}) {
+  const ref = doc(db, EVENTS_COLLECTION, input.eventId);
+  const payload = {
+    payoutStatus: 'requested' as const,
+    payoutRequestedAt: nowIso(),
+    payoutRequestedBy: input.actorUid || 'system',
+    payoutReleaseNote: input.note || 'Organizer requested payout release for this event.',
+    updatedAt: serverTimestamp(),
+  };
+  await setDoc(ref, payload, { merge: true });
+
+  await notifyStaffOfEventAction(
+    input.eventName,
+    input.eventId,
+    input.actorUid,
+    'Payout demand received',
+    `${input.eventName} has requested a payout release. Review the event and settle the organizer payout.`,
+    'event-payout-request'
+  );
+
+  return payload;
+}
 
 export async function registerForEvent(input: {
   eventId: string;
@@ -78,6 +217,8 @@ export async function registerForEvent(input: {
   email: string;
   qty: number;
   answers?: Record<string, string>;
+  userId?: string;
+  profileUrl?: string;
   paymentStatus?: TicketRegistration['paymentStatus'];
   paymentProvider?: EventDocument['paymentProvider'];
   paymentAmount?: number;
@@ -129,6 +270,8 @@ export async function registerForEvent(input: {
     email: input.email,
     qty,
     answers: input.answers || {},
+    userId: input.userId,
+    profileUrl: input.profileUrl,
     paymentStatus: input.paymentStatus || 'paid',
     paymentProvider: input.paymentProvider || 'none',
     paymentAmount: input.paymentAmount,
@@ -186,6 +329,8 @@ export async function markAttendance(input: {
   fullName: string;
   email: string;
   status: 'checked-in';
+  checkedInBy?: string;
+  checkedInByName?: string;
 }) {
   const recordId = `att_${input.eventId}_${input.registrationId}`;
   const ref = doc(db, EVENTS_COLLECTION, input.eventId, 'attendance', recordId);
@@ -198,6 +343,8 @@ export async function markAttendance(input: {
     fullName: input.fullName,
     email: input.email,
     status: 'checked-in',
+    checkedInBy: input.checkedInBy,
+    checkedInByName: input.checkedInByName,
     checkInAt: nowIso(),
     updatedAt: nowIso(),
   };
@@ -216,6 +363,32 @@ export async function getAttendanceForEvent(eventId: string) {
   return snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as (AttendanceRecord & { id: string })[];
 }
 
+
+export async function setEventHosts(eventId: string, hosts: EventHostAssignment[]) {
+  const ref = doc(db, EVENTS_COLLECTION, eventId);
+  await setDoc(ref, { hosts }, { merge: true });
+  return hosts;
+}
+
+export async function getEventHosts(eventId: string) {
+  const ref = doc(db, EVENTS_COLLECTION, eventId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return [] as EventHostAssignment[];
+  const hosts = (snap.data() as any)?.hosts || [];
+  return hosts as EventHostAssignment[];
+}
+
+export async function findRegistrationByProfileUrl(eventId: string, profileUrl: string) {
+  const q = query(
+    collection(db, EVENTS_COLLECTION, eventId, 'registrations'),
+    where('profileUrl', '==', profileUrl),
+    limit(20)
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  const docData = snap.docs[0];
+  return { id: docData.id, ...(docData.data() as any) } as TicketRegistration & { id: string };
+}
 
 export async function getPromotionCampaignForEvent(eventId: string) {
   const ref = doc(db, EVENTS_COLLECTION, eventId, 'promotionCampaigns', eventId);

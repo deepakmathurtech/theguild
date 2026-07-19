@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Copy, ExternalLink, Ticket, Users } from 'lucide-react';
+import { BellRing, CheckCircle2, Clock3, Copy, ExternalLink, Ticket, Users, Wallet } from 'lucide-react';
 import type { EventDocument, EventRegistrationField, TicketRegistration, TicketTier } from '../lib/eventModels';
-import { createEvent, getEventsForOwner, getRegistrationsForEvent, upsertTicketTiers } from '../lib/firestoreEvents';
+import { createEvent, getEventsForHost, getRegistrationsForEvent, requestEventPayout, updateEventStatus, upsertTicketTiers } from '../lib/firestoreEvents';
+import { canManageEvent } from '../lib/eventAccess';
+import { calculateCommissionBreakdown, DEFAULT_GUILD_COMMISSION_PERCENT, formatCurrency, getEventCommissionPercent } from '../lib/pricing';
+import { useActionGuard } from '../lib/useActionGuard';
 
 function sanitizeSlug(input: string) {
   return input
@@ -13,7 +16,15 @@ function sanitizeSlug(input: string) {
     .replace(/(^-|-$)/g, '');
 }
 
+function parseList(input: string) {
+  return input
+    .split(/\n|;/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 type QuestionDraft = EventRegistrationField & { optionsText: string };
+type FeedbackTone = 'success' | 'error';
 
 export default function EventMaker() {
   const { profile, firebaseUser, loading } = useAuth();
@@ -30,6 +41,14 @@ export default function EventMaker() {
   const [registrations, setRegistrations] = useState<(TicketRegistration & { id: string })[]>([]);
   const [loadingRegistrations, setLoadingRegistrations] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [payoutUpdating, setPayoutUpdating] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [feedbackTone, setFeedbackTone] = useState<FeedbackTone>('success');
+  const createGuard = useActionGuard({ cooldownMs: 20000, maxAttempts: 2, windowMs: 60000 });
+  const statusGuard = useActionGuard({ cooldownMs: 5000, maxAttempts: 3, windowMs: 30000 });
+  const payoutGuard = useActionGuard({ cooldownMs: 60000, maxAttempts: 1, windowMs: 60000 });
+  const shareGuard = useActionGuard({ cooldownMs: 2000, maxAttempts: 3, windowMs: 10000 });
 
   const [form, setForm] = useState({
     name: '',
@@ -41,6 +60,17 @@ export default function EventMaker() {
     endAt: '',
     ticketTiersEnabled: true,
     currency: 'INR',
+    venue: '',
+    location: '',
+    badgeLabel: '',
+    heroImageUrl: '',
+    contactEmail: '',
+    organizerBio: '',
+    agenda: '',
+    highlights: '',
+    whatToExpect: '',
+    includes: '',
+    registrationNote: '',
     tiers: [
       { id: 'tier1', name: 'General Pass', price: 199, capacity: 200 },
       { id: 'tier2', name: 'Student Pass', price: 99, capacity: 120 },
@@ -50,15 +80,16 @@ export default function EventMaker() {
 
   useEffect(() => {
     if (!ownerUid || loading) return;
-    getEventsForOwner(ownerUid)
+    getEventsForHost(ownerUid, profile?.uid ? `/member/${profile.uid}` : undefined)
       .then((data) => {
-        setEvents(data);
-        if (!selectedEventId && data[0]?.id) {
-          setSelectedEventId(data[0].id);
+        const manageableEvents = data.filter((event) => canManageEvent(event, profile, ownerUid));
+        setEvents(manageableEvents);
+        if (!selectedEventId && manageableEvents[0]?.id) {
+          setSelectedEventId(manageableEvents[0].id);
         }
       })
       .catch((e) => console.error(e));
-  }, [ownerUid, loading]);
+  }, [ownerUid, loading, profile]);
 
   useEffect(() => {
     if (!form.name.trim()) return;
@@ -79,10 +110,32 @@ export default function EventMaker() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!ownerUid || !canCreateEvents) return;
-    if (!form.name.trim()) return;
+    setFeedback(null);
+    if (!form.name.trim() || form.name.trim().length < 3) {
+      setFeedbackTone('error');
+      setFeedback('Event name must be at least 3 characters.');
+      return;
+    }
 
     const slug = sanitizeSlug(form.slug || form.name);
-    if (!slug) return;
+    if (!slug) {
+      setFeedbackTone('error');
+      setFeedback('Add a valid URL slug using letters, numbers, or dashes.');
+      return;
+    }
+
+    if (form.contactEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactEmail.trim())) {
+      setFeedbackTone('error');
+      setFeedback('Add a valid contact email or leave it blank.');
+      return;
+    }
+
+    const guardMessage = createGuard.guardAction(`Event creation is cooling down. Try again in ${Math.max(1, createGuard.remainingSeconds)} seconds.`);
+    if (guardMessage) {
+      setFeedbackTone('error');
+      setFeedback(guardMessage);
+      return;
+    }
 
     setBusy(true);
     try {
@@ -107,11 +160,25 @@ export default function EventMaker() {
         status: form.status,
         ticketTiersEnabled: form.ticketTiersEnabled,
         currency: form.currency,
+        venue: form.venue.trim() || undefined,
+        location: form.location.trim() || undefined,
+        badgeLabel: form.badgeLabel.trim() || undefined,
+        heroImageUrl: form.heroImageUrl.trim() || undefined,
+        contactEmail: form.contactEmail.trim() || undefined,
+        organizerBio: form.organizerBio.trim() || undefined,
+        agenda: form.agenda.trim() || undefined,
+        highlights: parseList(form.highlights),
+        whatToExpect: parseList(form.whatToExpect),
+        includes: parseList(form.includes),
+        registrationNote: form.registrationNote.trim() || undefined,
         registrationFormFields: normalizedQuestions,
         organizationId: profile?.organizationId || profile?.uid || '',
         organizationName: profile?.organizationName || profile?.fullName || 'Your organization',
         createdBy: ownerUid,
         paymentProvider: 'razorpay',
+        paymentConfig: {
+          platformCommissionPercent: DEFAULT_GUILD_COMMISSION_PERCENT,
+        },
       } as any);
 
       if (form.ticketTiersEnabled) {
@@ -121,6 +188,11 @@ export default function EventMaker() {
       setEvents((prev) => [{ id: created.id, ...(created as any) }, ...prev]);
       setSelectedEventId(created.id);
       navigate(`/event-platform/e/${slug}`);
+    } catch (error) {
+      console.error('Failed to create event', error);
+      createGuard.release();
+      setFeedbackTone('error');
+      setFeedback('Unable to create this event right now. Please review the form and try again.');
     } finally {
       setBusy(false);
     }
@@ -128,14 +200,80 @@ export default function EventMaker() {
 
   const selectedEvent = useMemo(() => events.find((event) => event.id === selectedEventId) || null, [events, selectedEventId]);
 
+  async function handleStatusChange(nextStatus: EventDocument['status']) {
+    if (!selectedEvent?.id) return;
+    const guardMessage = statusGuard.guardAction(`Status updates are cooling down. Try again in ${Math.max(1, statusGuard.remainingSeconds)} seconds.`);
+    if (guardMessage) {
+      setFeedbackTone('error');
+      setFeedback(guardMessage);
+      return;
+    }
+
+    setStatusUpdating(true);
+    setFeedback(null);
+    try {
+      await updateEventStatus(selectedEvent.id, nextStatus);
+      setEvents((prev) => prev.map((event) => event.id === selectedEvent.id ? { ...event, status: nextStatus, payoutStatus: nextStatus === 'completed' ? 'ready' : (event.payoutStatus || 'pending') } : event));
+      setFeedbackTone('success');
+      setFeedback(nextStatus === 'completed' ? 'Event marked completed. The payout is now ready for settlement.' : 'Event reopened for continued management.');
+    } catch (error) {
+      console.error('Failed to update event status', error);
+      statusGuard.release();
+      setFeedbackTone('error');
+      setFeedback('Unable to update the event status right now.');
+    } finally {
+      setStatusUpdating(false);
+    }
+  }
+
+  async function handleDemandPayout() {
+    if (!selectedEvent?.id) return;
+    const guardMessage = payoutGuard.guardAction(`Payout requests are limited. Try again in ${Math.max(1, payoutGuard.remainingSeconds)} seconds.`);
+    if (guardMessage) {
+      setFeedbackTone('error');
+      setFeedback(guardMessage);
+      return;
+    }
+
+    setPayoutUpdating(true);
+    setFeedback(null);
+    try {
+      const receptionistUid = (profile as any)?.assignedReceptionistId || (profile as any)?.assignedReceptionist || undefined;
+      await requestEventPayout({
+        eventId: selectedEvent.id,
+        eventName: selectedEvent.name,
+        actorUid: ownerUid || undefined,
+        receptionistUid,
+        note: 'Organizer requested payout release after the event concluded.',
+      });
+      setEvents((prev) => prev.map((event) => event.id === selectedEvent.id ? { ...event, payoutStatus: 'requested', payoutRequestedAt: new Date().toISOString() } : event));
+      setFeedbackTone('success');
+      setFeedback('Payout demand submitted and the receptionist has been notified.');
+    } catch (error) {
+      console.error('Failed to request payout', error);
+      payoutGuard.release();
+      setFeedbackTone('error');
+      setFeedback('Unable to submit the payout request right now.');
+    } finally {
+      setPayoutUpdating(false);
+    }
+  }
+
   const summary = useMemo(() => {
     const tiers = ((selectedEvent as any)?.ticketTiers || []) as TicketTier[];
     const sold = registrations.reduce((sum, registration) => sum + Number(registration.qty || 0), 0);
     const capacity = tiers.reduce((sum, tier) => sum + Number(tier.capacity || 0), 0);
+    const grossRevenue = registrations.reduce((sum, registration) => {
+      const tier = tiers.find((item) => item.id === registration.tierId);
+      return sum + Number(tier?.price || 0) * Number(registration.qty || 0);
+    }, 0);
+    const commission = calculateCommissionBreakdown(grossRevenue, getEventCommissionPercent(selectedEvent as any));
     return {
       sold,
       capacity,
       remaining: Math.max(0, capacity - sold),
+      grossRevenue,
+      commission,
     };
   }, [registrations, selectedEvent]);
 
@@ -157,6 +295,19 @@ export default function EventMaker() {
         </div>
       ) : null}
 
+      {feedback ? (
+        <div
+          className={`rounded-2xl border p-4 text-sm ${
+            feedbackTone === 'success'
+              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600'
+              : 'border-red-500/20 bg-red-500/10 text-red-500'
+          }`}
+          role={feedbackTone === 'error' ? 'alert' : 'status'}
+        >
+          {feedback}
+        </div>
+      ) : null}
+
       {canCreateEvents ? (
         <form onSubmit={submit} className="rounded-2xl border border-[var(--border)] bg-[var(--card-subtle)]/20 p-4 md:p-5 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -165,9 +316,11 @@ export default function EventMaker() {
               <input
                 className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-3 py-2 text-sm"
                 value={form.name}
-                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value.slice(0, 90) }))}
                 placeholder="e.g., Annual Meetup 2026"
                 required
+                minLength={3}
+                maxLength={90}
               />
             </label>
 
@@ -176,8 +329,9 @@ export default function EventMaker() {
               <input
                 className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-3 py-2 text-sm"
                 value={form.slug}
-                onChange={(e) => setForm((p) => ({ ...p, slug: e.target.value }))}
+                onChange={(e) => setForm((p) => ({ ...p, slug: sanitizeSlug(e.target.value).slice(0, 80) }))}
                 placeholder="e.g., annual-meetup-2026"
+                maxLength={80}
               />
             </label>
           </div>
@@ -187,10 +341,127 @@ export default function EventMaker() {
             <textarea
               className="mt-1 w-full min-h-[100px] rounded-xl border border-[var(--border)] bg-transparent px-3 py-2 text-sm"
               value={form.description}
-              onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+              onChange={(e) => setForm((p) => ({ ...p, description: e.target.value.slice(0, 1800) }))}
               placeholder="What attendees will get..."
+              maxLength={1800}
             />
           </label>
+
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-subtle)]/30 p-4 space-y-4">
+            <div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">Public page details</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className="block">
+                <div className="text-xs font-bold text-[var(--text-secondary)]">Hero image URL</div>
+                <input
+                  className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-3 py-2 text-sm"
+                  value={form.heroImageUrl}
+                  onChange={(e) => setForm((p) => ({ ...p, heroImageUrl: e.target.value.trim().slice(0, 300) }))}
+                  placeholder="https://..."
+                  type="url"
+                  inputMode="url"
+                />
+              </label>
+              <label className="block">
+                <div className="text-xs font-bold text-[var(--text-secondary)]">Badge / tagline</div>
+                <input
+                  className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-3 py-2 text-sm"
+                  value={form.badgeLabel}
+                  onChange={(e) => setForm((p) => ({ ...p, badgeLabel: e.target.value }))}
+                  placeholder="Featured community meetup"
+                />
+              </label>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className="block">
+                <div className="text-xs font-bold text-[var(--text-secondary)]">Venue</div>
+                <input
+                  className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-3 py-2 text-sm"
+                  value={form.venue}
+                  onChange={(e) => setForm((p) => ({ ...p, venue: e.target.value }))}
+                  placeholder="Main Hall, 2nd Floor"
+                />
+              </label>
+              <label className="block">
+                <div className="text-xs font-bold text-[var(--text-secondary)]">Location</div>
+                <input
+                  className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-3 py-2 text-sm"
+                  value={form.location}
+                  onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
+                  placeholder="Ludhiana, Punjab"
+                />
+              </label>
+            </div>
+            <label className="block">
+              <div className="text-xs font-bold text-[var(--text-secondary)]">Organizer bio</div>
+              <textarea
+                className="mt-1 w-full min-h-[80px] rounded-xl border border-[var(--border)] bg-transparent px-3 py-2 text-sm"
+                value={form.organizerBio}
+                onChange={(e) => setForm((p) => ({ ...p, organizerBio: e.target.value }))}
+                placeholder="Tell attendees who is hosting this experience"
+              />
+            </label>
+            <label className="block">
+              <div className="text-xs font-bold text-[var(--text-secondary)]">Contact email</div>
+              <input
+                className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-3 py-2 text-sm"
+                value={form.contactEmail}
+                onChange={(e) => setForm((p) => ({ ...p, contactEmail: e.target.value.trim().slice(0, 120) }))}
+                placeholder="hello@organization.com"
+                type="email"
+                inputMode="email"
+                maxLength={120}
+              />
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className="block">
+                <div className="text-xs font-bold text-[var(--text-secondary)]">Highlights (one per line)</div>
+                <textarea
+                  className="mt-1 w-full min-h-[90px] rounded-xl border border-[var(--border)] bg-transparent px-3 py-2 text-sm"
+                  value={form.highlights}
+                  onChange={(e) => setForm((p) => ({ ...p, highlights: e.target.value }))}
+                  placeholder="Networking lounge\nLive demos"
+                />
+              </label>
+              <label className="block">
+                <div className="text-xs font-bold text-[var(--text-secondary)]">What to expect (one per line)</div>
+                <textarea
+                  className="mt-1 w-full min-h-[90px] rounded-xl border border-[var(--border)] bg-transparent px-3 py-2 text-sm"
+                  value={form.whatToExpect}
+                  onChange={(e) => setForm((p) => ({ ...p, whatToExpect: e.target.value }))}
+                  placeholder="Community walkthrough\nHands-on session"
+                />
+              </label>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className="block">
+                <div className="text-xs font-bold text-[var(--text-secondary)]">Agenda / schedule</div>
+                <textarea
+                  className="mt-1 w-full min-h-[90px] rounded-xl border border-[var(--border)] bg-transparent px-3 py-2 text-sm"
+                  value={form.agenda}
+                  onChange={(e) => setForm((p) => ({ ...p, agenda: e.target.value }))}
+                  placeholder="10:00 AM welcome\n11:00 AM session"
+                />
+              </label>
+              <label className="block">
+                <div className="text-xs font-bold text-[var(--text-secondary)]">Includes / perks</div>
+                <textarea
+                  className="mt-1 w-full min-h-[90px] rounded-xl border border-[var(--border)] bg-transparent px-3 py-2 text-sm"
+                  value={form.includes}
+                  onChange={(e) => setForm((p) => ({ ...p, includes: e.target.value }))}
+                  placeholder="Certificate\nRefreshments"
+                />
+              </label>
+            </div>
+            <label className="block">
+              <div className="text-xs font-bold text-[var(--text-secondary)]">Registration note</div>
+              <textarea
+                className="mt-1 w-full min-h-[70px] rounded-xl border border-[var(--border)] bg-transparent px-3 py-2 text-sm"
+                value={form.registrationNote}
+                onChange={(e) => setForm((p) => ({ ...p, registrationNote: e.target.value }))}
+                placeholder="Share any note for attendees before they confirm"
+              />
+            </label>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label className="block">
@@ -274,8 +545,9 @@ export default function EventMaker() {
               <input
                 className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-3 py-2 text-sm"
                 value={form.currency}
-                onChange={(e) => setForm((p) => ({ ...p, currency: e.target.value }))}
+                onChange={(e) => setForm((p) => ({ ...p, currency: e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3) }))}
                 placeholder="INR"
+                maxLength={3}
               />
             </label>
           </div>
@@ -317,10 +589,13 @@ export default function EventMaker() {
                       <div className="text-xs font-bold text-[var(--text-secondary)]">Price</div>
                       <input
                         type="number"
+                        min={0}
+                        step="0.01"
+                        inputMode="decimal"
                         className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-3 py-2 text-sm"
                         value={t.price}
                         onChange={(e) => {
-                          const value = Number(e.target.value);
+                          const value = Math.max(0, Number(e.target.value));
                           setForm((p) => ({
                             ...p,
                             tiers: p.tiers.map((x, i) => (i === idx ? { ...x, price: value } : x)),
@@ -333,10 +608,13 @@ export default function EventMaker() {
                       <div className="text-xs font-bold text-[var(--text-secondary)]">Capacity</div>
                       <input
                         type="number"
+                        min={1}
+                        step={1}
+                        inputMode="numeric"
                         className="mt-1 w-full rounded-xl border border-[var(--border)] bg-transparent px-3 py-2 text-sm"
                         value={t.capacity}
                         onChange={(e) => {
-                          const value = Number(e.target.value);
+                          const value = Math.max(1, Math.floor(Number(e.target.value)));
                           setForm((p) => ({
                             ...p,
                             tiers: p.tiers.map((x, i) => (i === idx ? { ...x, capacity: value } : x)),
@@ -468,16 +746,24 @@ export default function EventMaker() {
 
           <button
             type="submit"
-            disabled={busy || loading || !ownerUid || !canCreateEvents}
+            disabled={busy || createGuard.isCoolingDown || loading || !ownerUid || !canCreateEvents}
             className="w-full rounded-xl bg-[var(--primary)] text-black font-extrabold py-2.5 text-xs hover:opacity-95 transition-opacity disabled:opacity-50"
           >
-            {busy ? 'Creating…' : 'Create event + public page'}
+            {busy ? 'Creating...' : createGuard.isCoolingDown ? `Wait ${createGuard.remainingSeconds}s` : 'Create event + public page'}
           </button>
         </form>
       ) : null}
 
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-subtle)]/20 p-4">
-        <div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">Your events</div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">Your events</div>
+          <a
+            href="/event-platform/history"
+            className="rounded-xl border border-[var(--border)] bg-[var(--card-subtle)]/40 px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--card-subtle)]/70"
+          >
+            View history archive
+          </a>
+        </div>
         <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
           {events.length ? (
             events.map((e) => (
@@ -522,17 +808,40 @@ export default function EventMaker() {
                 type="button"
                 onClick={async () => {
                   if (!selectedEvent) return;
+                  const guardMessage = shareGuard.guardAction('Copy action is cooling down. Try again in a moment.');
+                  if (guardMessage) {
+                    setFeedbackTone('error');
+                    setFeedback(guardMessage);
+                    return;
+                  }
                   const url = `${window.location.origin}/event-platform/e/${selectedEvent.slug}`;
-                  await navigator.clipboard.writeText(url);
-                  setShareCopied(true);
-                  window.setTimeout(() => setShareCopied(false), 1500);
+                  try {
+                    await navigator.clipboard.writeText(url);
+                    setShareCopied(true);
+                    setFeedbackTone('success');
+                    setFeedback('Public event link copied.');
+                    window.setTimeout(() => setShareCopied(false), 1500);
+                  } catch {
+                    shareGuard.release();
+                    setFeedbackTone('error');
+                    setFeedback('Unable to copy the public link. Open the page and copy it from the address bar.');
+                  }
                 }}
-                className="rounded-xl border border-[var(--border)] bg-[var(--card-subtle)]/40 px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--card-subtle)]/70"
+                disabled={shareGuard.isCoolingDown}
+                className="rounded-xl border border-[var(--border)] bg-[var(--card-subtle)]/40 px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--card-subtle)]/70 disabled:opacity-50"
               >
                 <span className="inline-flex items-center gap-2">
                   <Copy className="h-3.5 w-3.5" />
                   {shareCopied ? 'Copied' : 'Copy public link'}
                 </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleStatusChange(selectedEvent?.status === 'completed' ? 'published' : 'completed')}
+                disabled={statusUpdating || statusGuard.isCoolingDown}
+                className="rounded-xl border border-[var(--border)] bg-[var(--card-subtle)]/40 px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--card-subtle)]/70 disabled:opacity-50"
+              >
+                {statusGuard.isCoolingDown ? `Wait ${statusGuard.remainingSeconds}s` : selectedEvent?.status === 'completed' ? 'Re-open event' : 'Mark as completed'}
               </button>
               <a
                 href={`/event-platform/e/${selectedEvent.slug}`}
@@ -551,7 +860,7 @@ export default function EventMaker() {
 
         {selectedEvent ? (
           <>
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-xl border border-[var(--border)] bg-[var(--card-subtle)]/30 p-3">
                 <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">Tickets sold</div>
                 <div className="mt-1 text-xl font-extrabold">{summary.sold}</div>
@@ -561,8 +870,57 @@ export default function EventMaker() {
                 <div className="mt-1 text-xl font-extrabold">{summary.capacity}</div>
               </div>
               <div className="rounded-xl border border-[var(--border)] bg-[var(--card-subtle)]/30 p-3">
-                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">Remaining</div>
-                <div className="mt-1 text-xl font-extrabold">{summary.remaining}</div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">Net payout</div>
+                <div className="mt-1 text-xl font-extrabold">{formatCurrency((selectedEvent as any)?.currency, summary.commission.organizationPayout)}</div>
+              </div>
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--card-subtle)]/30 p-3">
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">Guild fee</div>
+                <div className="mt-1 text-xl font-extrabold">{formatCurrency((selectedEvent as any)?.currency, summary.commission.guildFee)}</div>
+              </div>
+            </div>
+
+            <div className="mt-3 rounded-xl border border-[var(--border)] bg-[var(--card-subtle)]/20 p-3 text-sm text-[var(--text-secondary)]">
+              Gross sales: <span className="font-extrabold text-[var(--text)]">{formatCurrency((selectedEvent as any)?.currency, summary.commission.grossAmount)}</span>. Guild keeps <span className="font-extrabold text-[var(--primary)]">{summary.commission.commissionPercent}%</span> of each ticket amount, and the organization receives the remaining <span className="font-extrabold text-emerald-500">{100 - summary.commission.commissionPercent}%</span> after payment gateway costs are deducted.
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-[var(--primary)]/20 bg-[var(--primary)]/10 p-4 shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">Payout release</div>
+                  <div className="mt-1 text-sm font-extrabold">Funds are released when the event is completed or when you demand settlement.</div>
+                  <div className="mt-2 text-xs text-[var(--text-secondary)]">
+                    {selectedEvent.payoutStatus === 'requested' ? 'A payout demand is already pending review by your receptionist.' : selectedEvent.payoutStatus === 'ready' ? 'This event is ready for payout settlement.' : 'You can request payout now and your receptionist will be notified.'}
+                  </div>
+                </div>
+                <div className="rounded-full border border-[var(--primary)]/20 bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--primary)]">
+                  {selectedEvent.payoutStatus || 'pending'}
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={handleDemandPayout}
+                  disabled={payoutUpdating || payoutGuard.isCoolingDown || selectedEvent.payoutStatus === 'requested'}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-3 py-2.5 text-sm font-extrabold text-black transition hover:opacity-95 disabled:opacity-50"
+                >
+                  <Wallet className="h-4 w-4" />
+                  {payoutUpdating ? 'Submitting...' : payoutGuard.isCoolingDown ? `Wait ${payoutGuard.remainingSeconds}s` : selectedEvent.payoutStatus === 'requested' ? 'Payout requested' : 'Demand payout'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleStatusChange(selectedEvent?.status === 'completed' ? 'published' : 'completed')}
+                  disabled={statusUpdating || statusGuard.isCoolingDown}
+                  className="flex items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--card-subtle)]/40 px-3 py-2.5 text-sm font-extrabold text-[var(--text-secondary)] transition hover:bg-[var(--card-subtle)]/70 disabled:opacity-50"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  {statusGuard.isCoolingDown ? `Wait ${statusGuard.remainingSeconds}s` : selectedEvent?.status === 'completed' ? 'Re-open event' : 'Mark completed'}
+                </button>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)]">
+                <span className="inline-flex items-center gap-1"><Clock3 className="h-3.5 w-3.5" />{selectedEvent.payoutRequestedAt ? `Requested ${new Date(selectedEvent.payoutRequestedAt).toLocaleString()}` : 'No payout request yet'}</span>
+                <span className="inline-flex items-center gap-1"><BellRing className="h-3.5 w-3.5" />Receptionist notified when payout is demanded</span>
               </div>
             </div>
 
