@@ -682,8 +682,10 @@ function EventHostRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!firebaseUser) {
-    return <Navigate to="/auth" replace />;
+    const redirect = `${location.pathname}${location.search}`;
+    return <Navigate to={`/auth?redirect=${encodeURIComponent(redirect)}`} replace />;
   }
+
 
   if (!profile) {
     return <Navigate to="/onboarding" replace />;
@@ -705,8 +707,10 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!firebaseUser) {
-    return <Navigate to="/auth" replace />;
+    const redirect = `${location.pathname}${location.search}`;
+    return <Navigate to={`/auth?redirect=${encodeURIComponent(redirect)}`} replace />;
   }
+
 
   return <>{children}</>;
 }
