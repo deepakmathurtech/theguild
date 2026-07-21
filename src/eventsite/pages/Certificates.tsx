@@ -335,7 +335,7 @@ export default function Certificates() {
     setSuccessMessage(null);
     setErrorMessage(null);
     try {
-      // Generate PDF from template if available
+// Generate PDF from template if available
       let attachments: CertificateAttachment[] = [];
       if (template) {
         try {
@@ -343,7 +343,7 @@ export default function Certificates() {
             template,
             selectedEvent.name,
             record,
-            2 // 2x quality for email
+            { scale: 1, jpegQuality: 0.8 } // 1x scale + JPEG compression = small file size
           );
           attachments = [pdfAttachment];
         } catch (pdfErr) {

@@ -294,7 +294,7 @@ export default function CertificatePreviewModal({
         template,
         eventName,
         participant,
-        exportScale
+        { scale: exportScale, jpegQuality: 0.85 }
       );
       
       await onSendComplete([pdfAttachment]);

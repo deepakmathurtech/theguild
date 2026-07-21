@@ -18,23 +18,33 @@ export interface ParticipantInfo {
 /**
  * Generate a PDF certificate from a template and participant data.
  * Uses an off-screen HTML5 Canvas to render the certificate, then wraps it in a PDF.
+ * Uses JPEG compression with configurable quality to keep file size under Vercel's 4.5MB limit.
+ *
+ * @param template - The certificate template with layers
+ * @param eventName - Name of the event
+ * @param participant - Participant details
+ * @param options - Optional render settings
+ * @param options.scale - Render scale (1 = ~800x600, 2 = ~1600x1200). Default 1 for email attachments to keep size small.
+ * @param options.jpegQuality - JPEG compression quality 0-1. Default 0.8 balances quality and size.
  */
 export async function generateCertificatePDF(
   template: CertificateTemplate,
   eventName: string,
   participant: ParticipantInfo,
-  exportScale: number = 2
+  options?: { scale?: number; jpegQuality?: number }
 ): Promise<CertificateAttachment> {
-  const pngDataUrl = await renderCertificateCanvas(template, eventName, participant, exportScale);
+  const scale = options?.scale ?? 1;
+  const jpegQuality = options?.jpegQuality ?? 0.8;
+  const imageDataUrl = await renderCertificateCanvas(template, eventName, participant, scale, jpegQuality);
   
-  // Convert PNG to PDF using jsPDF
+  // Convert image to PDF using jsPDF
   const orientation = template.orientation === 'portrait' ? 'p' : 'l';
   const pdf = new jsPDF(orientation, 'mm', [210, 297]); // A4
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
 
-  // Add the PNG image to fill the PDF page
-  pdf.addImage(pngDataUrl, 'PNG', 0, 0, pageWidth, pageHeight);
+  // Add the JPEG image to fill the PDF page
+  pdf.addImage(imageDataUrl, 'JPEG', 0, 0, pageWidth, pageHeight);
 
   // Get base64 PDF content (strip the data:application/pdf;base64, prefix)
   const pdfBase64 = pdf.output('datauristring').split(',')[1];
@@ -44,14 +54,16 @@ export async function generateCertificatePDF(
 }
 
 /**
- * Render a certificate template to a PNG data URL using an off-screen canvas.
+ * Render a certificate template to an image data URL using an off-screen canvas.
+ * Uses JPEG compression to keep file size small for email attachments.
  * This is a standalone implementation that does not require any DOM elements to be visible.
  */
 async function renderCertificateCanvas(
   template: CertificateTemplate,
   eventName: string,
   participant: ParticipantInfo,
-  scale: number = 2
+  scale: number = 1,
+  jpegQuality: number = 0.8
 ): Promise<string> {
   const mockCertId = `CERT-2026-${participant.registrationId?.substring(0, 6).toUpperCase() || '000000'}`;
   const currentDate = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
@@ -129,7 +141,8 @@ async function renderCertificateCanvas(
     }
   }
 
-  return canvas.toDataURL('image/png');
+  // Use JPEG compression for smaller file size (avoiding Vercel's 4.5MB body limit)
+  return canvas.toDataURL('image/jpeg', jpegQuality);
 }
 
 function getBackgroundUrl(template: CertificateTemplate): string {
