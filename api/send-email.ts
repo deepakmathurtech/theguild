@@ -52,6 +52,7 @@ export default async function handler(req: any, res: any) {
   const fullName = sanitizePlainText(body.fullName, 120);
   const eventName = sanitizePlainText(body.eventName, 200);
   const registrationId = sanitizePlainText(body.registrationId, 64);
+  const attachments = Array.isArray(body.attachments) ? body.attachments : [];
 
   if (!to || !isValidEmail(to)) {
     return sendJson(res, 400, { success: false, message: 'Invalid or missing recipient email address.' });
@@ -92,19 +93,29 @@ export default async function handler(req: any, res: any) {
   const textBody = `Hi ${fullName},\n\nCongratulations! Your completion certificate for "${eventName}" is registered on the Guild Trust Ledger.\n\nCertificate ID: ${certId}\nVerify your record here: ${verifyLink}\n\nBest regards,\nThe Guild Team`;
 
   try {
+    const emailPayload: any = {
+      from: `${fromName} <${fromAddress}>`,
+      to: [to],
+      subject: `Your verified certificate for ${eventName} is ready! 🎉`,
+      html: htmlBody,
+      text: textBody,
+    };
+
+    // Attach certificate PDF if provided
+    if (attachments.length > 0) {
+      emailPayload.attachments = attachments.map((att: any) => ({
+        filename: att.filename || 'certificate.pdf',
+        content: att.content, // base64 string
+      }));
+    }
+
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${resendApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        from: `${fromName} <${fromAddress}>`,
-        to: [to],
-        subject: `Your verified certificate for ${eventName} is ready! 🎉`,
-        html: htmlBody,
-        text: textBody,
-      }),
+      body: JSON.stringify(emailPayload),
     });
 
     const result = await response.json() as { id?: string; name?: string; message?: string; statusCode?: number };

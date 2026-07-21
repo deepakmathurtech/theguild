@@ -440,6 +440,7 @@ export async function issueCertificate(input: {
 /**
  * Sends a certificate notification email via the /api/send-email Vercel serverless function.
  * Uses Resend API server-side — no Firebase Blaze plan or extensions required.
+ * Optionally attaches a PDF certificate file.
  * Returns { queued: true, messageId } on success or { queued: false, error } on failure.
  */
 export async function queueCertificateEmail(input: {
@@ -447,6 +448,10 @@ export async function queueCertificateEmail(input: {
   email: string;
   eventName: string;
   registrationId: string;
+  attachments?: Array<{
+    filename: string;
+    content: string; // base64-encoded content
+  }>;
 }): Promise<{ queued: true; messageId: string } | { queued: false; error: string }> {
   try {
     const response = await fetch('/api/send-email', {
@@ -457,6 +462,7 @@ export async function queueCertificateEmail(input: {
         fullName: input.fullName,
         eventName: input.eventName,
         registrationId: input.registrationId,
+        attachments: input.attachments || [],
       }),
     });
 

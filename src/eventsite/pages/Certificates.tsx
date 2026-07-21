@@ -18,6 +18,8 @@ import CertificateTemplateEditor from '../components/CertificateTemplateEditor';
 import CertificatePreviewModal from '../components/CertificatePreviewModal';
 import { certificateTemplateStorage } from '../lib/certificateTemplateStorage';
 import type { CertificateTemplate } from '../lib/certificateTypes';
+import { generateCertificatePDF } from '../lib/certificatePdfGenerator';
+import type { CertificateAttachment } from '../lib/certificatePdfGenerator';
 
 type CertificateType = CertificateIssue['type'] | 'custom_pdf';
 
@@ -297,7 +299,7 @@ export default function Certificates() {
   };
 
   // Called when preview modal finishes mock-sending
-  const handleModalSendComplete = async () => {
+  const handleModalSendComplete = async (attachments?: CertificateAttachment[]) => {
     if (!previewParticipant || !selectedEventId) return;
 
     const certificate = await issueCertificate({
@@ -311,35 +313,53 @@ export default function Certificates() {
 
     setCertificates((previous) => [...previous.filter((item) => item.registrationId !== previewParticipant.registrationId), certificate]);
 
-    // Queue real email
+    // Queue real email with PDF attachment
     const mailResult = await queueCertificateEmail({
       fullName: previewParticipant.fullName,
       email: previewParticipant.email,
       eventName: selectedEvent?.name || 'the event',
       registrationId: previewParticipant.registrationId!,
+      attachments: attachments || [],
     });
     if (mailResult.queued) {
-      setSuccessMessage(`Certificate issued and email queued for ${previewParticipant.fullName}. ✉️`);
+      setSuccessMessage(`Certificate issued and email (with PDF) queued for ${previewParticipant.fullName}. ✉️`);
     } else {
       setSuccessMessage(`Certificate issued for ${previewParticipant.fullName}. Email queue failed: ${mailResult.error}`);
     }
   };
 
-  // Resend email for an already-issued certificate
+  // Resend email for an already-issued certificate (includes PDF attachment if template exists)
   const handleResendEmail = async (record: { fullName: string; email: string; registrationId: string }) => {
     if (resendingEmail || !selectedEvent) return;
     setResendingEmail(record.registrationId);
     setSuccessMessage(null);
     setErrorMessage(null);
     try {
+      // Generate PDF from template if available
+      let attachments: CertificateAttachment[] = [];
+      if (template) {
+        try {
+          const pdfAttachment = await generateCertificatePDF(
+            template,
+            selectedEvent.name,
+            record,
+            2 // 2x quality for email
+          );
+          attachments = [pdfAttachment];
+        } catch (pdfErr) {
+          console.warn('[Certificates] Could not generate PDF for resend, sending without attachment:', pdfErr);
+        }
+      }
+
       const result = await queueCertificateEmail({
         fullName: record.fullName,
         email: record.email,
         eventName: selectedEvent.name,
         registrationId: record.registrationId,
+        attachments,
       });
       if (result.queued) {
-        setSuccessMessage(`Email re-queued for ${record.fullName} (${record.email}) ✉️`);
+        setSuccessMessage(`Email re-queued with PDF for ${record.fullName} (${record.email}) ✉️`);
       } else {
         setErrorMessage(`Failed to queue email for ${record.fullName}: ${result.error}`);
       }

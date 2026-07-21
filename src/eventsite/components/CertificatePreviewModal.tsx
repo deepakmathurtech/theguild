@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import type { CertificateTemplate, CertificateLayer } from '../lib/certificateTypes';
 import { PRESETS } from './CertificateTemplateEditor';
+import { generateCertificatePDF } from '../lib/certificatePdfGenerator';
+import type { CertificateAttachment } from '../lib/certificatePdfGenerator';
 
 interface CertificatePreviewModalProps {
   isOpen: boolean;
@@ -19,7 +21,7 @@ interface CertificatePreviewModalProps {
     role?: string;
     registrationId?: string;
   };
-  onSendComplete: () => Promise<void>;
+  onSendComplete: (attachments?: CertificateAttachment[]) => Promise<void>;
 }
 
 export default function CertificatePreviewModal({
@@ -287,10 +289,18 @@ export default function CertificatePreviewModal({
     }
 
     try {
-      await onSendComplete();
+      // Generate PDF certificate attachment using shared utility
+      const pdfAttachment = await generateCertificatePDF(
+        template,
+        eventName,
+        participant,
+        exportScale
+      );
+      
+      await onSendComplete([pdfAttachment]);
       
       // Dispatch via local email client fallback
-      const mailtoUrl = `mailto:${participant.email}?subject=Your verified certificate for ${eventName} is ready! 🎉&body=Hi ${participant.fullName.split(' ')[0]},%0D%0A%0D%0ACongratulations! Your completion certificate for "${eventName}" is registered and verified on the Guild Trust Ledger.%0D%0A%0D%0ACertificate ID: ${mockCertId}%0D%0APassport Verification Link: ${window.location.origin}/impact%0D%0A%0D%0ABest regards,%0D%0AThe Guild Team`;
+      const mailtoUrl = `mailto:${participant.email}?subject=Your verified certificate for ${eventName} is ready! 🎉&body=Hi ${participant.fullName.split(' ')[0]},%0D%0A%0D%0ACongratulations! Your completion certificate for "${eventName}" is registered and verified on the Guild Trust Ledger. A PDF copy is attached to this email.%0D%0A%0D%0ACertificate ID: ${mockCertId}%0D%0APassport Verification Link: ${window.location.origin}/impact%0D%0A%0D%0ABest regards,%0D%0AThe Guild Team`;
       window.location.href = mailtoUrl;
       
       setSendStep(5);
