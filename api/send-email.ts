@@ -1,4 +1,4 @@
-import { loadRuntimeEnv } from './lib/runtime-env';
+import { loadRuntimeEnv } from './lib/runtime-env.js';
 import {
   applyRateLimitOrRespond,
   getClientIp,
@@ -6,7 +6,7 @@ import {
   isValidEmail,
   sanitizePlainText,
   setSecurityHeaders,
-} from './lib/request-security';
+} from './lib/request-security.js';
 
 function sendJson(res: any, status: number, payload: any) {
   res.status(status).json(payload);
