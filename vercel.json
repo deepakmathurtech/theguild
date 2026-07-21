@@ -1,8 +1,17 @@
 {
   "$schema": "https://openapi.vercel.com/vercel.json",
+
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+
+  "functions": {
+    "api/**/*.ts": {
+      "includeFiles": "api/lib/**",
+      "maxDuration": 30
+    }
+  },
+
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -13,6 +22,7 @@
       "destination": "/index.html"
     }
   ],
+
   "headers": [
     {
       "source": "/(.*)",
