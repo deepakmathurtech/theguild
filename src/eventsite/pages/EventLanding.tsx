@@ -146,12 +146,10 @@ export default function EventLanding() {
             <div className="mt-2 text-xs text-[var(--text-secondary)]">Experiences being prepared before launch.</div>
           </div>
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-subtle)]/20 p-4">
-            <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">Role fit</div>
-            <div className="mt-2 text-sm font-extrabold">{roleLabel}</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">Total events</div>
+            <div className="mt-2 text-2xl font-extrabold">{events.length}</div>
             <div className="mt-2 text-xs text-[var(--text-secondary)]">
-              {profile?.role === 'organizationRepresentative' || profile?.role === 'organization'
-                ? 'Best for creation, ticket control, promotion, and payout review.'
-                : 'Best for check-in, on-ground support, and live event execution.'}
+              Active events in this workspace ({isOrganizerMode ? 'organizer view' : 'host view'}).
             </div>
           </div>
         </div>

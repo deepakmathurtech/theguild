@@ -57,6 +57,36 @@ export type EventDocument = {
   includes?: string[];
   contactEmail?: string;
   registrationNote?: string;
+
+  // Custom rich additions for public page custom styling & sections
+  themePrimaryColor?: string; // hex color e.g., #dcb36c
+  themeLayout?: 'modern_center' | 'bold_left' | 'sidebar_checkout' | 'glass_cyber';
+  socialTwitter?: string;
+  socialLinkedin?: string;
+  socialDiscord?: string;
+  socialWebsite?: string;
+  speakers?: Array<{
+    id: string;
+    name: string;
+    role: string;
+    company?: string;
+    bio?: string;
+    avatarUrl?: string;
+    twitter?: string;
+    linkedin?: string;
+  }>;
+  sponsors?: Array<{
+    id: string;
+    name: string;
+    logoUrl?: string;
+    websiteUrl?: string;
+    tier?: 'platinum' | 'gold' | 'silver' | 'bronze';
+  }>;
+  faqs?: Array<{
+    id: string;
+    question: string;
+    answer: string;
+  }>;
 };
 
 export type TicketTier = {

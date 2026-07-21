@@ -48,6 +48,15 @@ export function buildEventEditorDraft(event: Partial<EventDocument> & { ticketTi
     whatToExpect: serializeList(event.whatToExpect),
     includes: serializeList(event.includes),
     registrationNote: event.registrationNote || '',
+    themePrimaryColor: event.themePrimaryColor || '#dcb36c',
+    themeLayout: event.themeLayout || 'modern_center',
+    socialTwitter: event.socialTwitter || '',
+    socialLinkedin: event.socialLinkedin || '',
+    socialDiscord: event.socialDiscord || '',
+    socialWebsite: event.socialWebsite || '',
+    speakers: Array.isArray(event.speakers) ? event.speakers.map(s => ({ ...s })) : [],
+    sponsors: Array.isArray(event.sponsors) ? event.sponsors.map(sp => ({ ...sp })) : [],
+    faqs: Array.isArray(event.faqs) ? event.faqs.map(f => ({ ...f })) : [],
     tiers: Array.isArray(event.ticketTiers) && event.ticketTiers.length
       ? event.ticketTiers.map((tier) => ({ ...tier, price: Number(tier.price || 0), capacity: Number(tier.capacity || 0) }))
       : [{ id: 'tier1', name: 'General Pass', price: 199, capacity: 200 }],

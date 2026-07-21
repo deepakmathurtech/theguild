@@ -201,26 +201,26 @@ export default function Settings() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex border-b border-[var(--border)] gap-1 overflow-x-auto">
+      <div className="flex bg-[var(--card-subtle)]/40 p-1 rounded-xl gap-1 overflow-x-auto max-w-xl border border-[var(--border)]">
         {isOrgRep && (
           <button onClick={() => setActiveTab('org')}
-            className={`pb-3 px-4 font-bold text-xs border-b-2 transition-all whitespace-nowrap ${activeTab === 'org' ? 'border-[var(--primary)] text-[var(--text)]' : 'border-transparent text-[var(--text-muted)]'}`}>
-            <Building2 size={14} className="inline mr-1.5" />Organization
+            className={`py-2 px-4 rounded-lg font-bold text-xs transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'org' ? 'bg-[var(--primary)] text-black shadow' : 'text-[var(--text-secondary)] hover:bg-[var(--card-subtle)]/50'}`}>
+            <Building2 size={13} />Organization
           </button>
         )}
         <button onClick={() => setActiveTab('profile')}
-          className={`pb-3 px-4 font-bold text-xs border-b-2 transition-all whitespace-nowrap ${activeTab === 'profile' ? 'border-[var(--primary)] text-[var(--text)]' : 'border-transparent text-[var(--text-muted)]'}`}>
-          <User size={14} className="inline mr-1.5" />Personal Info
+          className={`py-2 px-4 rounded-lg font-bold text-xs transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'profile' ? 'bg-[var(--primary)] text-black shadow' : 'text-[var(--text-secondary)] hover:bg-[var(--card-subtle)]/50'}`}>
+          <User size={13} />Personal Info
         </button>
         {!isOrgRep && (
           <>
             <button onClick={() => setActiveTab('skills')}
-              className={`pb-3 px-4 font-bold text-xs border-b-2 transition-all whitespace-nowrap ${activeTab === 'skills' ? 'border-[var(--primary)] text-[var(--text)]' : 'border-transparent text-[var(--text-muted)]'}`}>
-              <Zap size={14} className="inline mr-1.5" />Skills & Interests
+              className={`py-2 px-4 rounded-lg font-bold text-xs transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'skills' ? 'bg-[var(--primary)] text-black shadow' : 'text-[var(--text-secondary)] hover:bg-[var(--card-subtle)]/50'}`}>
+              <Zap size={13} />Skills & Interests
             </button>
             <button onClick={() => setActiveTab('path')}
-              className={`pb-3 px-4 font-bold text-xs border-b-2 transition-all whitespace-nowrap ${activeTab === 'path' ? 'border-[var(--primary)] text-[var(--text)]' : 'border-transparent text-[var(--text-muted)]'}`}>
-              <Target size={14} className="inline mr-1.5" />Growth Path
+              className={`py-2 px-4 rounded-lg font-bold text-xs transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'path' ? 'bg-[var(--primary)] text-black shadow' : 'text-[var(--text-secondary)] hover:bg-[var(--card-subtle)]/50'}`}>
+              <Target size={13} />Growth Path
             </button>
           </>
         )}

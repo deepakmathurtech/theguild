@@ -6,6 +6,31 @@ nav::-webkit-scrollbar-track { background: transparent; }
 nav::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 nav { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 
+/* ── Responsive Utilities ── */
+.scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* Safe area padding for mobile bottom tabs */
+.pb-safe { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+.mb-safe { margin-bottom: max(5rem, calc(env(safe-area-inset-bottom) + 4rem)); }
+
+/* Touch-friendly canvas interactions */
+.touch-none { touch-action: none; }
+
+/* Smooth number animations */
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-count { animation: count-up 0.4s ease-out; }
+
+/* Fade-in for status changes */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fade-in 0.25s ease-out; }
+
 @layer base {
   :root,
   [data-theme='dark'] {

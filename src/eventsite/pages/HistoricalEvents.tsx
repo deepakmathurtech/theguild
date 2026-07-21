@@ -198,12 +198,13 @@ export default function HistoricalEvents() {
                     <div key={tier.tierId} className="rounded-xl border border-[var(--border)] bg-[var(--card-subtle)]/30 p-3">
                       <div className="flex items-center justify-between gap-3">
                         <div className="font-semibold">{tier.name}</div>
-                        <div className="text-xs text-[var(--text-secondary)]">
-                          {tier.sold}/{tier.capacity} sold
+                        <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                          <span className="font-bold text-[var(--primary)]">{Math.round(tier.rate * 100)}%</span>
+                          <span>{tier.sold}/{tier.capacity} sold</span>
                         </div>
                       </div>
                       <div className="mt-2 h-2 rounded-full bg-[var(--card-subtle)]/60">
-                        <div className="h-2 rounded-full bg-[var(--primary)]" style={{ width: `${Math.min(100, tier.rate * 100)}%` }} />
+                        <div className="h-2 rounded-full bg-[var(--primary)] transition-all duration-500" style={{ width: `${Math.min(100, tier.rate * 100)}%` }} />
                       </div>
                     </div>
                   ))}

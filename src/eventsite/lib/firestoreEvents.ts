@@ -420,6 +420,7 @@ export async function issueCertificate(input: {
   fullName: string;
   email: string;
   type: CertificateIssue['type'];
+  eventName?: string;
 }) {
   const ref = doc(db, EVENTS_COLLECTION, input.eventId, 'certificateIssues', `${input.eventId}_${input.registrationId}`);
   const payload: CertificateIssue = {
@@ -435,6 +436,47 @@ export async function issueCertificate(input: {
   await setDoc(ref, payload as any, { merge: true });
   return { id: ref.id, ...payload };
 }
+
+/**
+ * Sends a certificate notification email via the /api/send-email Vercel serverless function.
+ * Uses Resend API server-side — no Firebase Blaze plan or extensions required.
+ * Returns { queued: true, messageId } on success or { queued: false, error } on failure.
+ */
+export async function queueCertificateEmail(input: {
+  fullName: string;
+  email: string;
+  eventName: string;
+  registrationId: string;
+}): Promise<{ queued: true; messageId: string } | { queued: false; error: string }> {
+  try {
+    const response = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: input.email,
+        fullName: input.fullName,
+        eventName: input.eventName,
+        registrationId: input.registrationId,
+      }),
+    });
+
+    const result = await response.json() as { success: boolean; messageId?: string; message?: string };
+
+    if (!response.ok || !result.success) {
+      const errMsg = result.message || `HTTP ${response.status}`;
+      console.error(`[Guild Mail] ❌ Failed to send email for ${input.email}:`, errMsg);
+      return { queued: false, error: errMsg };
+    }
+
+    console.log(`[Guild Mail] ✅ Email sent to ${input.email}. Resend ID: ${result.messageId}`);
+    return { queued: true, messageId: result.messageId || 'sent' };
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error(`[Guild Mail] ❌ Network error sending email for ${input.email}:`, errMsg);
+    return { queued: false, error: errMsg };
+  }
+}
+
 
 export async function getCertificateIssuesForEvent(eventId: string) {
   const q = query(

@@ -13,7 +13,8 @@ import { isStandaloneEventRoute } from './eventsite/lib/eventRoutes';
 import {
   TrendingUp, Compass, Building, Bell, User, Settings as SettingsIcon, LogOut,
   Menu, X, Sun, Moon, Award, Network, FileText, Target,
-  ShieldCheck, Home as HomeIcon, ArrowLeftRight, Handshake, Users, CalendarDays, QrCode
+  ShieldCheck, Home as HomeIcon, ArrowLeftRight, Handshake, Users, CalendarDays, QrCode,
+  LayoutDashboard, Ticket, Megaphone, History
 } from 'lucide-react';
 
 // Pages - Lazy loaded for better bundle size
@@ -35,6 +36,7 @@ const HistoricalEvents = lazy(() => import('./eventsite/pages/HistoricalEvents')
 const EventBuyerAuth = lazy(() => import('./eventsite/pages/EventBuyerAuth'));
 const Ticketing = lazy(() => import('./eventsite/pages/Ticketing'));
 const AttendanceManager = lazy(() => import('./eventsite/pages/AttendanceManager'));
+const QrCheckInFullScreen = lazy(() => import('./eventsite/pages/QrCheckInFullScreen'));
 const PromotionChannel = lazy(() => import('./eventsite/pages/PromotionChannel'));
 const Certificates = lazy(() => import('./eventsite/pages/Certificates'));
 const PublicEventPage = lazy(() => import('./eventsite/pages/PublicEventPage'));
@@ -139,11 +141,11 @@ const memberItems = [
 // Organization Representative navigation - exclusive when logged in as org rep
 const organizationItems = [
   { to: '/org-dashboard', label: 'Dashboard', icon: HomeIcon, end: true },
-  { to: '/org-events', label: 'Events', icon: CalendarDays },
+  { to: '/org-events', label: 'Events Hub', icon: CalendarDays },
+  { to: '/event-platform', label: 'Event Workspace', icon: LayoutDashboard },
   { to: '/org-outcomes', label: 'Outcomes', icon: Award },
   { to: '/need-submit', label: 'Post Need', icon: Target },
   { to: '/my-needs', label: 'My Needs', icon: FileText },
-
   { to: '/org-messages', label: 'Messages', icon: Bell },
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
@@ -226,13 +228,17 @@ function AppShell() {
     ? (
       isHostOnlyMode
         ? [
-            { to: '/event-platform/attendance', label: 'Host Check-in', icon: QrCode },
+            { to: '/event-platform/attendance', label: 'Check-in Desk', icon: QrCode },
+            { to: '/event-platform/certificates', label: 'Certificates', icon: Award },
           ]
         : [
-            { to: '/event-platform', label: 'Event Center', icon: CalendarDays },
-            { to: '/event-platform/attendance', label: 'Host Check-in', icon: QrCode },
-            { to: '/event-platform/ticketing', label: 'Ticketing', icon: CalendarDays },
+            { to: '/event-platform', label: 'Event Overview', icon: LayoutDashboard },
+            { to: '/event-platform/maker', label: 'Event Maker', icon: CalendarDays },
+            { to: '/event-platform/ticketing', label: 'Ticketing Gate', icon: Ticket },
+            { to: '/event-platform/attendance', label: 'Check-in Desk', icon: QrCode },
+            { to: '/event-platform/promotion', label: 'Promotion', icon: Megaphone },
             { to: '/event-platform/certificates', label: 'Certificates', icon: Award },
+            { to: '/event-platform/history', label: 'History', icon: History },
           ]
     )
     : [];
@@ -316,15 +322,18 @@ function AppShell() {
 
           {hostNavItems.length ? (
             <div className="mt-4">
-              <p className="px-4 mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-60">
-                {isHostOnlyMode ? 'Host Mode' : 'Host'}
-              </p>
-              {isHostOnlyMode ? (
-                <div className="mx-3 mb-3 rounded-xl border border-[var(--primary)]/20 bg-[var(--primary)]/10 p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--primary)]">Live event access</p>
-                  <p className="mt-1 text-xs text-[var(--text-secondary)]">Jump straight into check-in, arrivals, and certificate handoff for your assigned events.</p>
-                </div>
-              ) : null}
+              {/* Event Ops section header */}
+              <div className="mx-3 mb-2 rounded-xl border border-[var(--primary)]/15 bg-gradient-to-br from-[var(--primary)]/10 to-transparent p-3">
+                <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[var(--primary)] flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] animate-pulse" />
+                  {isHostOnlyMode ? 'Live Event Access' : 'Event Operations'}
+                </p>
+                <p className="mt-1 text-[10px] text-[var(--text-secondary)] leading-relaxed">
+                  {isHostOnlyMode
+                    ? 'Check-in arrivals and issue certificates for assigned events.'
+                    : 'Full event lifecycle: create, ticket, check-in, promote, certify.'}
+                </p>
+              </div>
               {hostNavItems.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -334,8 +343,8 @@ function AppShell() {
                     className={({ isActive }) => `
                       relative flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all
                       ${isActive
-                        ? 'bg-[var(--primary)]/20 text-[var(--primary)] ring-1 ring-[var(--primary)]/30'
-                        : 'text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--card-subtle)]/50'}
+                        ? 'bg-[var(--primary)]/20 text-[var(--primary)] ring-1 ring-[var(--primary)]/30 border-l-2 border-[var(--primary)]'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--card-subtle)]/50 border-l-2 border-transparent'}
                     `}
                   >
                     <Icon className="w-4 h-4" />
@@ -515,16 +524,17 @@ function AppShell() {
           )}
 
           {hostNavItems.length ? (
-            <div className="mt-4">
-              <p className="px-4 mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-60">
-                {isHostOnlyMode ? 'Host Mode' : 'Host'}
-              </p>
-              {isHostOnlyMode ? (
-                <div className="mx-1 mb-3 rounded-2xl border border-[var(--primary)]/20 bg-[var(--primary)]/10 p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--primary)]">Live event access</p>
-                  <p className="mt-1 text-xs text-[var(--text-secondary)]">Open your assigned events, move arrivals through the door, and issue certificates faster.</p>
-                </div>
-              ) : null}
+            <div className="mt-4 space-y-2">
+              {/* Event section header in mobile menu */}
+              <div className="rounded-2xl border border-[var(--primary)]/20 bg-[var(--primary)]/10 p-3.5">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--primary)] flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] animate-pulse" />
+                  {isHostOnlyMode ? 'Live Event Access' : 'Event Operations'}
+                </p>
+                <p className="mt-1 text-[10px] text-[var(--text-secondary)]">
+                  {isHostOnlyMode ? 'Check-in and certificate delivery.' : 'Create, ticket, check-in, promote, certify.'}
+                </p>
+              </div>
               {hostNavItems.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -534,7 +544,9 @@ function AppShell() {
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={({ isActive }) => `
                       flex gap-3 items-center px-4 py-3.5 rounded-2xl font-semibold text-sm transition-all
-                      ${isActive ? 'bg-[var(--primary)] text-black shadow-lg' : 'bg-[var(--card-subtle)] text-[var(--text-secondary)] border border-[var(--border)]'}
+                      ${isActive
+                        ? 'bg-[var(--primary)] text-black shadow-lg shadow-[var(--primary)]/20'
+                        : 'bg-[var(--card-subtle)] text-[var(--text-secondary)] border border-[var(--border)] hover:border-[var(--primary)]/30'}
                     `}
                   >
                     <Icon className="w-5 h-5" />
@@ -563,21 +575,54 @@ function AppShell() {
       <main className="main flex flex-col min-h-screen bg-[var(--bg)] text-[var(--text)]">
         {/* Topbar */}
         <header className="flex items-center justify-between h-16 mb-6 shrink-0">
-          {/* Desktop: Just shows content area title */}
-          <div className="hidden md:block">
-            <h1 className="text-xl font-bold tracking-tight">Workspace</h1>
-            <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-              <span className="w-2 h-2 rounded-full bg-[var(--success)] animate-pulse" />
-              Ecosystem Active
-            </div>
-          </div>
+          {/* Desktop: Dynamic page title based on route */}
+          {(() => {
+            const routeTitles: Record<string, { label: string; sub: string }> = {
+              '/': { label: 'Growth', sub: 'Your ecosystem dashboard' },
+              '/quests': { label: 'Quests', sub: 'Browse available missions' },
+              '/my-quests': { label: 'My Quests', sub: 'Your active missions' },
+              '/organizations': { label: 'Organizations', sub: 'Partner network' },
+              '/branches': { label: 'Network', sub: 'Guild branch map' },
+              '/docs': { label: 'Knowledge Hub', sub: 'Guides and resources' },
+              '/impact': { label: 'Impact', sub: 'Outcomes and proof' },
+              '/profile': { label: 'Profile', sub: 'Your Guild identity' },
+              '/settings': { label: 'Settings', sub: 'Account preferences' },
+              '/notifications': { label: 'Alerts', sub: 'Recent activity' },
+              '/org-dashboard': { label: 'Org Dashboard', sub: 'Organization workspace' },
+              '/org-events': { label: 'Event Hub', sub: 'Your events workspace' },
+              '/org-outcomes': { label: 'Outcomes', sub: 'Verified results' },
+              '/need-submit': { label: 'Post a Need', sub: 'Submit organization need' },
+              '/my-needs': { label: 'My Needs', sub: 'Submitted needs' },
+              '/event-platform': { label: 'Event Center', sub: 'Event operations' },
+              '/event-platform/maker': { label: 'Event Maker', sub: 'Create & edit events' },
+              '/event-platform/ticketing': { label: 'Ticketing Gate', sub: 'Manage registrations' },
+              '/event-platform/attendance': { label: 'Check-in Desk', sub: 'Live attendance' },
+              '/event-platform/promotion': { label: 'Promotion', sub: 'Campaign messaging' },
+              '/event-platform/certificates': { label: 'Certificates', sub: 'Issue certificates' },
+              '/event-platform/history': { label: 'History Archive', sub: 'Past events review' },
+            };
+            const matched = Object.entries(routeTitles)
+              .filter(([path]) => location.pathname === path || (path !== '/' && location.pathname.startsWith(path)))
+              .sort((a, b) => b[0].length - a[0].length)[0];
+            const { label, sub } = matched?.[1] ?? { label: 'Workspace', sub: 'Ecosystem active' };
+            return (
+              <div className="hidden md:block">
+                <h1 className="text-xl font-bold tracking-tight">{label}</h1>
+                <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+                  <span className="w-2 h-2 rounded-full bg-[var(--success)] animate-pulse" />
+                  {sub}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Mobile: Hamburger, logo, notifications */}
           <div className="md:hidden flex items-center justify-between w-full">
             <button
               className="p-3 rounded-xl hover:bg-[var(--card-subtle)]"
               onClick={() => setIsMobileMenuOpen(true)}
-              aria-label="Open menu"
+              aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={isMobileMenuOpen}
             >
               <Menu className="w-6 h-6" />
             </button>
@@ -913,10 +958,14 @@ const routerConfig = createBrowserRouter([
           { path: 'history', element: <HistoricalEvents /> },
           { path: 'ticketing', element: <Ticketing /> },
           { path: 'attendance', element: <AttendanceManager /> },
+{ path: 'attendance/scan', element: <QrCheckInFullScreen eventId={''} /> },
+
           { path: 'promotion', element: <PromotionChannel /> },
           { path: 'certificates', element: <Certificates /> },
+          { path: 'attendance/scan', element: <QrCheckInFullScreen eventId={''} /> },
         ],
       },
+
       { path: '/event-platform/e/:slug', element: <PublicEventPage /> },
       { path: '/needs/:id', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedDetails /></RoleRoute> },
       { path: '/need-submit', element: <RoleRoute requiredRole={['organizationRepresentative', 'organization']}><NeedWizard /></RoleRoute> },

@@ -5,16 +5,11 @@ import type { EventDocument } from '../lib/eventModels';
 
 function getStatusTone(status?: EventDocument['status']) {
   switch (status) {
-    case 'completed':
-      return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600';
-    case 'cancelled':
-      return 'border-red-500/30 bg-red-500/10 text-red-500';
-    case 'draft':
-      return 'border-amber-500/30 bg-amber-500/10 text-amber-600';
-    case 'archived':
-      return 'border-slate-500/30 bg-slate-500/10 text-slate-400';
-    default:
-      return 'border-[var(--primary)]/30 bg-[var(--primary)]/10 text-[var(--primary)]';
+    case 'completed':  return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600';
+    case 'cancelled':  return 'border-red-500/30 bg-red-500/10 text-red-500';
+    case 'draft':      return 'border-amber-500/30 bg-amber-500/10 text-amber-600';
+    case 'archived':   return 'border-slate-500/30 bg-slate-500/10 text-slate-400';
+    default:           return 'border-[var(--primary)]/30 bg-[var(--primary)]/10 text-[var(--primary)]';
   }
 }
 
@@ -48,26 +43,35 @@ export default function EventWorkspaceHeader({
   aside,
 }: EventWorkspaceHeaderProps) {
   return (
-    <div className="rounded-[28px] border border-[var(--border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4 md:p-5 shadow-sm">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <div className="rounded-2xl border border-[var(--border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.01))] p-4 shadow-sm sm:p-5">
+
+      {/* Title row */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--text-muted)]">{eyebrow}</div>
-          <h3 className="mt-2 text-lg font-extrabold tracking-tight md:text-xl">{title}</h3>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">{description}</p>
+          <h3 className="mt-1.5 text-base font-extrabold tracking-tight sm:text-lg md:text-xl">{title}</h3>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)] sm:text-sm sm:leading-6 line-clamp-2">{description}</p>
         </div>
-        {aside ? <div className="w-full shrink-0 lg:w-auto">{aside}</div> : null}
+        {aside ? (
+          <div className="w-full shrink-0 sm:w-auto">{aside}</div>
+        ) : null}
       </div>
 
-      <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)]">
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-subtle)]/30 p-4">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <label className="block w-full md:max-w-sm">
-              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">Selected event</div>
-              <div className="relative mt-2">
+      {/* Bottom grid: event selector + metrics */}
+      <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto]">
+
+        {/* Event selector card */}
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-subtle)]/30 p-3 sm:p-4">
+
+          {/* Select + status badges */}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <label className="block w-full sm:max-w-xs">
+              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">Selected event</div>
+              <div className="relative mt-1.5">
                 <select
-                  className="w-full appearance-none rounded-2xl border border-[var(--border)] bg-[var(--bg)]/70 px-4 py-3 pr-10 text-sm font-semibold text-[var(--text)]"
+                  className="w-full appearance-none rounded-xl border border-[var(--border)] bg-[var(--bg)]/70 px-3.5 py-2.5 pr-9 text-sm font-semibold text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]/30 transition"
                   value={selectedEventId}
-                  onChange={(event) => onSelectEventId(event.target.value)}
+                  onChange={(e) => onSelectEventId(e.target.value)}
                   disabled={!events.length}
                   aria-label="Selected event"
                 >
@@ -86,59 +90,73 @@ export default function EventWorkspaceHeader({
             </label>
 
             {selectedEvent ? (
-              <div className="flex flex-wrap gap-2">
-                <span className={`rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] ${getStatusTone(selectedEvent.status)}`}>
+              <div className="flex flex-wrap gap-1.5">
+                <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${getStatusTone(selectedEvent.status)}`}>
                   {selectedEvent.status}
                 </span>
-                <span className="rounded-full border border-[var(--border)] bg-[var(--card-subtle)]/40 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                <span className="rounded-full border border-[var(--border)] bg-[var(--card-subtle)]/40 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                   {selectedEvent.visibility}
                 </span>
-                <span className="rounded-full border border-[var(--border)] bg-[var(--card-subtle)]/40 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                <span className="rounded-full border border-[var(--border)] bg-[var(--card-subtle)]/40 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] hidden sm:inline-flex">
                   {selectedEvent.ticketTiersEnabled ? 'Ticketing on' : 'Ticketing off'}
                 </span>
               </div>
             ) : null}
           </div>
 
+          {/* Event detail cards */}
           {selectedEvent ? (
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-subtle)]/40 p-3">
-                <div className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  Schedule
+            <div className="mt-3 grid grid-cols-1 gap-2 xs:grid-cols-3 sm:grid-cols-3">
+              {[
+                {
+                  icon: <CalendarDays className="h-3.5 w-3.5" />,
+                  label: 'Schedule',
+                  value: selectedEvent.startAt
+                    ? new Date(selectedEvent.startAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+                    : 'Schedule pending',
+                },
+                {
+                  icon: <MapPin className="h-3.5 w-3.5" />,
+                  label: 'Venue',
+                  value: selectedEvent.venue || selectedEvent.location || 'Venue TBD',
+                },
+                {
+                  icon: <Eye className="h-3.5 w-3.5" />,
+                  label: 'Organizer',
+                  value: selectedEvent.organizationName || 'Organization workspace',
+                },
+              ].map(card => (
+                <div key={card.label} className="rounded-xl border border-[var(--border)] bg-[var(--card-subtle)]/30 p-2.5 sm:p-3">
+                  <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                    {card.icon}
+                    {card.label}
+                  </div>
+                  <div className="mt-1.5 text-xs font-extrabold truncate sm:text-sm" title={typeof card.value === 'string' ? card.value : undefined}>
+                    {card.value}
+                  </div>
                 </div>
-                <div className="mt-2 text-sm font-extrabold">{selectedEvent.startAt ? new Date(selectedEvent.startAt).toLocaleString() : 'Schedule pending'}</div>
-              </div>
-              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-subtle)]/40 p-3">
-                <div className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                  <MapPin className="h-3.5 w-3.5" />
-                  Venue
-                </div>
-                <div className="mt-2 text-sm font-extrabold">{selectedEvent.venue || selectedEvent.location || 'Venue not added'}</div>
-              </div>
-              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-subtle)]/40 p-3">
-                <div className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                  <Eye className="h-3.5 w-3.5" />
-                  Organizer
-                </div>
-                <div className="mt-2 text-sm font-extrabold">{selectedEvent.organizationName || 'Organization workspace'}</div>
-              </div>
+              ))}
             </div>
           ) : null}
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-          {metrics.map((metric) => (
-            <div key={metric.label} className="rounded-2xl border border-[var(--border)] bg-[var(--card-subtle)]/30 p-4">
-              <div className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                <Users className="h-3.5 w-3.5" />
-                {metric.label}
+        {/* Metrics */}
+        {metrics.length > 0 && (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 xl:grid-cols-1 xl:w-36">
+            {metrics.map((metric) => (
+              <div key={metric.label} className="rounded-2xl border border-[var(--border)] bg-[var(--card-subtle)]/30 p-3 sm:p-4">
+                <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                  <Users className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{metric.label}</span>
+                </div>
+                <div className="mt-2 text-2xl font-extrabold">{metric.value}</div>
+                {metric.hint ? (
+                  <div className="mt-0.5 text-[11px] text-[var(--text-secondary)] leading-tight">{metric.hint}</div>
+                ) : null}
               </div>
-              <div className="mt-2 text-xl font-extrabold">{metric.value}</div>
-              {metric.hint ? <div className="mt-1 text-xs text-[var(--text-secondary)]">{metric.hint}</div> : null}
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

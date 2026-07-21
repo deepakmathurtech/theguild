@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Camera, QrCode, Search } from 'lucide-react';
+import { BrowserQRCodeReader, type Result as ZXingResult } from '@zxing/library';
+
 
 import { useAuth } from '../../context/AuthContext';
 import { useEventPlatformSelection } from '../../context/EventPlatformSelectionContext';
@@ -27,6 +29,9 @@ export default function AttendanceManager() {
   const [cameraMode, setCameraMode] = useState<'idle' | 'starting' | 'live'>('idle');
   const [cameraMessage, setCameraMessage] = useState<string | null>(null);
   const [cameraSupported, setCameraSupported] = useState(false);
+  const zxReaderRef = useRef<BrowserQRCodeReader | null>(null);
+  const zxDecodingRef = useRef<boolean>(false);
+
   const checkInGuard = useActionGuard({ cooldownMs: 800, maxAttempts: 8, windowMs: 10000 });
   const hostGuard = useActionGuard({ cooldownMs: 30000, maxAttempts: 2, windowMs: 60000 });
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -108,6 +113,7 @@ export default function AttendanceManager() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
     const BarcodeDetectorCtor = (window as Window & { BarcodeDetector?: any }).BarcodeDetector;
     const hasMediaDevices = typeof navigator !== 'undefined' && Boolean(navigator.mediaDevices?.getUserMedia);
     const hasDetector = Boolean(BarcodeDetectorCtor);
@@ -118,6 +124,15 @@ export default function AttendanceManager() {
       detectorRef.current = new BarcodeDetectorCtor({ formats: ['qr_code'] });
     }
 
+    // ZXing fallback: doesn't require native BarcodeDetector
+    try {
+      if (hasMediaDevices) {
+        zxReaderRef.current = new BrowserQRCodeReader();
+      }
+    } catch {
+      // ignore
+    }
+
     return () => {
       if (scanFrameRef.current) {
         window.cancelAnimationFrame(scanFrameRef.current);
@@ -125,8 +140,14 @@ export default function AttendanceManager() {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
+      try {
+        zxReaderRef.current?.reset();
+      } catch {
+        // ignore
+      }
     };
   }, []);
+
 
   const checkedInCount = Object.values(attendance).filter((record) => record.status === 'checked-in').length;
   const totalCount = registrations.length;
@@ -282,25 +303,56 @@ export default function AttendanceManager() {
       setCameraMode('live');
       setCameraMessage('Camera is live. Point it at a member profile QR code.');
 
+
+      // Prefer native BarcodeDetector when present; otherwise use ZXing fallback.
+      const hasNativeDetector = Boolean(detectorRef.current);
+
       const scanLoop = async () => {
-        if (!videoRef.current || !detectorRef.current || scanLockRef.current) {
+        if (!videoRef.current || scanLockRef.current) {
           scanFrameRef.current = window.requestAnimationFrame(scanLoop);
           return;
         }
 
         try {
-          const results = await detectorRef.current.detect(videoRef.current);
-          const match = results.find((item: any) => item?.rawValue);
-          if (match?.rawValue) {
-            scanLockRef.current = true;
-            setScanValue(match.rawValue);
-            const didCheckIn = await processScanValue(match.rawValue);
-            if (didCheckIn) {
-              setCameraMessage('QR captured and attendee checked in.');
-              stopCamera();
+          if (hasNativeDetector) {
+            const results = await detectorRef.current.detect(videoRef.current);
+            const match = results.find((item: any) => item?.rawValue);
+            if (match?.rawValue) {
+              scanLockRef.current = true;
+              setScanValue(match.rawValue);
+              const didCheckIn = await processScanValue(match.rawValue);
+              if (didCheckIn) {
+                setCameraMessage('QR captured and attendee checked in.');
+                stopCamera();
+                return;
+              }
+              scanLockRef.current = false;
+            }
+          } else if (zxReaderRef.current) {
+            // Avoid running full decode loop concurrently.
+            if (zxDecodingRef.current) {
+              scanFrameRef.current = window.requestAnimationFrame(scanLoop);
               return;
             }
-            scanLockRef.current = false;
+
+            zxDecodingRef.current = true;
+            // decodeBitmap requires a BinaryBitmap; use decodeFromVideoElement for compatibility
+            const result = await zxReaderRef.current.decodeFromVideoElement(videoRef.current);
+
+            zxDecodingRef.current = false;
+
+            const text = result?.getText?.();
+            if (text) {
+              scanLockRef.current = true;
+              setScanValue(text);
+              const didCheckIn = await processScanValue(text);
+              if (didCheckIn) {
+                setCameraMessage('QR captured and attendee checked in.');
+                stopCamera();
+                return;
+              }
+              scanLockRef.current = false;
+            }
           }
         } catch {
           setCameraMessage('Camera opened, but the QR still needs a clearer view.');
@@ -310,6 +362,7 @@ export default function AttendanceManager() {
       };
 
       scanFrameRef.current = window.requestAnimationFrame(scanLoop);
+
     } catch (error: any) {
       stopCamera();
       const message =
@@ -459,12 +512,23 @@ export default function AttendanceManager() {
                 />
                 <button
                   type="button"
-                  onClick={handleScan}
-                  disabled={Boolean(checkingIn) || checkInGuard.isCoolingDown}
+                  onClick={async () => {
+                    const trimmed = scanValue.trim();
+                    if (trimmed) {
+                      await handleScan();
+                      return;
+                    }
+
+                    if (!selectedEventId) return;
+                    const route = `/event-platform/attendance/scan?eventId=${encodeURIComponent(selectedEventId)}`;
+                    window.open(route, '_blank', 'noopener,noreferrer');
+                  }}
+                  disabled={Boolean(checkingIn) || checkInGuard.isCoolingDown || !selectedEventId}
                   className="rounded-xl bg-[var(--primary)] px-3 py-2 text-xs font-bold text-black disabled:opacity-50"
                 >
                   Scan
                 </button>
+
                 <button
                   type="button"
                   onClick={() => {

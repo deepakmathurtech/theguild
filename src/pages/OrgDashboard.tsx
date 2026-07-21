@@ -48,37 +48,29 @@ export default function OrgDashboard() {
     async function loadData() {
       if (!profile) return;
       try {
-        // Fetch organization (supports ownerId and ownerEmail fallback)
         const orgData = await fetchUserOrganization(profile);
         if (orgData) {
           setOrg(orgData);
 
+          // Fetch all dependent data in parallel for performance
+          const [qList, orgNeeds, orgActivities, branchList] = await Promise.all([
+            fetchQuests(),
+            fetchOrganizationNeeds(orgData.id),
+            fetchOrganizationActivities(orgData.id),
+            fetchBranches(),
+          ]);
 
-
-          // Fetch quests posted by this org
-          const qList = await fetchQuests();
-          const orgQuests = qList.filter(q => q.organizationId === orgData.id);
-          setQuests(orgQuests);
-
-          // Fetch needs for this org
-          const orgNeeds = await fetchOrganizationNeeds(orgData.id);
+          setQuests(qList.filter(q => q.organizationId === orgData.id));
           setNeeds(orgNeeds);
-
-          // Fetch activities
-          const orgActivities = await fetchOrganizationActivities(orgData.id);
           setActivities(orgActivities);
-
-          // Fetch all branches for relationship center
-          const branchList = await fetchBranches();
           setBranches(branchList);
 
-          // Fetch receptionist for this organization
+          // Fetch receptionist (depends on orgData, keep sequential)
           if (orgData.assignedReceptionistId) {
             const rec = await fetchReceptionistById(orgData.assignedReceptionistId);
             if (rec) {
               setManager(rec);
             } else {
-              // Use assigned name when record lookup fails, or fallback to a random receptionist
               setManager({
                 uid: orgData.assignedReceptionistId,
                 fullName: orgData.assignedReceptionistName || 'Guild Representative',
@@ -89,7 +81,6 @@ export default function OrgDashboard() {
               });
             }
           } else {
-            // Fallback to random receptionist
             setManager(getRandomReceptionist());
           }
         }
@@ -229,7 +220,7 @@ export default function OrgDashboard() {
                 placeholder="Describe your organization's mission and focus area..."
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Website</label>
                 <input
@@ -251,7 +242,7 @@ export default function OrgDashboard() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1">Phone</label>
                 <input
@@ -330,7 +321,7 @@ export default function OrgDashboard() {
     new: 'New Partner',
     trusted: 'Trusted Partner',
     verified: 'Verified Partner',
-    premium: 'Premium Partner'
+    partner: 'Strategic Partner'
   };
   const formatTrustLevel = (level: string | undefined) => trustLevelLabels[level || 'new'] || level || 'New Partner';
 
@@ -457,14 +448,24 @@ export default function OrgDashboard() {
             <div className="text-[10px] font-bold uppercase text-[var(--text-muted)] mt-1">Activities</div>
           </div>
           <div className="p-4 bg-[var(--card-subtle)] rounded-xl border border-[var(--border)] text-center">
-            <div className="text-2xl font-black text-purple-500">{formatTrustLevel(org.trustLevel)}</div>
-            <div className="text-[10px] font-bold uppercase text-[var(--text-muted)] mt-1">Trust Level</div>
+            <div className="mt-1 flex justify-center">
+              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
+                org.trustLevel === 'partner' ? 'bg-purple-500/15 text-purple-400 border border-purple-500/30' :
+                org.trustLevel === 'verified' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' :
+                org.trustLevel === 'trusted' ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30' :
+                'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+              }`}>
+                <ShieldCheck size={11} />
+                {formatTrustLevel(org.trustLevel)}
+              </span>
+            </div>
+            <div className="text-[10px] font-bold uppercase text-[var(--text-muted)] mt-2">Trust Level</div>
           </div>
         </div>
       </div>
 
       {/* Row 2: Relationship Manager presentation */}
-      <div className="grid md:grid-cols-[1.5fr_1fr] gap-6">
+      <div className="grid md:grid-cols-2 gap-6">
         
         {/* Active Needs / Setup */}
         <div className="panel space-y-4">
@@ -615,10 +616,15 @@ export default function OrgDashboard() {
             title="No Posted Quests"
             description="You haven't posted any quests for Guild members to claim yet."
             whyItMatters="Quests are how organizations scale work. Your assigned coordinator will assist you in mapping your business needs to Quest parameters."
-            actionText={consulted ? "Consultation Requested" : "Consult Guild Representative"}
+            actionText={consulted ? "Consultation Requested ✓" : "Consult Guild Representative"}
             onAction={() => {
-              if (manager) {
+              if (!consulted) {
                 setConsulted(true);
+                if (manager?.email) {
+                  window.open(`mailto:${manager.email}?subject=Quest Consultation Request&body=Hi ${manager.fullName},%0D%0A%0D%0AI'd like to consult with you about posting quests for ${org.name}.%0D%0A%0D%0AThank you.`);
+                } else if (manager?.phone) {
+                  window.open(`tel:${manager.phone}`);
+                }
               }
             }}
             icon={<Award size={22} />}
@@ -654,13 +660,17 @@ export default function OrgDashboard() {
           <div className="panel p-4 rounded-xl border border-[var(--border)]">
             <div className="space-y-3">
               {activities.slice(0, 8).map((activity, idx) => (
-                <div key={activity.id} className="flex gap-3 items-start">
-                  <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
-                    activity.type === 'outcomeDelivered' ? 'bg-emerald-500' :
-                    activity.type === 'needSubmitted' ? 'bg-blue-500' :
-                    activity.type === 'questCreated' ? 'bg-purple-500' :
-                    activity.type === 'opportunityCreated' ? 'bg-amber-500' :
-                    'bg-slate-500'
+                <div key={activity.id} className="flex gap-3 items-start relative">
+                  {/* Vertical connector line */}
+                  {idx < Math.min(activities.length, 8) - 1 && (
+                    <div className="absolute left-[3px] top-5 bottom-0 w-0.5 bg-[var(--border)]" style={{ height: 'calc(100% + 0.75rem)' }} />
+                  )}
+                  <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 z-10 ${
+                    activity.type === 'outcomeDelivered' ? 'bg-emerald-500 ring-4 ring-emerald-500/20' :
+                    activity.type === 'needSubmitted' ? 'bg-blue-500 ring-4 ring-blue-500/20' :
+                    activity.type === 'questCreated' ? 'bg-purple-500 ring-4 ring-purple-500/20' :
+                    activity.type === 'opportunityCreated' ? 'bg-amber-500 ring-4 ring-amber-500/20' :
+                    'bg-[var(--text-muted)] ring-4 ring-[var(--border)]'
                   }`} />
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-bold text-[var(--text)] truncate">{activity.title}</div>

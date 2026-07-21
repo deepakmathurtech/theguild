@@ -20,6 +20,7 @@ export default function PromotionChannel() {
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
   const saveGuard = useActionGuard({ cooldownMs: 10000, maxAttempts: 2, windowMs: 30000 });
 
   const ownerUid = profile?.uid || firebaseUser?.uid;
@@ -196,12 +197,38 @@ export default function PromotionChannel() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-subtle)]/20 p-4">
-            <div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">Event note</div>
-            <div className="mt-2 text-sm font-extrabold">{selectedEvent ? selectedEvent.name : 'No event selected'}</div>
-            <div className="mt-2 text-xs text-[var(--text-secondary)]">
-              Promotion data is stored under the selected event so it stays tied to the organizer workflow.
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-subtle)]/20 p-4 space-y-4">
+            <div>
+              <div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">Event note</div>
+              <div className="mt-2 text-sm font-extrabold">{selectedEvent ? selectedEvent.name : 'No event selected'}</div>
+              <div className="mt-2 text-xs text-[var(--text-secondary)]">
+                Promotion data is stored under the selected event so it stays tied to the organizer workflow.
+              </div>
             </div>
+
+            {selectedEvent && (
+              <div className="pt-3 border-t border-[var(--border)] space-y-2">
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">Shareable Public Link</div>
+                <div className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] p-2">
+                  <span className="text-[11px] text-[var(--text-secondary)] truncate flex-1 font-mono select-all">
+                    {`${window.location.origin}/event-platform/e/${selectedEvent.slug}`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/event-platform/e/${selectedEvent.slug}`);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className={`rounded-lg px-2.5 py-1.5 text-[10px] font-bold transition-all ${
+                      copied ? 'bg-emerald-600 text-white' : 'bg-[var(--primary)] text-black hover:opacity-90'
+                    }`}
+                  >
+                    {copied ? 'Copied ✓' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -11,9 +11,11 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.1",
+    "@zxing/library": "^0.23.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "firebase": "^12.15.0",
+    "jsqr": "^1.4.0",
     "lucide-react": "^1.21.0",
     "razorpay": "^2.9.6",
     "react": "^19.2.6",

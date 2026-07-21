@@ -52,6 +52,8 @@ export default function OrgEvents() {
   const [events, setEvents] = useState<(EventDocument & { id: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'completed'>('all');
 
   const ownerUid = profile?.uid || firebaseUser?.uid;
 
@@ -88,6 +90,16 @@ export default function OrgEvents() {
 
   const publishedCount = events.filter((event) => event.status === 'published').length;
   const completedCount = events.filter((event) => event.status === 'completed').length;
+
+  const filteredEvents = useMemo(() => {
+    return events.filter((event) => {
+      const matchesSearch = !searchQuery.trim() || event.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'draft' ? (event.status !== 'published' && event.status !== 'completed') : event.status === statusFilter);
+      return matchesSearch && matchesStatus;
+    });
+  }, [events, searchQuery, statusFilter]);
 
   return (
     <>
@@ -175,20 +187,48 @@ export default function OrgEvents() {
           </div>
 
           <div className="mt-4 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-            <div className="grid gap-3">
+            <div className="grid gap-3 content-start">
+              {/* Search + Filter row */}
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    placeholder="Search events…"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full rounded-2xl border border-[var(--border)] bg-[var(--card-subtle)]/40 px-4 py-2.5 pl-9 text-sm placeholder:text-[var(--text-muted)] focus:border-[var(--primary)] focus:outline-none"
+                  />
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </div>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+                  className="rounded-2xl border border-[var(--border)] bg-[var(--card-subtle)]/40 px-3 py-2.5 text-xs font-bold text-[var(--text)] focus:border-[var(--primary)] focus:outline-none"
+                >
+                  <option className="bg-[var(--bg)]" value="all">All</option>
+                  <option className="bg-[var(--bg)]" value="published">Published</option>
+                  <option className="bg-[var(--bg)]" value="draft">Draft</option>
+                  <option className="bg-[var(--bg)]" value="completed">Completed</option>
+                </select>
+              </div>
+
               {loading ? (
                 <div className="rounded-2xl border border-dashed border-[var(--border)] p-4 text-sm text-[var(--text-secondary)]">
                   Loading your events...
                 </div>
-              ) : events.length > 0 ? (
-                events.map((event) => {
+              ) : filteredEvents.length > 0 ? (
+                filteredEvents.map((event) => {
                   const isSelected = selectedEvent?.id === event.id;
+                  const statusColor =
+                    event.status === 'published' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500' :
+                    event.status === 'completed' ? 'border-blue-500/30 bg-blue-500/10 text-blue-400' :
+                    'border-[var(--primary)]/20 bg-[var(--primary)]/10 text-[var(--primary)]';
                   return (
                     <button
                       key={event.id}
                       type="button"
                       onClick={() => setSelectedEventId(event.id)}
-                      className={`rounded-2xl border p-4 text-left transition ${isSelected ? 'border-[var(--primary)]/40 bg-[var(--primary)]/10' : 'border-[var(--border)] bg-[var(--card-subtle)]/40 hover:bg-[var(--card-subtle)]/70'}`}
+                      className={`rounded-2xl border p-4 text-left transition ${isSelected ? 'border-[var(--primary)]/40 bg-[var(--primary)]/10 shadow-sm' : 'border-[var(--border)] bg-[var(--card-subtle)]/40 hover:bg-[var(--card-subtle)]/70'}`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -197,7 +237,7 @@ export default function OrgEvents() {
                             {event.startAt ? new Date(event.startAt).toLocaleString() : 'Schedule pending'}
                           </div>
                         </div>
-                        <div className="rounded-full border border-[var(--primary)]/20 bg-[var(--primary)]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--primary)]">
+                        <div className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] ${statusColor}`}>
                           {event.status || 'draft'}
                         </div>
                       </div>
@@ -215,7 +255,9 @@ export default function OrgEvents() {
               ) : (
                 <div className="rounded-2xl border border-dashed border-[var(--border)] p-6 text-center text-sm text-[var(--text-secondary)]">
                   <CalendarDays className="mx-auto mb-3 h-6 w-6 text-[var(--text-muted)]" />
-                  No events yet. Create your first event to generate a public registration page and launch the full workflow.
+                  {events.length === 0
+                    ? 'No events yet. Create your first event to generate a public registration page and launch the full workflow.'
+                    : 'No events match your search or filter.'}
                 </div>
               )}
             </div>

@@ -499,6 +499,12 @@ service cloud.firestore {
       allow delete: if isFounder();
     }
 
+    // Trigger Email extension — authenticated users can queue certificate email notifications
+    match /mail/{mailId} {
+      allow create: if signedIn();
+      allow read: if isStaff();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
